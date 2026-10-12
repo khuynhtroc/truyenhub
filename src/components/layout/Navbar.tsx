@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { Search, BookOpen, Sparkles, Moon, Sun, Coins, Bookmark, User, X } from "lucide-react";
+import { Search, BookOpen, Sparkles, Moon, Sun, Coins, Bookmark, User, X, LogIn } from "lucide-react";
 import { MOCK_STORIES } from "@/lib/mock-data";
 import { Story } from "@/types";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 export function Navbar() {
   const [isDark, setIsDark] = useState(false);
@@ -12,6 +13,8 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Story[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -175,16 +178,29 @@ export function Navbar() {
             {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          {/* User Avatar */}
-          <Link
-            href="/tai-khoan"
-            className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold border-2 border-background shadow-sm hover:ring-2 hover:ring-indigo-500/40 transition-all"
-            title="Tài khoản cá nhân"
-          >
-            <User className="w-4 h-4" />
-          </Link>
+          {/* User Button / Login */}
+          {isLoggedIn ? (
+            <Link
+              href="/tai-khoan"
+              className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold border-2 border-background shadow-sm hover:ring-2 hover:ring-indigo-500/40 transition-all"
+              title="Tài khoản cá nhân"
+            >
+              <User className="w-4 h-4" />
+            </Link>
+          ) : (
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="py-1.5 px-3 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Đăng Nhập</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Auth Modal with Google & Facebook */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </header>
   );
 }

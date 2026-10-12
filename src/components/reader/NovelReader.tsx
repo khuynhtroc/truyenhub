@@ -16,6 +16,7 @@ import {
   Moon,
   Coffee,
 } from "lucide-react";
+import { CommentSection } from "@/components/comment/CommentSection";
 
 interface NovelReaderProps {
   story: Story;
@@ -332,6 +333,15 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
             )}
           </div>
         )}
+
+        {/* Comment Section (Dual TruyenHub & Facebook) */}
+        <div className="my-12">
+          <CommentSection
+            storyId={story.id}
+            storyTitle={story.title}
+            chapterNumber={chapter.chapter_number}
+          />
+        </div>
       </main>
     </div>
   );

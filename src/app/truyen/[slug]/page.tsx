@@ -17,6 +17,7 @@ import {
   Sparkles,
   ArrowRight
 } from "lucide-react";
+import { CommentSection } from "@/components/comment/CommentSection";
 
 export const dynamic = "force-dynamic";
 
@@ -194,6 +195,9 @@ export default async function StoryDetailPage({
             ))}
           </div>
         </section>
+
+        {/* Comment & Discussion Section (Dual TruyenHub & Facebook) */}
+        <CommentSection storyId={story.id} storyTitle={story.title} />
       </main>
 
       <BottomNav />

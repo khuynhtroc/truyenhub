@@ -15,6 +15,7 @@ import {
   Heart, 
   Flag 
 } from "lucide-react";
+import { CommentSection } from "@/components/comment/CommentSection";
 
 interface ComicReaderProps {
   story: Story;
@@ -234,6 +235,15 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
             )}
           </div>
         )}
+
+        {/* Comment Section */}
+        <div className="w-full max-w-3xl mx-auto px-4 my-8">
+          <CommentSection
+            storyId={story.id}
+            storyTitle={story.title}
+            chapterNumber={chapter.chapter_number}
+          />
+        </div>
       </main>
     </div>
   );

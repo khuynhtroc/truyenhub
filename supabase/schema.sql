@@ -197,3 +197,30 @@ CREATE POLICY "User read own profile" ON public.profiles FOR SELECT USING (auth.
 
 -- User chỉ đọc lịch sử của chính mình
 CREATE POLICY "User reading history read" ON public.reading_history FOR ALL USING (auth.uid() = user_id);
+
+-- 9. BẢNG BÌNH LUẬN (COMMENTS)
+CREATE TABLE IF NOT EXISTS public.comments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    story_id UUID NOT NULL REFERENCES public.stories(id) ON DELETE CASCADE,
+    chapter_id UUID REFERENCES public.chapters(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    is_spoiler BOOLEAN DEFAULT FALSE,
+    parent_id UUID REFERENCES public.comments(id) ON DELETE CASCADE,
+    likes_count INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_comments_story ON public.comments(story_id);
+CREATE INDEX IF NOT EXISTS idx_comments_chapter ON public.comments(chapter_id);
+
+ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
+
+-- Ai cũng đọc được bình luận
+CREATE POLICY "Public comments read" ON public.comments FOR SELECT USING (true);
+
+-- Người dùng đã đăng nhập có thể đăng bình luận
+CREATE POLICY "Auth users insert comment" ON public.comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Người dùng có thể xóa bình luận của chính mình
+CREATE POLICY "Users delete own comment" ON public.comments FOR DELETE USING (auth.uid() = user_id);
