@@ -239,46 +239,63 @@ def ingest_novels(limit=None):
     print(f"\n🎉 Hoàn thành quét truyện chữ: {success_count} tác phẩm đã được nạp!", flush=True)
 
 
+def natural_sort_key(s):
+    return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', str(s))]
+
 # ========================================================
-# 2. XỬ LÝ TRUYỆN TRANH (PDF HOẶC ZIP -> WEBP -> R2)
+# 2. XỬ LÝ TRUYỆN TRANH (PDF, ZIP HOẶC FOLDER ẢNH -> WEBP -> R2)
 # ========================================================
-def ingest_manga_series(series_folder_name, max_chapters=5):
+def ingest_manga_series(series_folder_name, max_chapters=3):
     series_path = os.path.join(MANGA_ROOT, series_folder_name)
     if not os.path.exists(series_path):
-        print(f"[!] Không tìm thấy thư mục: {series_path}")
+        print(f"[!] Không tìm thấy thư mục: {series_path}", flush=True)
         return
 
-    print(f"\n--- Đang xử lý truyện tranh: {series_folder_name} (Tối đa {max_chapters} tập) ---")
+    print(f"\n--- Đang xử lý truyện tranh: {series_folder_name} (Tối đa {max_chapters} tập) ---", flush=True)
     s3 = get_s3()
     slug = slugify(series_folder_name)
     progress = load_progress()
 
-    # Tìm các file tập / chap (đệ quy để bắt cả các thư mục con như Doraemon, Thần Đồng Đất Việt)
-    target_files = []
+    # 1. Tìm các file tập/chap (PDF, ZIP)
+    target_items = []
     for root, dirs, f_list in os.walk(series_path):
         for f in f_list:
             if f.lower().endswith((".pdf", ".zip", ".cbz")):
-                target_files.append(os.path.join(root, f))
-    
-    target_files.sort()
-    pdf_count = sum(1 for f in target_files if f.lower().endswith(".pdf"))
-    zip_count = len(target_files) - pdf_count
-    print(f"-> Tìm thấy {len(target_files)} tập/chương ({pdf_count} PDF, {zip_count} ZIP/CBZ).")
+                target_items.append({
+                    "type": "file",
+                    "path": os.path.join(root, f),
+                    "name": f
+                })
+
+    # 2. Nếu không có file nén/PDF, tìm các thư mục con chứa ảnh trực tiếp (như Thần Đồng Đất Việt)
+    if not target_items:
+        for root, dirs, f_list in os.walk(series_path):
+            imgs = [os.path.join(root, f) for f in f_list if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
+            if imgs:
+                target_items.append({
+                    "type": "folder",
+                    "path": root,
+                    "name": os.path.basename(root),
+                    "images": sorted(imgs, key=natural_sort_key)
+                })
+
+    target_items.sort(key=lambda x: natural_sort_key(x["name"]))
+    print(f"-> Tìm thấy {len(target_items)} tập/chương.", flush=True)
 
     cover_url = f"{R2_DOMAIN}/covers/{slug}.webp"
     first_cover_extracted = False
-
     chapters_to_db = []
 
-    for ch_idx, file_path in enumerate(target_files[:max_chapters]):
-        file_name = os.path.basename(file_path)
+    for ch_idx, item in enumerate(target_items[:max_chapters]):
+        file_name = item["name"]
+        file_path = item["path"]
         chap_num = ch_idx + 1
         r2_prefix = f"comics/{slug}/chap-{chap_num}"
-        print(f"  + Xử lý Tập {chap_num}: {file_name}")
+        print(f"  + Xử lý Tập {chap_num}: {file_name}", flush=True)
 
         page_urls = []
 
-        if file_name.lower().endswith(".pdf"):
+        if item["type"] == "file" and file_name.lower().endswith(".pdf"):
             try:
                 pdf = pdfium.PdfDocument(file_path)
                 upload_tasks = []
@@ -303,14 +320,14 @@ def ingest_manga_series(series_folder_name, max_chapters=5):
                     for f in futures:
                         page_urls.append(f.result())
 
-                print(f"    -> Đã nén & upload siêu tốc {len(page_urls)} trang PDF lên R2.")
+                print(f"    -> Đã nén & upload siêu tốc {len(page_urls)} trang PDF lên R2.", flush=True)
             except Exception as e:
-                print(f"    -> Lỗi xử lý PDF {file_name}: {e}")
+                print(f"    -> Lỗi xử lý PDF {file_name}: {e}", flush=True)
 
-        elif file_name.lower().endswith((".zip", ".cbz")):
+        elif item["type"] == "file" and file_name.lower().endswith((".zip", ".cbz")):
             try:
                 with zipfile.ZipFile(file_path, "r") as z:
-                    imgs = sorted([f for f in z.namelist() if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')) and not f.startswith('__MACOSX')])
+                    imgs = sorted([f for f in z.namelist() if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')) and not f.startswith('__MACOSX')], key=natural_sort_key)
                     upload_tasks = []
                     for page_idx, img_name in enumerate(imgs):
                         img_data = z.read(img_name)
@@ -334,9 +351,39 @@ def ingest_manga_series(series_folder_name, max_chapters=5):
                     for f in futures:
                         page_urls.append(f.result())
 
-                print(f"    -> Đã nén & upload siêu tốc {len(page_urls)} trang ZIP lên R2.")
+                print(f"    -> Đã nén & upload siêu tốc {len(page_urls)} trang ZIP lên R2.", flush=True)
             except Exception as e:
-                print(f"    -> Lỗi xử lý ZIP {file_name}: {e}")
+                print(f"    -> Lỗi xử lý ZIP {file_name}: {e}", flush=True)
+
+        elif item["type"] == "folder":
+            try:
+                upload_tasks = []
+                for page_idx, img_p in enumerate(item["images"]):
+                    with open(img_p, "rb") as f_img:
+                        img = Image.open(f_img)
+                        img.load()
+                    if img.width > 1080:
+                        new_h = int((1080 / img.width) * img.height)
+                        img = img.resize((1080, new_h), Image.Resampling.LANCZOS)
+                    
+                    buf = BytesIO()
+                    img.save(buf, "WEBP", quality=80)
+                    r2_key = f"{r2_prefix}/page-{page_idx+1:03d}.webp"
+                    upload_tasks.append((buf.getvalue(), r2_key))
+
+                    if not first_cover_extracted and ch_idx == 0 and page_idx == 0:
+                        c_key = f"covers/{slug}.webp"
+                        cover_url = upload_buffer_r2(s3, buf.getvalue(), c_key)
+                        first_cover_extracted = True
+
+                with ThreadPoolExecutor(max_workers=8) as executor:
+                    futures = [executor.submit(upload_buffer_r2, s3, data, k) for data, k in upload_tasks]
+                    for f in futures:
+                        page_urls.append(f.result())
+
+                print(f"    -> Đã nén & upload siêu tốc {len(page_urls)} ảnh thư mục lên R2.", flush=True)
+            except Exception as e:
+                print(f"    -> Lỗi xử lý folder ảnh {file_name}: {e}", flush=True)
 
         if page_urls:
             chapters_to_db.append({
@@ -357,9 +404,9 @@ def ingest_manga_series(series_folder_name, max_chapters=5):
         "author_name": "Nhiều tác giả",
         "status": "ongoing",
         "genres": ["Truyện Tranh", "Manga"],
-        "total_chapters": len(target_files)
+        "total_chapters": len(target_items)
     }
-    res_story = supabase_upsert("stories", [story_record])
+    res_story = supabase_upsert("stories", [story_record], on_conflict="slug")
     if res_story and len(res_story) > 0:
         story_id = res_story[0]["id"]
         for ch in chapters_to_db:
@@ -371,7 +418,7 @@ def ingest_manga_series(series_folder_name, max_chapters=5):
                 "price_coins": ch["price_coins"],
                 "pages_images": json.dumps(ch["pages_images"])
             }
-            supabase_upsert("chapters", [ch_data])
+            supabase_upsert("chapters", [ch_data], on_conflict="story_id,chapter_number")
 
     if "manga" not in progress:
         progress["manga"] = {}
@@ -380,38 +427,61 @@ def ingest_manga_series(series_folder_name, max_chapters=5):
         "slug": slug,
         "cover_url": cover_url,
         "processed_chapters": len(chapters_to_db),
-        "total_files": len(target_files),
+        "total_files": len(target_items),
         "status": "completed"
     }
     save_progress(progress)
-    print(f"✓ Hoàn tất bộ truyện: {series_folder_name} ({len(chapters_to_db)} tập đã lên Cloudflare R2)")
+    print(f"✓ Hoàn tất bộ truyện: {series_folder_name} ({len(chapters_to_db)} tập đã lên Cloudflare R2)", flush=True)
+
+
+def ingest_all_manga(max_chapters=3):
+    if not os.path.exists(MANGA_ROOT):
+        print(f"Không tìm thấy thư mục {MANGA_ROOT}", flush=True)
+        return
+    items = sorted([d for d in os.listdir(MANGA_ROOT) if os.path.isdir(os.path.join(MANGA_ROOT, d))], key=natural_sort_key)
+    print("\n" + "=" * 65, flush=True)
+    print(f"🚀 BẮT ĐẦU NẠP HÀNG LOẠT TOÀN BỘ {len(items)} BỘ TRUYỆN TRANH (Mỗi bộ {max_chapters} tập)", flush=True)
+    print("=" * 65, flush=True)
+    for idx, s_name in enumerate(items):
+        print(f"\n[{idx+1}/{len(items)}] TRUYỆN: {s_name}", flush=True)
+        ingest_manga_series(s_name, max_chapters=max_chapters)
+    print("\n" + "=" * 65, flush=True)
+    print("🎉 HOÀN TẤT NẠP TOÀN BỘ 56 BỘ TRUYỆN TRANH LÊN CLOUDFLARE R2 & SUPABASE!", flush=True)
+    print("=" * 65, flush=True)
 
 
 def list_all_manga():
     if not os.path.exists(MANGA_ROOT):
-        print(f"Không tìm thấy thư mục {MANGA_ROOT}")
+        print(f"Không tìm thấy thư mục {MANGA_ROOT}", flush=True)
         return
-    items = sorted(os.listdir(MANGA_ROOT))
-    print(f"\n📋 DANH SÁCH {len(items)} BỘ TRUYỆN TRANH TRONG F:\\Truyện Tranh:")
+    items = sorted([d for d in os.listdir(MANGA_ROOT) if os.path.isdir(os.path.join(MANGA_ROOT, d))], key=natural_sort_key)
+    print(f"\n📋 DANH SÁCH {len(items)} BỘ TRUYỆN TRANH TRONG F:\\Truyện Tranh:", flush=True)
     for idx, name in enumerate(items):
         full = os.path.join(MANGA_ROOT, name)
-        if os.path.isdir(full):
-            files = []
+        files = []
+        for root, dirs, f_list in os.walk(full):
+            for f in f_list:
+                if f.lower().endswith(('.pdf', '.zip', '.cbz')):
+                    files.append(f)
+        if not files:
             for root, dirs, f_list in os.walk(full):
-                for f in f_list:
-                    if f.lower().endswith(('.pdf', '.zip', '.cbz')):
-                        files.append(f)
-            print(f"  {idx+1:02d}. {name:<35} ({len(files)} tập)")
+                imgs = [f for f in f_list if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
+                if imgs:
+                    files.append(root)
+        print(f"  {idx+1:02d}. {name:<35} ({len(files)} tập)", flush=True)
 
 
 if __name__ == "__main__":
-    print("=" * 65)
-    print("TRUYENHUB BATCH INGESTION ENGINE")
-    print("=" * 65)
+    print("=" * 65, flush=True)
+    print("TRUYENHUB BATCH INGESTION ENGINE", flush=True)
+    print("=" * 65, flush=True)
     
     if len(sys.argv) > 1 and sys.argv[1] == "--novels":
         limit = int(sys.argv[2]) if len(sys.argv) > 2 else None
         ingest_novels(limit=limit)
+    elif len(sys.argv) > 1 and sys.argv[1] == "--manga-all":
+        max_ch = int(sys.argv[2]) if len(sys.argv) > 2 else 3
+        ingest_all_manga(max_chapters=max_ch)
     elif len(sys.argv) > 1 and sys.argv[1].startswith("--manga="):
         series = sys.argv[1].split("=")[1]
         max_ch = int(sys.argv[2]) if len(sys.argv) > 2 else 5
@@ -419,7 +489,8 @@ if __name__ == "__main__":
     elif len(sys.argv) > 1 and sys.argv[1] == "--list-manga":
         list_all_manga()
     else:
-        print("\nCách dùng:")
-        print("  python scripts/batch_ingest_all.py --list-manga")
-        print("  python scripts/batch_ingest_all.py --novels [so_luong]")
-        print("  python scripts/batch_ingest_all.py --manga=Conan [so_tap]")
+        print("\nCách dùng:", flush=True)
+        print("  python scripts/batch_ingest_all.py --list-manga", flush=True)
+        print("  python scripts/batch_ingest_all.py --novels [so_luong]", flush=True)
+        print("  python scripts/batch_ingest_all.py --manga-all [so_tap_moi_bo]", flush=True)
+        print("  python scripts/batch_ingest_all.py --manga=Conan [so_tap]", flush=True)
