@@ -275,6 +275,7 @@ def ingest_manga_series(series_folder_name, max_chapters=5):
         if file_name.lower().endswith(".pdf"):
             try:
                 pdf = pdfium.PdfDocument(file_path)
+                upload_tasks = []
                 for page_idx, page in enumerate(pdf):
                     pil_image = page.render(scale=1.5).to_pil()
                     if pil_image.width > 1080:
@@ -284,16 +285,19 @@ def ingest_manga_series(series_folder_name, max_chapters=5):
                     buf = BytesIO()
                     pil_image.save(buf, "WEBP", quality=80)
                     r2_key = f"{r2_prefix}/page-{page_idx+1:03d}.webp"
-                    url = upload_buffer_r2(s3, buf.getvalue(), r2_key)
-                    page_urls.append(url)
+                    upload_tasks.append((buf.getvalue(), r2_key))
 
-                    # Lưu trang đầu tiên làm cover truyện nếu chưa có
                     if not first_cover_extracted and ch_idx == 0 and page_idx == 0:
                         c_key = f"covers/{slug}.webp"
                         cover_url = upload_buffer_r2(s3, buf.getvalue(), c_key)
                         first_cover_extracted = True
 
-                print(f"    -> Đã nén & upload {len(page_urls)} trang PDF lên R2.")
+                with ThreadPoolExecutor(max_workers=8) as executor:
+                    futures = [executor.submit(upload_buffer_r2, s3, data, k) for data, k in upload_tasks]
+                    for f in futures:
+                        page_urls.append(f.result())
+
+                print(f"    -> Đã nén & upload siêu tốc {len(page_urls)} trang PDF lên R2.")
             except Exception as e:
                 print(f"    -> Lỗi xử lý PDF {file_name}: {e}")
 
@@ -301,6 +305,7 @@ def ingest_manga_series(series_folder_name, max_chapters=5):
             try:
                 with zipfile.ZipFile(file_path, "r") as z:
                     imgs = sorted([f for f in z.namelist() if f.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')) and not f.startswith('__MACOSX')])
+                    upload_tasks = []
                     for page_idx, img_name in enumerate(imgs):
                         img_data = z.read(img_name)
                         img = Image.open(BytesIO(img_data))
@@ -311,15 +316,19 @@ def ingest_manga_series(series_folder_name, max_chapters=5):
                         buf = BytesIO()
                         img.save(buf, "WEBP", quality=80)
                         r2_key = f"{r2_prefix}/page-{page_idx+1:03d}.webp"
-                        url = upload_buffer_r2(s3, buf.getvalue(), r2_key)
-                        page_urls.append(url)
+                        upload_tasks.append((buf.getvalue(), r2_key))
 
                         if not first_cover_extracted and ch_idx == 0 and page_idx == 0:
                             c_key = f"covers/{slug}.webp"
                             cover_url = upload_buffer_r2(s3, buf.getvalue(), c_key)
                             first_cover_extracted = True
 
-                print(f"    -> Đã nén & upload {len(page_urls)} trang ZIP lên R2.")
+                with ThreadPoolExecutor(max_workers=8) as executor:
+                    futures = [executor.submit(upload_buffer_r2, s3, data, k) for data, k in upload_tasks]
+                    for f in futures:
+                        page_urls.append(f.result())
+
+                print(f"    -> Đã nén & upload siêu tốc {len(page_urls)} trang ZIP lên R2.")
             except Exception as e:
                 print(f"    -> Lỗi xử lý ZIP {file_name}: {e}")
 
