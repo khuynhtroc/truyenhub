@@ -3,6 +3,8 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { StoryCard } from "@/components/story/StoryCard";
 import { SafeImage } from "@/components/common/SafeImage";
 import { MOCK_STORIES } from "@/lib/mock-data";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { Story } from "@/types";
 import { Sparkles, Flame, BookOpen, Crown, ChevronRight, Zap } from "lucide-react";
 import Link from "next/link";
 
@@ -15,12 +17,26 @@ export default async function HomePage({
 }) {
   const { type } = await searchParams;
 
-  const filteredStories = type
-    ? MOCK_STORIES.filter((s) => s.type === type)
-    : MOCK_STORIES;
+  let allStories: Story[] = MOCK_STORIES;
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: dbStories } = await supabase
+      .from("stories")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (dbStories && dbStories.length > 0) {
+      allStories = dbStories as unknown as Story[];
+    }
+  } catch (error) {
+    console.error("Failed to load stories from Supabase:", error);
+  }
 
-  const comics = MOCK_STORIES.filter((s) => s.type === "comic");
-  const novels = MOCK_STORIES.filter((s) => s.type === "novel");
+  const filteredStories = type
+    ? allStories.filter((s) => s.type === type)
+    : allStories;
+
+  const comics = allStories.filter((s) => s.type === "comic");
+  const novels = allStories.filter((s) => s.type === "novel");
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12">

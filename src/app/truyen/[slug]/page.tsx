@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { SafeImage } from "@/components/common/SafeImage";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { Story, Chapter } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -28,22 +30,55 @@ export default async function StoryDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const story = MOCK_STORIES.find((s) => s.slug === slug);
+
+  let story: Story | null = null;
+  let chapters: Chapter[] = [];
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: dbStory } = await supabase
+      .from("stories")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (dbStory) {
+      story = dbStory as unknown as Story;
+      const { data: dbChapters } = await supabase
+        .from("chapters")
+        .select("id, story_id, chapter_number, title, is_locked, price_coins, created_at")
+        .eq("story_id", story.id)
+        .order("chapter_number", { ascending: true });
+      if (dbChapters) {
+        chapters = dbChapters as unknown as Chapter[];
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load story from Supabase:", error);
+  }
+
+  if (!story) {
+    story = MOCK_STORIES.find((s) => s.slug === slug) || null;
+    if (story) {
+      chapters = MOCK_CHAPTERS[slug] || [];
+    }
+  }
 
   if (!story) {
     notFound();
   }
 
-  const chapters = MOCK_CHAPTERS[slug] || [
-    {
-      id: "sample-1",
-      story_id: story.id,
-      chapter_number: 1,
-      title: "Chương 1: Khởi đầu",
-      is_locked: false,
-      price_coins: 0,
-      created_at: story.created_at,
-    },
+  if (chapters.length === 0) {
+    chapters = [
+      {
+        id: "sample-1",
+        story_id: story.id,
+        chapter_number: 1,
+        title: "Chương 1: Khởi đầu",
+        is_locked: false,
+        price_coins: 0,
+        created_at: story.created_at,
+      },
     {
       id: "sample-2",
       story_id: story.id,
@@ -63,6 +98,7 @@ export default async function StoryDetailPage({
       created_at: story.created_at,
     },
   ];
+}
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12">

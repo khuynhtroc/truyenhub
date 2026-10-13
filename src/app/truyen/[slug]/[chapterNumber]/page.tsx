@@ -1,6 +1,8 @@
 import { MOCK_STORIES, MOCK_CHAPTERS } from "@/lib/mock-data";
 import { ComicReader } from "@/components/reader/ComicReader";
 import { NovelReader } from "@/components/reader/NovelReader";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { Story, Chapter } from "@/types";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -13,11 +15,44 @@ export default async function ChapterPage({
   const { slug, chapterNumber } = await params;
   const num = parseFloat(chapterNumber);
 
-  const story = MOCK_STORIES.find((s) => s.slug === slug);
-  if (!story) notFound();
+  let story: Story | null = null;
+  let chapters: Chapter[] = [];
+  let chapter: Chapter | null = null;
 
-  const chapters = MOCK_CHAPTERS[slug] || [];
-  const chapter = chapters.find((c) => c.chapter_number === num);
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: dbStory } = await supabase
+      .from("stories")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (dbStory) {
+      story = dbStory as unknown as Story;
+      const { data: dbChapters } = await supabase
+        .from("chapters")
+        .select("*")
+        .eq("story_id", story.id)
+        .order("chapter_number", { ascending: true });
+
+      if (dbChapters) {
+        chapters = dbChapters as unknown as Chapter[];
+        chapter = chapters.find((c) => Number(c.chapter_number) === num) || null;
+      }
+    }
+  } catch (error) {
+    console.error("Failed to query chapter from Supabase:", error);
+  }
+
+  if (!story) {
+    story = MOCK_STORIES.find((s) => s.slug === slug) || null;
+    if (story) {
+      chapters = MOCK_CHAPTERS[slug] || [];
+      chapter = chapters.find((c) => c.chapter_number === num) || null;
+    }
+  }
+
+  if (!story) notFound();
 
   if (!chapter) {
     // If not found in mock, create a placeholder chapter
