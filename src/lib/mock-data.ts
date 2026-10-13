@@ -1,4 +1,6 @@
 import { Story, Chapter } from "@/types";
+import chapters1367 from "./data/chapters-13-67.json";
+import chaptersDragonBall from "./data/chapters-dragon-ball.json";
 
 export const MOCK_STORIES: Story[] = [
   {
@@ -7,13 +9,13 @@ export const MOCK_STORIES: Story[] = [
     slug: "dragon-ball",
     type: "comic",
     description: "Câu chuyện về cuộc phiêu lưu của cậu bé Songoku cùng những người bạn đi tìm 7 viên ngọc rồng để thực hiện điều ước và bảo vệ địa cầu khỏi những thế lực hắc ám.",
-    cover_url: "https://pub-996745da873f42adb3c8b53c9ed97e85.r2.dev/covers/720/1790828437249479334.webp",
+    cover_url: "/covers/dragon-ball-cover.webp",
     author_name: "Toriyama Akira",
     status: "completed",
     genres: ["Hành động", "Phiêu lưu", "Hài hước", "Shounen"],
     total_views: 452000,
     total_likes: 12500,
-    total_chapters: 42,
+    total_chapters: 4,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-10-10T00:00:00Z",
   },
@@ -29,7 +31,7 @@ export const MOCK_STORIES: Story[] = [
     genres: ["Trinh thám", "Kịch tính", "Tâm lý", "Cảnh sát"],
     total_views: 289000,
     total_likes: 9800,
-    total_chapters:  23,
+    total_chapters: 7,
     created_at: "2026-02-01T00:00:00Z",
     updated_at: "2026-10-11T00:00:00Z",
   },
@@ -84,93 +86,8 @@ export const MOCK_STORIES: Story[] = [
 ];
 
 export const MOCK_CHAPTERS: Record<string, Chapter[]> = {
-  "dragon-ball": [
-    {
-      id: "db-1",
-      story_id: "1",
-      chapter_number: 1,
-      title: "Chương 1: Bulma và Son Goku",
-      is_locked: false,
-      price_coins: 0,
-      pages_images: [
-        "/comics/dragon-ball/chap-1/page-001.webp",
-        "/comics/dragon-ball/chap-1/page-002.webp",
-        "/comics/dragon-ball/chap-1/page-003.webp",
-        "/comics/dragon-ball/chap-1/page-004.webp",
-        "/comics/dragon-ball/chap-1/page-005.webp",
-        "/comics/dragon-ball/chap-1/page-006.webp",
-        "/comics/dragon-ball/chap-1/page-007.webp",
-        "/comics/dragon-ball/chap-1/page-008.webp",
-        "/comics/dragon-ball/chap-1/page-009.webp",
-        "/comics/dragon-ball/chap-1/page-010.webp",
-        "/comics/dragon-ball/chap-1/page-011.webp",
-        "/comics/dragon-ball/chap-1/page-012.webp",
-        "/comics/dragon-ball/chap-1/page-013.webp",
-        "/comics/dragon-ball/chap-1/page-014.webp",
-        "/comics/dragon-ball/chap-1/page-015.webp",
-        "/comics/dragon-ball/chap-1/page-016.webp",
-        "/comics/dragon-ball/chap-1/page-017.webp",
-        "/comics/dragon-ball/chap-1/page-018.webp",
-        "/comics/dragon-ball/chap-1/page-019.webp",
-        "/comics/dragon-ball/chap-1/page-020.webp",
-        "/comics/dragon-ball/chap-1/page-021.webp",
-        "/comics/dragon-ball/chap-1/page-022.webp",
-        "/comics/dragon-ball/chap-1/page-023.webp",
-        "/comics/dragon-ball/chap-1/page-024.webp",
-        "/comics/dragon-ball/chap-1/page-025.webp",
-        "/comics/dragon-ball/chap-1/page-026.webp",
-        "/comics/dragon-ball/chap-1/page-027.webp",
-        "/comics/dragon-ball/chap-1/page-028.webp",
-        "/comics/dragon-ball/chap-1/page-029.webp",
-        "/comics/dragon-ball/chap-1/page-030.webp",
-        "/comics/dragon-ball/chap-1/page-031.webp",
-        "/comics/dragon-ball/chap-1/page-032.webp",
-        "/comics/dragon-ball/chap-1/page-033.webp",
-        "/comics/dragon-ball/chap-1/page-034.webp",
-        "/comics/dragon-ball/chap-1/page-035.webp",
-        "/comics/dragon-ball/chap-1/page-036.webp",
-        "/comics/dragon-ball/chap-1/page-037.webp"
-],
-      created_at: "2026-01-01T00:00:00Z",
-    },
-    {
-      id: "db-2",
-      story_id: "1",
-      chapter_number: 2,
-      title: "Chương 2: Không có ngọc rồng!",
-      is_locked: false,
-      price_coins: 0,
-      pages_images: [
-        "https://pub-996745da873f42adb3c8b53c9ed97e85.r2.dev/comics/update/6143/page-006-1791627433435324888.webp",
-        "https://pub-996745da873f42adb3c8b53c9ed97e85.r2.dev/comics/update/6143/page-007-1791627433928240662.webp",
-      ],
-      created_at: "2026-01-02T00:00:00Z",
-    },
-    {
-      id: "db-3",
-      story_id: "1",
-      chapter_number: 3,
-      title: "Chương 3: Cân Đẩu Vân của Quy Lão",
-      is_locked: false,
-      price_coins: 0,
-      pages_images: [
-        "https://pub-996745da873f42adb3c8b53c9ed97e85.r2.dev/comics/update/6143/page-008-1791627434414524534.webp",
-      ],
-      created_at: "2026-01-03T00:00:00Z",
-    },
-    {
-      id: "db-4",
-      story_id: "1",
-      chapter_number: 4,
-      title: "Chương 4: Ô Long xuất hiện (VIP)",
-      is_locked: true,
-      price_coins: 5,
-      pages_images: [
-        "https://pub-996745da873f42adb3c8b53c9ed97e85.r2.dev/comics/update/6143/page-009-1791627434852640868.webp",
-      ],
-      created_at: "2026-01-04T00:00:00Z",
-    },
-  ],
+  "dragon-ball": chaptersDragonBall as Chapter[],
+  "13-67-chan-ho-kei": chapters1367 as Chapter[],
   "van-co-kiem-ton": [
     {
       id: "vckt-1",
