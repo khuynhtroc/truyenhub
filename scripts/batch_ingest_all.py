@@ -88,11 +88,13 @@ def upload_buffer_r2(s3, buffer, r2_key, content_type="image/webp"):
     )
     return f"{R2_DOMAIN}/{r2_key}"
 
-def supabase_upsert(table, records):
-    """Gửi bản ghi lên Supabase qua PostgREST"""
+def supabase_upsert(table, records, on_conflict=None):
+    """Gửi bản ghi lên Supabase qua PostgREST với cơ chế merge-duplicates"""
     if not SUPABASE_URL or not SUPABASE_KEY:
         return None
     url = f"{SUPABASE_URL}/rest/v1/{table}"
+    if on_conflict:
+        url += f"?on_conflict={on_conflict}"
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -112,9 +114,9 @@ def supabase_upsert(table, records):
 # 1. BÓC TÁCH TOÀN BỘ 778 TRUYỆN CHỮ (.EPUB)
 # ========================================================
 def ingest_novels(limit=None):
-    print("\n" + "=" * 65)
-    print("📚 BẮT ĐẦU QUÉT VÀ NẠP TRUYỆN CHỮ (F:\\Truyện Chữ)")
-    print("=" * 65)
+    print("\n" + "=" * 65, flush=True)
+    print("📚 BẮT ĐẦU QUÉT VÀ NẠP TRUYỆN CHỮ (F:\\Truyện Chữ)", flush=True)
+    print("=" * 65, flush=True)
 
     progress = load_progress()
     epubs = []
@@ -123,10 +125,10 @@ def ingest_novels(limit=None):
             if f.lower().endswith(".epub"):
                 epubs.append(os.path.join(root, f))
 
-    print(f"-> Tìm thấy tổng cộng {len(epubs)} tác phẩm .epub.")
+    print(f"-> Tìm thấy tổng cộng {len(epubs)} tác phẩm .epub.", flush=True)
     if limit:
         epubs = epubs[:limit]
-        print(f"-> Chế độ giới hạn: Xử lý {limit} cuốn đầu tiên.")
+        print(f"-> Chế độ giới hạn: Xử lý {limit} cuốn đầu tiên.", flush=True)
 
     s3 = get_s3()
     success_count = 0
@@ -145,6 +147,8 @@ def ingest_novels(limit=None):
             meta_desc = book.get_metadata('DC', 'description')
             desc = meta_desc[0][0] if meta_desc else f"Bộ tiểu thuyết hấp dẫn {title} của tác giả {author}."
             slug = slugify(title)
+            if not slug:
+                slug = slugify(os.path.splitext(fname)[0])
 
             # Upload cover nếu có
             cover_url = ""
@@ -171,10 +175,13 @@ def ingest_novels(limit=None):
                     soup = BeautifulSoup(item.get_content(), "html.parser")
                     paras = [p.get_text().strip() for p in soup.find_all("p") if p.get_text().strip()]
                     text = "\n\n".join(paras)
-                    if len(text) > 800:
+                    if len(text) < 400:
+                        text = soup.get_text(separator="\n\n").strip()
+
+                    if len(text) > 400:
                         h = soup.find(["h1", "h2", "h3"])
                         ch_title = h.get_text().strip() if h else f"Chương {ch_num}"
-                        is_locked = ch_num > 3
+                        is_locked = ch_num > 5
                         chapters.append({
                             "chapter_number": ch_num,
                             "title": ch_title[:100],
@@ -184,7 +191,7 @@ def ingest_novels(limit=None):
                         })
                         ch_num += 1
 
-            # Nạp vào Supabase nếu có bảng
+            # Nạp vào Supabase
             story_record = {
                 "title": title,
                 "slug": slug,
@@ -196,15 +203,14 @@ def ingest_novels(limit=None):
                 "genres": ["Tiểu thuyết", "Truyện Chữ"],
                 "total_chapters": len(chapters)
             }
-            res_story = supabase_upsert("stories", [story_record])
+            res_story = supabase_upsert("stories", [story_record], on_conflict="slug")
 
-            # Nếu lưu thành công vào Supabase, nạp tiếp chapters
+            # Nếu lưu thành công vào Supabase, nạp tiếp chapters theo từng chunk 10
             if res_story and len(res_story) > 0:
                 story_id = res_story[0]["id"]
-                # Cắt mảng chapters thành từng mẩu 20 để insert
-                for c_i in range(0, len(chapters), 20):
+                for c_i in range(0, len(chapters), 10):
                     batch_c = []
-                    for ch in chapters[c_i:c_i+20]:
+                    for ch in chapters[c_i:c_i+10]:
                         batch_c.append({
                             "story_id": story_id,
                             "chapter_number": ch["chapter_number"],
@@ -213,7 +219,7 @@ def ingest_novels(limit=None):
                             "price_coins": ch["price_coins"],
                             "content_text": ch["content_text"]
                         })
-                    supabase_upsert("chapters", batch_c)
+                    supabase_upsert("chapters", batch_c, on_conflict="story_id,chapter_number")
 
             progress["novels"][fname] = {
                 "title": title,
@@ -225,12 +231,12 @@ def ingest_novels(limit=None):
             }
             save_progress(progress)
             success_count += 1
-            print(f"[{idx+1}/{len(epubs)}] ✓ {title[:35]} ({len(chapters)} chương)")
+            print(f"[{idx+1}/{len(epubs)}] ✓ {title[:40]} ({len(chapters)} chương)", flush=True)
 
         except Exception as e:
-            print(f"[{idx+1}/{len(epubs)}] ✗ Lỗi {fname}: {e}")
+            print(f"[{idx+1}/{len(epubs)}] ✗ Lỗi {fname}: {e}", flush=True)
 
-    print(f"\n🎉 Hoàn thành quét truyện chữ: {success_count} tác phẩm đã được nạp!")
+    print(f"\n🎉 Hoàn thành quét truyện chữ: {success_count} tác phẩm đã được nạp!", flush=True)
 
 
 # ========================================================
