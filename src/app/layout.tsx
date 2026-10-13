@@ -59,8 +59,14 @@ export const metadata: Metadata = {
     description: "Đọc truyện tranh và truyện chữ trực tuyến tốc độ cao.",
   },
   robots: {
-    index: true,
-    follow: true,
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
   },
 };
 

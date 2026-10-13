@@ -5,10 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
-        disallow: ["/api/", "/tai-khoan/"],
+        disallow: "/",
       },
     ],
-    sitemap: "https://truyenhub.vn/sitemap.xml",
   };
 }
