@@ -91,7 +91,13 @@ def process_test_comic():
     print("2. ĐANG XỬ LÝ TRUYỆN TRANH MẪU TỪ Ổ G: (Dragon Ball Chap 1)")
     print("=" * 60)
 
-    zip_path = r"G:\Truyện Tranh\Truyện Tranh\Dragon Ball\JPG_CHAP\1. DRAGON BALL BẢN VIP - BẢN ĐẸP NGUYÊN GỐC - CHAP 1_DOANH_NAM ĐỊNH.zip"
+    candidates = [
+        r"F:\Truyện Tranh\Truyện Tranh\Dragon Ball\JPG_CHAP\1. DRAGON BALL BẢN VIP - BẢN ĐẸP NGUYÊN GỐC - CHAP 1_DOANH_NAM ĐỊNH.zip",
+        r"F:\Truyện Tranh\Dragon Ball\JPG_CHAP\1. DRAGON BALL BẢN VIP - BẢN ĐẸP NGUYÊN GỐC - CHAP 1_DOANH_NAM ĐỊNH.zip",
+        r"G:\Truyện Tranh\Truyện Tranh\Dragon Ball\JPG_CHAP\1. DRAGON BALL BẢN VIP - BẢN ĐẸP NGUYÊN GỐC - CHAP 1_DOANH_NAM ĐỊNH.zip",
+        r"G:\Truyện Tranh\Dragon Ball\JPG_CHAP\1. DRAGON BALL BẢN VIP - BẢN ĐẸP NGUYÊN GỐC - CHAP 1_DOANH_NAM ĐỊNH.zip",
+    ]
+    zip_path = next((p for p in candidates if os.path.exists(p)), candidates[0])
     print(f"Path: {zip_path}")
 
     out_dir = r"F:\Antigravity\truyenhub\public\comics\dragon-ball\chap-1"

@@ -83,7 +83,14 @@ def extract_13_67():
 # ========================================================
 def extract_dragon_ball():
     print("\n--- 2. Đang trích xuất Dragon Ball (Chap 1 -> Chap 4) ---")
-    base_zip_dir = r"G:\Truyện Tranh\Truyện Tranh\Dragon Ball\JPG_CHAP"
+    candidates = [
+        r"F:\Truyện Tranh\Truyện Tranh\Dragon Ball\JPG_CHAP",
+        r"F:\Truyện Tranh\Dragon Ball\JPG_CHAP",
+        r"G:\Truyện Tranh\Truyện Tranh\Dragon Ball\JPG_CHAP",
+        r"G:\Truyện Tranh\Dragon Ball\JPG_CHAP",
+    ]
+    base_zip_dir = next((p for p in candidates if os.path.exists(p)), candidates[0])
+    print(f"Using comic path: {base_zip_dir}")
     
     # 2.1 Tạo bìa Dragon Ball chuẩn
     cover_dest = r"F:\Antigravity\truyenhub\public\covers\dragon-ball-cover.webp"

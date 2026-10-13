@@ -1,7 +1,7 @@
 """
 SCRIPT BÓC TÁCH DỮ LIỆU TỰ ĐỘNG CHO TRUYENHUB
 - Xử lý 7GB Truyện Chữ (F:\Truyện Chữ): bóc tách .epub thành từng chương text sạch
-- Xử lý 125GB Truyện Tranh (G:\Truyện Tranh): nén WebP 80%, đẩy Cloudflare R2
+- Xử lý 125GB Truyện Tranh (F:\Truyện Tranh): nén WebP 80%, đẩy Cloudflare R2
 - Đẩy dữ liệu Metadata và Chương vào Database Supabase
 """
 
@@ -16,6 +16,10 @@ import ebooklib
 from ebooklib import epub
 from bs4 import BeautifulSoup
 from supabase import create_client, Client
+
+# Đường dẫn thư mục dữ liệu nguồn
+NOVEL_ROOT = r"F:\Truyện Chữ"
+MANGA_ROOT = r"F:\Truyện Tranh" if os.path.exists(r"F:\Truyện Tranh") else r"G:\Truyện Tranh"
 
 # ==========================================
 # CẤU HÌNH THÔNG SỐ (THAY THẾ BẰNG KEY CỦA BẠN)
