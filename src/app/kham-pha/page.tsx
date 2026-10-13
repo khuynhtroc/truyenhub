@@ -1,36 +1,57 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { StoryCard } from "@/components/story/StoryCard";
 import { MOCK_STORIES } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/client";
+import { Story } from "@/types";
 import { Compass, Filter, Search, RotateCcw, Sparkles } from "lucide-react";
 
 export default function ExplorePage() {
+  const [stories, setStories] = useState<Story[]>(MOCK_STORIES);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedGenre, setSelectedGenre] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("views");
   const [keyword, setKeyword] = useState<string>("");
 
+  useEffect(() => {
+    async function loadStories() {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("stories")
+          .select("*")
+          .order("total_views", { ascending: false });
+        if (data && data.length > 0) {
+          setStories(data as unknown as Story[]);
+        }
+      } catch (err) {
+        console.error("Failed to load stories from Supabase:", err);
+      }
+    }
+    loadStories();
+  }, []);
+
   // Collect all unique genres
   const allGenres = useMemo(() => {
     const set = new Set<string>();
-    MOCK_STORIES.forEach((s) => s.genres.forEach((g) => set.add(g)));
+    stories.forEach((s) => s.genres?.forEach((g) => set.add(g)));
     return Array.from(set);
-  }, []);
+  }, [stories]);
 
   // Filter & sort
   const filteredStories = useMemo(() => {
-    let list = [...MOCK_STORIES];
+    let list = [...stories];
 
     if (selectedType !== "all") {
       list = list.filter((s) => s.type === selectedType);
     }
 
     if (selectedGenre !== "all") {
-      list = list.filter((s) => s.genres.includes(selectedGenre));
+      list = list.filter((s) => s.genres?.includes(selectedGenre));
     }
 
     if (selectedStatus !== "all") {

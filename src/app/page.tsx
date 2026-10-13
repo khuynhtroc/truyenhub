@@ -125,13 +125,13 @@ export default async function HomePage({
               <Flame className="w-5 h-5 text-rose-500" />
               Đang Thịnh Hành Nhất
             </h2>
-            <span className="text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-0.5">
+            <Link href="/kham-pha" className="text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer flex items-center gap-0.5">
               Xem tất cả <ChevronRight className="w-3.5 h-3.5" />
-            </span>
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {filteredStories.map((story) => (
+            {filteredStories.slice(0, 20).map((story) => (
               <StoryCard key={story.id} story={story} />
             ))}
           </div>
