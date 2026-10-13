@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { MOCK_STORIES } from "@/lib/mock-data";
+import { SafeImage } from "@/components/common/SafeImage";
 import Link from "next/link";
 import { Bookmark, Clock, ArrowRight, BookOpen, Image as ImageIcon } from "lucide-react";
 
@@ -46,7 +47,13 @@ export default function BookshelfPage() {
               className="flex items-center gap-4 p-4 rounded-2xl border border-border/60 bg-card hover:border-rose-500/40 transition-all shadow-sm"
             >
               <div className="relative w-16 sm:w-20 aspect-[3/4] rounded-xl overflow-hidden shrink-0 bg-muted">
-                <img src={item.story.cover_url} alt={item.story.title} className="w-full h-full object-cover" />
+                <SafeImage
+                  src={item.story.cover_url}
+                  alt={item.story.title}
+                  fallbackTitle={item.story.title}
+                  fallbackAuthor={item.story.author_name}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               <div className="flex flex-col justify-between flex-1 gap-1 truncate">

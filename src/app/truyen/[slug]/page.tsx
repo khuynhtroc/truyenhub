@@ -18,6 +18,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
+import { SafeImage } from "@/components/common/SafeImage";
 
 export const dynamic = "force-dynamic";
 
@@ -78,7 +79,13 @@ export default async function StoryDetailPage({
 
           {/* Cover */}
           <div className="relative w-40 sm:w-52 aspect-[3/4] mx-auto sm:mx-0 rounded-2xl overflow-hidden shadow-xl border border-white/20 shrink-0">
-            <img src={story.cover_url} alt={story.title} className="w-full h-full object-cover" />
+            <SafeImage
+              src={story.cover_url}
+              alt={story.title}
+              fallbackTitle={story.title}
+              fallbackAuthor={story.author_name}
+              className="w-full h-full object-cover"
+            />
             <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-md bg-black/75 backdrop-blur-md text-white text-[10px] font-black uppercase">
               {story.type === "comic" ? "Truyện Tranh" : "Truyện Chữ"}
             </span>

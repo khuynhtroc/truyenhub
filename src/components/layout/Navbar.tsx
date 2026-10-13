@@ -6,6 +6,7 @@ import { Search, BookOpen, Sparkles, Moon, Sun, Coins, Bookmark, User, X, LogIn 
 import { MOCK_STORIES } from "@/lib/mock-data";
 import { Story } from "@/types";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { SafeImage } from "@/components/common/SafeImage";
 
 export function Navbar() {
   const [isDark, setIsDark] = useState(false);
@@ -137,7 +138,13 @@ export function Navbar() {
                       onClick={() => setShowSearchDropdown(false)}
                       className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/60 transition-colors"
                     >
-                      <img src={s.cover_url} alt={s.title} className="w-10 h-13 object-cover rounded-md shrink-0" />
+                      <SafeImage
+                        src={s.cover_url}
+                        alt={s.title}
+                        fallbackTitle={s.title}
+                        fallbackAuthor={s.author_name}
+                        className="w-10 h-14 object-cover rounded-md shrink-0 text-[8px]"
+                      />
                       <div className="flex flex-col truncate">
                         <span className="text-xs font-bold truncate text-foreground">{s.title}</span>
                         <span className="text-[11px] text-muted-foreground truncate">{s.author_name}</span>

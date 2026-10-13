@@ -1,13 +1,17 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Story } from "@/types";
 import { formatNumber } from "@/lib/utils";
-import { Eye, Heart, BookOpen, Image as ImageIcon } from "lucide-react";
+import { Eye, Heart, BookOpen, Image as ImageIcon, Sparkles } from "lucide-react";
 
 interface StoryCardProps {
   story: Story;
 }
 
 export function StoryCard({ story }: StoryCardProps) {
+  const [imgError, setImgError] = useState(false);
   const isComic = story.type === "comic";
 
   return (
@@ -16,23 +20,35 @@ export function StoryCard({ story }: StoryCardProps) {
       className="group flex flex-col gap-2 rounded-xl overflow-hidden focus:outline-none transition-all"
     >
       {/* Cover image wrap */}
-      <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-muted/60 border border-border/40 shadow-sm group-hover:shadow-md group-hover:border-rose-500/40 transition-all">
+      <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-muted/80 border border-border/40 shadow-sm group-hover:shadow-md group-hover:border-rose-500/40 transition-all">
         {/* Placeholder / Image */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10 opacity-70 group-hover:opacity-50 transition-opacity" />
-        
-        <img
-          src={story.cover_url}
-          alt={story.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          loading="lazy"
-        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent z-10 opacity-70 group-hover:opacity-50 transition-opacity pointer-events-none" />
+
+        {!imgError ? (
+          <img
+            src={story.cover_url}
+            alt={story.title}
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+          />
+        ) : (
+          /* Graceful stylized fallback cover */
+          <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-indigo-950 to-rose-950 p-4 flex flex-col justify-between items-center text-center">
+            <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-rose-400 mt-4">
+              <Sparkles className="w-4 h-4" />
+            </span>
+            <span className="font-extrabold text-xs text-white/90 leading-tight line-clamp-3">
+              {story.title}
+            </span>
+            <span className="text-[10px] text-white/50">{story.author_name}</span>
+          </div>
+        )}
 
         {/* Type Badge: Comic vs Novel */}
         <span
           className={`absolute top-2.5 left-2.5 z-20 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wide uppercase shadow-sm flex items-center gap-1 ${
-            isComic
-              ? "bg-amber-500 text-white"
-              : "bg-indigo-600 text-white"
+            isComic ? "bg-amber-500 text-white" : "bg-indigo-600 text-white"
           }`}
         >
           {isComic ? <ImageIcon className="w-3 h-3" /> : <BookOpen className="w-3 h-3" />}

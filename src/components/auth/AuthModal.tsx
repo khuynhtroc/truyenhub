@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import { X, Sparkles, Mail, Lock, User, AlertCircle, ArrowRight } from "lucide-react";
 
@@ -11,6 +12,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +21,23 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Prevent scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
 
   const supabase = createClient();
 
@@ -104,13 +122,20 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-card border border-border/60 p-6 sm:p-8 shadow-2xl">
+  const modalContent = (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[99999] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-3xl bg-card border border-border/80 p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-150"
+      >
         {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          title="Đóng"
         >
           <X className="w-5 h-5" />
         </button>
@@ -277,4 +302,6 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
