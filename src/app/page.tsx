@@ -152,7 +152,7 @@ export default async function HomePage({
                 </Link>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {comics.slice(0, 3).map((story) => (
+                {comics.slice(0, 6).map((story) => (
                   <StoryCard key={story.id} story={story} />
                 ))}
               </div>
@@ -170,7 +170,7 @@ export default async function HomePage({
                 </Link>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {novels.slice(0, 3).map((story) => (
+                {novels.slice(0, 6).map((story) => (
                   <StoryCard key={story.id} story={story} />
                 ))}
               </div>
