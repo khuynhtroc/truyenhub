@@ -1,99 +1,195 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { MOCK_STORIES } from "@/lib/mock-data";
 import { SafeImage } from "@/components/common/SafeImage";
-import Link from "next/link";
-import { Bookmark, Clock, ArrowRight, BookOpen, Image as ImageIcon } from "lucide-react";
+import { 
+  Bookmark, 
+  Clock, 
+  ArrowRight, 
+  BookOpen, 
+  Trash2, 
+  Compass, 
+  Sparkles,
+  BookMarked
+} from "lucide-react";
+
+interface BookmarkedStory {
+  id: string;
+  slug: string;
+  title: string;
+  cover_url: string;
+  author_name: string;
+  type: string;
+  total_chapters: number;
+  last_chapter?: number;
+  savedAt: string;
+}
 
 export default function BookshelfPage() {
-  const readingList = [
-    {
-      story: MOCK_STORIES[0], // Dragon Ball
-      lastChapter: 3,
-      totalChapters: 42,
-      progressPercent: 7,
-      updatedAt: "Vừa xong",
-    },
-    {
-      story: MOCK_STORIES[2], // Vạn Cổ Kiếm Tôn
-      lastChapter: 2,
-      totalChapters: 50,
-      progressPercent: 4,
-      updatedAt: "2 giờ trước",
-    },
-  ];
+  const [bookmarks, setBookmarks] = useState<BookmarkedStory[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("truyenhub_bookmarks") || "[]");
+      setBookmarks(saved);
+    } catch (_) {}
+    setIsLoaded(true);
+  }, []);
+
+  const handleRemove = (slug: string) => {
+    const next = bookmarks.filter((b) => b.slug !== slug);
+    setBookmarks(next);
+    try {
+      localStorage.setItem("truyenhub_bookmarks", JSON.stringify(next));
+    } catch (_) {}
+  };
+
+  const handleClearAll = () => {
+    if (window.confirm("Bạn có chắc muốn xóa tất cả truyện khỏi Tủ Truyện?")) {
+      setBookmarks([]);
+      try {
+        localStorage.removeItem("truyenhub_bookmarks");
+      } catch (_) {}
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-24 md:pb-12">
       <Navbar />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 w-full py-8 flex flex-col gap-6">
-        <div className="flex items-center justify-between">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black flex items-center gap-2">
-              <Bookmark className="w-6 h-6 text-rose-500" />
+            <h1 className="text-2xl sm:text-3xl font-black flex items-center gap-2.5">
+              <Bookmark className="w-7 h-7 text-rose-500 fill-rose-500/20" />
               Tủ Truyện Của Bạn
             </h1>
-            <p className="text-xs text-muted-foreground mt-1">
-              Tự động lưu lại chương và vị trí trang bạn đang đọc dở.
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Bộ sưu tập các tác phẩm bạn đã đánh dấu yêu thích để theo dõi tiện lợi.
             </p>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-3">
-          {readingList.map((item) => (
-            <div
-              key={item.story.id}
-              className="flex items-center gap-4 p-4 rounded-2xl border border-border/60 bg-card hover:border-rose-500/40 transition-all shadow-sm"
+          {bookmarks.length > 0 && (
+            <button
+              onClick={handleClearAll}
+              className="text-xs font-bold text-muted-foreground hover:text-rose-500 transition-colors self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-muted"
             >
-              <div className="relative w-16 sm:w-20 aspect-[3/4] rounded-xl overflow-hidden shrink-0 bg-muted">
-                <SafeImage
-                  src={item.story.cover_url}
-                  alt={item.story.title}
-                  fallbackTitle={item.story.title}
-                  fallbackAuthor={item.story.author_name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="flex flex-col justify-between flex-1 gap-1 truncate">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500">
-                    {item.story.type === "comic" ? "Truyện Tranh" : "Truyện Chữ"}
-                  </span>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {item.updatedAt}
-                  </span>
-                </div>
-
-                <h3 className="font-bold text-sm sm:text-base truncate text-foreground">
-                  {item.story.title}
-                </h3>
-
-                <p className="text-xs text-muted-foreground">
-                  Đang đọc: <b className="text-foreground">Chương {item.lastChapter}</b> / {item.totalChapters}
-                </p>
-
-                {/* Progress bar */}
-                <div className="w-full max-w-xs h-1.5 rounded-full bg-muted overflow-hidden mt-1">
-                  <div
-                    className="h-full bg-rose-500 rounded-full"
-                    style={{ width: `${item.progressPercent}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Action button */}
-              <Link
-                href={`/truyen/${item.story.slug}/${item.lastChapter}`}
-                className="py-2.5 px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-sm transition-all"
-              >
-                <span>Đọc Tiếp</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          ))}
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa tất cả</span>
+            </button>
+          )}
         </div>
+
+        {/* List or Empty State */}
+        {!isLoaded ? (
+          <div className="py-20 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+            <Clock className="w-4 h-4 animate-spin text-rose-500" />
+            <span>Đang tải tủ truyện...</span>
+          </div>
+        ) : bookmarks.length === 0 ? (
+          <div className="py-16 px-6 text-center rounded-3xl bg-card border border-border/60 flex flex-col items-center justify-center gap-4 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500">
+              <BookMarked className="w-8 h-8" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-black text-foreground">
+                Tủ truyện của bạn đang trống
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                Khi đọc bất kỳ tác phẩm truyện tranh, sách hay tiểu thuyết nào, hãy bấm nút <b>&quot;Tủ truyện&quot;</b> để lưu lại tại đây!
+              </p>
+            </div>
+            <Link
+              href="/kham-pha"
+              className="mt-2 py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-rose-500/20 flex items-center gap-2 transition-all hover:opacity-95"
+            >
+              <Compass className="w-4 h-4" />
+              <span>Khám Phá Truyện Ngay</span>
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {bookmarks.map((item) => {
+              const currentChapter = item.last_chapter || 1;
+              const totalChaps = item.total_chapters || 1;
+              const percent = Math.min(100, Math.round((currentChapter / totalChaps) * 100));
+
+              return (
+                <div
+                  key={item.slug}
+                  className="flex items-center gap-4 p-3.5 sm:p-4 rounded-2xl border border-border/60 bg-card hover:border-rose-500/40 transition-all shadow-sm group"
+                >
+                  <Link
+                    href={`/truyen/${item.slug}`}
+                    className="relative w-16 sm:w-20 aspect-[3/4] rounded-xl overflow-hidden shrink-0 bg-muted shadow-sm"
+                  >
+                    <SafeImage
+                      src={item.cover_url}
+                      alt={item.title}
+                      fallbackTitle={item.title}
+                      fallbackAuthor={item.author_name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                  </Link>
+
+                  <div className="flex flex-col justify-between flex-1 gap-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                        {item.type === "comic" ? "Truyện Tranh" : "Truyện Chữ"}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground truncate">
+                        {item.author_name}
+                      </span>
+                    </div>
+
+                    <Link
+                      href={`/truyen/${item.slug}`}
+                      className="font-bold text-sm sm:text-base truncate text-foreground hover:text-rose-500 transition-colors"
+                    >
+                      {item.title}
+                    </Link>
+
+                    <p className="text-xs text-muted-foreground">
+                      Đang đọc: <b className="text-foreground">Tập {currentChapter}</b> / {totalChaps} chương
+                    </p>
+
+                    {/* Progress bar */}
+                    <div className="w-full max-w-xs h-1.5 rounded-full bg-muted overflow-hidden mt-1">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-500 to-rose-500 rounded-full"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      href={`/truyen/${item.slug}/${currentChapter}`}
+                      className="py-2.5 px-3.5 sm:px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                      <span>Đọc Tiếp</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+
+                    <button
+                      onClick={() => handleRemove(item.slug)}
+                      className="p-2.5 rounded-xl hover:bg-muted text-muted-foreground hover:text-rose-500 transition-colors"
+                      title="Xóa khỏi tủ truyện"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
 
       <BottomNav />

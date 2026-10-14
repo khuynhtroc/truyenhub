@@ -72,6 +72,18 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     } catch (_) {}
   };
 
+  // Sync reading progress to bookmarks
+  useEffect(() => {
+    try {
+      const savedBookmarks = JSON.parse(localStorage.getItem("truyenhub_bookmarks") || "[]");
+      const foundIdx = savedBookmarks.findIndex((b: any) => b.slug === story.slug);
+      if (foundIdx >= 0) {
+        savedBookmarks[foundIdx].last_chapter = chapter.chapter_number;
+        localStorage.setItem("truyenhub_bookmarks", JSON.stringify(savedBookmarks));
+      }
+    } catch (_) {}
+  }, [story.slug, chapter.chapter_number]);
+
   // Keyboard navigation & scroll
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

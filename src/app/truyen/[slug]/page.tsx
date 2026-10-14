@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { ChapterTableOfContents } from "@/components/story/ChapterTableOfContents";
+import { StoryActionButtons } from "@/components/story/StoryActionButtons";
 import { SafeImage } from "@/components/common/SafeImage";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Story, Chapter } from "@/types";
@@ -183,24 +184,13 @@ export default async function StoryDetailPage({
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start pt-2">
-              <Link
-                href={`/truyen/${story.slug}/1`}
-                className="py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 text-white font-extrabold text-sm shadow-md shadow-rose-500/20 transition-all flex items-center gap-2"
-              >
-                <span>Đọc từ đầu</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <button className="py-3 px-4 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs border border-border/50 flex items-center gap-2 transition-all">
-                <Bookmark className="w-4 h-4 text-rose-500" />
-                <span>Tủ truyện</span>
-              </button>
-              <button className="py-3 px-4 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs border border-border/50 flex items-center gap-2 transition-all">
-                <Heart className="w-4 h-4" />
-                <span>Thả tim</span>
-              </button>
-            </div>
+            {/* Action buttons with interactive state */}
+            <StoryActionButtons
+              story={story}
+              firstChapterNumber={chapters[0]?.chapter_number || 1}
+              latestChapterNumber={chapters[chapters.length - 1]?.chapter_number || 1}
+              totalChapters={chapters.length}
+            />
           </div>
         </section>
 
@@ -227,11 +217,13 @@ export default async function StoryDetailPage({
         )}
 
         {/* Interactive Chapter Table of Contents */}
-        <ChapterTableOfContents
-          storySlug={story.slug}
-          storyTitle={story.title}
-          chapters={chapters}
-        />
+        <div id="chapter-toc" className="scroll-mt-20">
+          <ChapterTableOfContents
+            storySlug={story.slug}
+            storyTitle={story.title}
+            chapters={chapters}
+          />
+        </div>
 
         {/* Comment & Discussion Section (Dual TruyenHub & Facebook) */}
         <CommentSection storyId={story.id} storyTitle={story.title} />

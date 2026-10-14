@@ -1,25 +1,69 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { Search, BookOpen, Sparkles, Moon, Sun, Coins, Bookmark, User, X, LogIn } from "lucide-react";
-import { MOCK_STORIES } from "@/lib/mock-data";
+import { 
+  Search, 
+  BookOpen, 
+  Sparkles, 
+  Moon, 
+  Sun, 
+  Coins, 
+  Bookmark, 
+  User, 
+  X, 
+  LogIn, 
+  ChevronDown, 
+  Layers, 
+  BookMarked, 
+  Compass, 
+  Flame, 
+  GraduationCap, 
+  Globe2, 
+  Menu,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
+  BrainCircuit,
+  Briefcase
+} from "lucide-react";
 import { Story } from "@/types";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SafeImage } from "@/components/common/SafeImage";
 
+const GENRE_MENU_ITEMS = [
+  { label: "Tất Cả Thể Loại", href: "/kham-pha", icon: Compass, desc: "Khám phá kho 880+ bộ truyện", color: "text-rose-500" },
+  { label: "Truyện Tranh (Manga)", href: "/kham-pha?type=comic", icon: Sparkles, desc: "Đội Quân Nhí Nhố, Doraemon, Ô Long Viện...", color: "text-amber-500" },
+  { label: "Truyện Chữ (Tiểu Thuyết)", href: "/kham-pha?type=novel", icon: BookOpen, desc: "Kiếm hiệp, tiên hiệp, huyền huyễn...", color: "text-indigo-500" },
+  { label: "Sách Kỹ Năng & Tư Duy", href: "/kham-pha?genre=S%C3%A1ch", icon: BrainCircuit, desc: "Đắc Nhân Tâm, 7 Thói Quen, Dám Nghĩ Lớn...", color: "text-emerald-500" },
+  { label: "Tâm Lý Học Chuyên Sâu", href: "/kham-pha?genre=T%C3%A2m+L%C3%BD+H%E1%BB%8Dc", icon: GraduationCap, desc: "Tâm Lý Học Đám Đông, Thiên Tài Bên Trái...", color: "text-purple-500" },
+  { label: "Kinh Tế - Harvard HBR", href: "/kham-pha?genre=Kinh+T%E1%BA%BF+-+Qu%E1%BA%A3n+Tr%E1%BB%8B", icon: Briefcase, desc: "Bộ cẩm nang Harvard Business Review...", color: "text-blue-500" },
+  { label: "Truyện & Sách Tiếng Anh", href: "/kham-pha?genre=Ti%E1%BA%BFng+Anh", icon: Globe2, desc: "Harry Potter, English Bestsellers...", color: "text-teal-500" },
+  { label: "Trinh Thám & Kinh Dị", href: "/kham-pha?genre=Trinh+Th%C3%A1m", icon: BookMarked, desc: "Donato Carrisi, Sherlock Holmes...", color: "text-rose-600" },
+  { label: "Tuổi Học Trò & Thiếu Nhi", href: "/kham-pha?genre=Tu%E1%BB%95i+H%E1%BB%8Dc+Tr%C3%B2", icon: Flame, desc: "Kính Vạn Hoa, Tứ Quái TKKG...", color: "text-orange-500" },
+  { label: "⚡ Đang Cập Nhật / Xử Lý", href: "/kham-pha?status=ongoing", icon: Clock, desc: "Các bộ đang bóc tách chương mới", color: "text-amber-600" },
+  { label: "✅ Đã Hoàn Thành (Full)", href: "/kham-pha?status=completed", icon: CheckCircle2, desc: "Trọn bộ đầy đủ 100% chương", color: "text-emerald-600" },
+];
+
 export function Navbar() {
+  const router = useRouter();
   const [isDark, setIsDark] = useState(false);
   const [userCoins] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Story[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn] = useState(false);
+
   const searchRef = useRef<HTMLDivElement>(null);
+  const genreDropdownRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Check initial dark mode
     if (typeof window !== "undefined") {
       const isDarkMode = document.documentElement.classList.contains("dark");
       setIsDark(isDarkMode);
@@ -28,6 +72,9 @@ export function Navbar() {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSearchDropdown(false);
+      }
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(event.target as Node)) {
+        setShowGenreDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -51,112 +98,227 @@ export function Navbar() {
     if (!query.trim()) {
       setSearchResults([]);
       setShowSearchDropdown(false);
+      setIsSearching(false);
       return;
     }
-    const q = query.toLowerCase();
-    const results = MOCK_STORIES.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.author_name.toLowerCase().includes(q) ||
-        s.genres.some((g) => g.toLowerCase().includes(q))
-    );
-    setSearchResults(results);
+
     setShowSearchDropdown(true);
+    setIsSearching(true);
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data.results || []);
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      setShowSearchDropdown(false);
+      router.push(`/kham-pha?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-        {/* Brand Logo */}
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20 group-hover:scale-105 transition-transform">
+      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-6">
+        {/* Brand Logo & Desktop Nav */}
+        <div className="flex items-center gap-4 lg:gap-6">
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="md:hidden p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground"
+            aria-label="Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20 group-hover:scale-105 transition-transform">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-extrabold text-xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
+              <span className="font-extrabold text-lg sm:text-xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
                 TruyenHub
               </span>
-              <span className="hidden sm:inline-block ml-1.5 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+              <span className="hidden sm:inline-block ml-1.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
                 PRO
               </span>
             </div>
           </Link>
 
-          {/* Nav links */}
-          <nav className="hidden md:flex items-center gap-5 text-sm font-semibold text-muted-foreground">
+          {/* Desktop Nav links */}
+          <nav className="hidden md:flex items-center gap-3 lg:gap-5 text-xs lg:text-sm font-bold text-muted-foreground">
             <Link href="/" className="hover:text-foreground transition-colors">
               Trang chủ
             </Link>
-            <Link href="/?type=comic" className="hover:text-foreground transition-colors flex items-center gap-1.5">
+            
+            <Link href="/kham-pha?type=comic" className="hover:text-foreground transition-colors flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              Truyện Tranh
+              <span>Truyện Tranh</span>
             </Link>
-            <Link href="/?type=novel" className="hover:text-foreground transition-colors">
-              Truyện Chữ
+
+            <Link href="/kham-pha?type=novel" className="hover:text-foreground transition-colors flex items-center gap-1">
+              <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Truyện Chữ</span>
             </Link>
-            <Link href="/tu-truyen" className="hover:text-foreground transition-colors flex items-center gap-1.5">
+
+            <Link href="/kham-pha?genre=S%C3%A1ch" className="hover:text-foreground transition-colors flex items-center gap-1">
+              <BrainCircuit className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Sách Kỹ Năng</span>
+            </Link>
+
+            <Link href="/kham-pha?genre=Ti%E1%BB%83u+Thuy%E1%BA%BFt" className="hover:text-foreground transition-colors">
+              <span>Tiểu Thuyết</span>
+            </Link>
+
+            <Link href="/kham-pha?genre=Ti%E1%BA%BFng+Anh" className="hover:text-foreground transition-colors flex items-center gap-1">
+              <Globe2 className="w-3.5 h-3.5 text-teal-500" />
+              <span>Tiếng Anh</span>
+            </Link>
+
+            {/* Dropdown Thể loại */}
+            <div ref={genreDropdownRef} className="relative">
+              <button
+                onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                className="hover:text-foreground transition-colors flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-muted/60"
+              >
+                <Layers className="w-3.5 h-3.5 text-rose-500" />
+                <span>Thể Loại</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showGenreDropdown ? "rotate-180" : ""}`} />
+              </button>
+
+              {showGenreDropdown && (
+                <div className="absolute top-9 left-0 w-72 rounded-2xl bg-card border border-border shadow-2xl p-2 z-50 flex flex-col gap-1 max-h-[460px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-muted-foreground border-b pb-1.5 mb-1">
+                    Phân Loại & Thể Loại
+                  </div>
+                  {GENRE_MENU_ITEMS.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setShowGenreDropdown(false)}
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/70 transition-colors group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                          <Icon className={`w-4 h-4 ${item.color}`} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold text-foreground group-hover:text-rose-500 transition-colors">
+                            {item.label}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground truncate">
+                            {item.desc}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <Link href="/tu-truyen" className="hover:text-foreground transition-colors flex items-center gap-1">
               <Bookmark className="w-3.5 h-3.5 text-rose-500" />
-              Tủ Truyện
+              <span>Tủ Truyện</span>
             </Link>
           </nav>
         </div>
 
         {/* Search bar with Live Dropdown & User tools */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Live Search */}
-          <div ref={searchRef} className="relative hidden sm:block w-48 md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              onFocus={() => searchQuery.trim() && setShowSearchDropdown(true)}
-              placeholder="Tìm tên truyện, tác giả..."
-              className="w-full h-9 pl-9 pr-8 rounded-full bg-muted/60 hover:bg-muted text-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-rose-500/50 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setShowSearchDropdown(false);
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+          <div ref={searchRef} className="relative hidden sm:block w-44 md:w-60 lg:w-72">
+            <form onSubmit={handleSearchSubmit}>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                onFocus={() => searchQuery.trim() && setShowSearchDropdown(true)}
+                placeholder="Tìm truyện tranh, sách, tiểu thuyết..."
+                className="w-full h-9 pl-9 pr-8 rounded-full bg-muted/60 hover:bg-muted text-xs sm:text-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-rose-500/50 transition-all"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setShowSearchDropdown(false);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </form>
 
             {/* Live Search Dropdown */}
             {showSearchDropdown && (
-              <div className="absolute top-11 left-0 right-0 rounded-2xl bg-card border border-border shadow-2xl p-2 z-50 flex flex-col gap-1 max-h-80 overflow-y-auto">
-                {searchResults.length > 0 ? (
-                  searchResults.map((s) => (
-                    <Link
-                      key={s.id}
-                      href={`/truyen/${s.slug}`}
-                      onClick={() => setShowSearchDropdown(false)}
-                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/60 transition-colors"
-                    >
-                      <SafeImage
-                        src={s.cover_url}
-                        alt={s.title}
-                        fallbackTitle={s.title}
-                        fallbackAuthor={s.author_name}
-                        className="w-10 h-14 object-cover rounded-md shrink-0 text-[8px]"
-                      />
-                      <div className="flex flex-col truncate">
-                        <span className="text-xs font-bold truncate text-foreground">{s.title}</span>
-                        <span className="text-[11px] text-muted-foreground truncate">{s.author_name}</span>
-                        <span className="text-[10px] font-extrabold text-rose-500">
-                          {s.type === "comic" ? "Truyện Tranh" : "Truyện Chữ"} · C.{s.total_chapters}
-                        </span>
-                      </div>
-                    </Link>
-                  ))
+              <div className="absolute top-11 left-0 right-0 rounded-2xl bg-card border border-border shadow-2xl p-2 z-50 flex flex-col gap-1 max-h-96 overflow-y-auto animate-in fade-in duration-150">
+                {isSearching ? (
+                  <div className="p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                    <Clock className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                    <span>Đang tìm kiếm trong kho 880+ bộ truyện...</span>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <>
+                    <div className="px-2 py-1 text-[10px] font-black uppercase text-muted-foreground flex justify-between">
+                      <span>Kết quả ({searchResults.length})</span>
+                      <button
+                        onClick={() => {
+                          setShowSearchDropdown(false);
+                          router.push(`/kham-pha?q=${encodeURIComponent(searchQuery)}`);
+                        }}
+                        className="text-rose-500 hover:underline"
+                      >
+                        Xem tất cả &rarr;
+                      </button>
+                    </div>
+                    {searchResults.map((s) => (
+                      <Link
+                        key={s.id}
+                        href={`/truyen/${s.slug}`}
+                        onClick={() => setShowSearchDropdown(false)}
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/70 transition-colors group"
+                      >
+                        <SafeImage
+                          src={s.cover_url}
+                          alt={s.title}
+                          fallbackTitle={s.title}
+                          fallbackAuthor={s.author_name}
+                          className="w-10 h-14 object-cover rounded-md shrink-0 text-[8px]"
+                        />
+                        <div className="flex flex-col truncate min-w-0">
+                          <span className="text-xs font-bold truncate text-foreground group-hover:text-rose-500 transition-colors">
+                            {s.title}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground truncate">{s.author_name}</span>
+                          <span className="text-[10px] font-extrabold text-rose-500">
+                            {s.type === "comic" ? "Truyện Tranh" : "Truyện Chữ"} · {s.total_chapters} Chương
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </>
                 ) : (
                   <div className="p-4 text-center text-xs text-muted-foreground">
-                    Không tìm thấy truyện phù hợp
+                    Không tìm thấy truyện phù hợp với &quot;{searchQuery}&quot;
                   </div>
                 )}
               </div>
@@ -166,11 +328,11 @@ export function Navbar() {
           {/* Nạp Xu Widget */}
           <Link
             href="/nap-xu"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all shadow-sm"
           >
             <Coins className="w-3.5 h-3.5 text-amber-500 animate-bounce" />
             <span>{userCoins} Xu</span>
-            <span className="text-[10px] bg-amber-500 text-white rounded-full px-1.5 py-0.2 ml-0.5 font-bold">
+            <span className="hidden sm:inline-block text-[10px] bg-amber-500 text-white rounded-full px-1.5 py-0.2 ml-0.5 font-bold">
               + Nạp
             </span>
           </Link>
@@ -189,7 +351,7 @@ export function Navbar() {
           {isLoggedIn ? (
             <Link
               href="/tai-khoan"
-              className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold border-2 border-background shadow-sm hover:ring-2 hover:ring-indigo-500/40 transition-all"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold border-2 border-background shadow-sm hover:ring-2 hover:ring-indigo-500/40 transition-all"
               title="Tài khoản cá nhân"
             >
               <User className="w-4 h-4" />
@@ -205,6 +367,52 @@ export function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Mobile Dropdown Menu */}
+      {showMobileMenu && (
+        <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl px-4 py-4 flex flex-col gap-3 animate-in fade-in slide-in-from-top-3">
+          {/* Mobile search bar */}
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Tìm kiếm truyện, tác giả..."
+              className="w-full h-10 pl-9 pr-4 rounded-xl bg-card border border-border/70 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+            />
+          </form>
+
+          {/* Quick Category List */}
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            {GENRE_MENU_ITEMS.slice(0, 8).map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setShowMobileMenu(false)}
+                  className="flex items-center gap-2 p-2.5 rounded-xl bg-card border border-border/50 text-xs font-bold hover:bg-muted"
+                >
+                  <Icon className={`w-3.5 h-3.5 ${item.color} shrink-0`} />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t text-xs font-bold text-muted-foreground">
+            <Link href="/kham-pha" onClick={() => setShowMobileMenu(false)} className="text-rose-500 flex items-center gap-1">
+              <Compass className="w-4 h-4" />
+              <span>Xem Tất Cả Truyện</span>
+            </Link>
+            <Link href="/tu-truyen" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-1">
+              <Bookmark className="w-4 h-4 text-rose-500" />
+              <span>Tủ Truyện</span>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Auth Modal with Google & Facebook */}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
