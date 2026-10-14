@@ -5,10 +5,10 @@ const config: CapacitorConfig = {
   appName: "DocTruyen.vip",
   webDir: "public",
   server: {
-    // Points directly to the live production server (https://doctruyen.vip)
+    // Points directly to the live production server (https://www.doctruyen.vip)
     // Guarantees real-time sync with web, instant updates without re-submitting to App Store,
     // and full access to Next.js API routes (TTS, Supabase auth, VietQR).
-    url: "https://doctruyen.vip",
+    url: "https://www.doctruyen.vip",
     cleartext: false,
     androidScheme: "https",
   },
