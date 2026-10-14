@@ -17,9 +17,9 @@ export async function GET(req: NextRequest) {
     const { data: dbResults } = await supabase
       .from("stories")
       .select("*")
-      .or(`title.ilike.%${q}%,author_name.ilike.%${q}%`)
+      .or(`title.ilike.%${q}%,author_name.ilike.%${q}%,slug.ilike.%${q}%`)
       .order("total_views", { ascending: false })
-      .limit(10);
+      .limit(12);
 
     if (dbResults && dbResults.length > 0) {
       return NextResponse.json({ results: dbResults });
@@ -31,10 +31,11 @@ export async function GET(req: NextRequest) {
   const lowerQ = q.toLowerCase();
   const results = MOCK_STORIES.filter(
     (story) =>
-      story.title.toLowerCase().includes(lowerQ) ||
-      story.author_name.toLowerCase().includes(lowerQ) ||
-      story.genres.some((g) => g.toLowerCase().includes(lowerQ))
+      (story.title || "").toLowerCase().includes(lowerQ) ||
+      (story.author_name || "").toLowerCase().includes(lowerQ) ||
+      (story.slug || "").toLowerCase().includes(lowerQ) ||
+      (Array.isArray(story.genres) && story.genres.some((g) => (g || "").toLowerCase().includes(lowerQ)))
   );
 
-  return NextResponse.json({ results: results.slice(0, 10) });
+  return NextResponse.json({ results: results.slice(0, 12) });
 }

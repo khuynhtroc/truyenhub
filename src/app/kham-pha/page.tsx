@@ -170,22 +170,22 @@ function ExploreContent() {
       const gLower = selectedGenre.toLowerCase();
       if (gLower === "sách") {
         list = list.filter((s) =>
-          s.genres?.some((g) =>
-            ["sách", "kỹ năng", "tâm lý học", "kinh tế - quản trị", "phát triển bản thân", "harvard business review"].includes(g.toLowerCase())
+          Array.isArray(s.genres) && s.genres.some((g) =>
+            ["sách", "kỹ năng", "tâm lý học", "kinh tế - quản trị", "phát triển bản thân", "harvard business review"].includes((g || "").toLowerCase())
           )
         );
       } else if (gLower === "tiểu thuyết") {
         list = list.filter((s) =>
-          s.genres?.some((g) =>
-            ["tiểu thuyết", "văn học", "kinh dị", "trinh thám", "kỳ ảo", "tuổi học trò", "văn học việt nam", "văn học nhật bản"].includes(g.toLowerCase())
+          Array.isArray(s.genres) && s.genres.some((g) =>
+            ["tiểu thuyết", "văn học", "kinh dị", "trinh thám", "kỳ ảo", "tuổi học trò", "văn học việt nam", "văn học nhật bản"].includes((g || "").toLowerCase())
           )
         );
       } else if (gLower === "tiếng anh") {
         list = list.filter((s) =>
-          s.genres?.some((g) => g.toLowerCase().includes("tiếng anh") || g.toLowerCase().includes("english"))
+          Array.isArray(s.genres) && s.genres.some((g) => (g || "").toLowerCase().includes("tiếng anh") || (g || "").toLowerCase().includes("english"))
         );
       } else {
-        list = list.filter((s) => s.genres?.some((g) => g.toLowerCase().includes(gLower)));
+        list = list.filter((s) => Array.isArray(s.genres) && s.genres.some((g) => (g || "").toLowerCase().includes(gLower)));
       }
     }
 
@@ -198,23 +198,36 @@ function ExploreContent() {
       }
     }
 
-    // Filter by keyword
+    // Filter by keyword (100% null-safe)
     if (keyword.trim()) {
       const q = keyword.toLowerCase().trim();
-      list = list.filter(
-        (s) =>
-          s.title.toLowerCase().includes(q) ||
-          s.author_name.toLowerCase().includes(q) ||
-          s.genres.some((g) => g.toLowerCase().includes(q))
-      );
+      list = list.filter((s) => {
+        const titleMatch = (s.title || "").toLowerCase().includes(q);
+        const authorMatch = (s.author_name || "").toLowerCase().includes(q);
+        const slugMatch = (s.slug || "").toLowerCase().includes(q);
+        const genreMatch = Array.isArray(s.genres) && s.genres.some((g) => (g || "").toLowerCase().includes(q));
+        const descMatch = (s.description || "").toLowerCase().includes(q);
+        return titleMatch || authorMatch || slugMatch || genreMatch || descMatch;
+      });
     }
 
     // Sort
     list.sort((a, b) => {
-      if (sortBy === "views") return b.total_views - a.total_views;
-      if (sortBy === "likes") return b.total_likes - a.total_likes;
-      if (sortBy === "chapters") return b.total_chapters - a.total_chapters;
-      if (sortBy === "newest") return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      const viewsA = a.total_views || 0;
+      const viewsB = b.total_views || 0;
+      const likesA = a.total_likes || 0;
+      const likesB = b.total_likes || 0;
+      const chapsA = a.total_chapters || 0;
+      const chapsB = b.total_chapters || 0;
+
+      if (sortBy === "views") return viewsB - viewsA;
+      if (sortBy === "likes") return likesB - likesA;
+      if (sortBy === "chapters") return chapsB - chapsA;
+      if (sortBy === "newest") {
+        const timeA = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+        const timeB = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+        return timeB - timeA;
+      }
       return 0;
     });
 
