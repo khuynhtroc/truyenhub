@@ -12,10 +12,6 @@ import {
   Home,
   Volume2,
   VolumeX,
-  Type,
-  Sun,
-  Moon,
-  Coffee,
   List,
   BookOpen,
   Search,
@@ -28,7 +24,9 @@ import {
   Settings,
   Sparkles,
   Globe2,
-  Check
+  Check,
+  User,
+  Gauge
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 
@@ -40,13 +38,115 @@ interface NovelReaderProps {
 
 type AudioEngine = "ai" | "system";
 
+interface AiVoiceOption {
+  id: string;
+  name: string;
+  lang: string;
+  gender: "female" | "male";
+  desc: string;
+  tag: string;
+}
+
+const AI_VOICES: AiVoiceOption[] = [
+  {
+    id: "vi-VN-HoaiMyNeural",
+    name: "Hoài My (Nữ)",
+    lang: "vi",
+    gender: "female",
+    desc: "Giọng Nữ Hà Nội truyền cảm, mềm mại, êm tai (Tiểu thuyết & Ngôn tình)",
+    tag: "Khuyên dùng",
+  },
+  {
+    id: "vi-VN-NamMinhNeural",
+    name: "Nam Minh (Nam)",
+    lang: "vi",
+    gender: "male",
+    desc: "Giọng Nam trầm ấm, rõ ràng, hào sảng (Kiếm hiệp & Trinh thám)",
+    tag: "Phổ biến",
+  },
+  {
+    id: "en-US-JennyNeural",
+    name: "Jenny (Nữ - US)",
+    lang: "en",
+    gender: "female",
+    desc: "Tự nhiên, phát âm chuẩn Mỹ, biểu cảm cao",
+    tag: "Tiếng Anh",
+  },
+  {
+    id: "en-US-GuyNeural",
+    name: "Guy (Nam - US)",
+    lang: "en",
+    gender: "male",
+    desc: "Ấm áp, đĩnh đạc, phát âm chuẩn Mỹ",
+    tag: "Tiếng Anh",
+  },
+  {
+    id: "zh-CN-XiaoxiaoNeural",
+    name: "Hiểu Hiểu (Nữ - Trung)",
+    lang: "zh",
+    gender: "female",
+    desc: "Dịu dàng, truyền cảm, thích hợp truyện tiên hiệp / ngôn tình",
+    tag: "Tiếng Trung",
+  },
+  {
+    id: "zh-CN-YunxiNeural",
+    name: "Vân Hi (Nam - Trung)",
+    lang: "zh",
+    gender: "male",
+    desc: "Trẻ trung, nhiệt huyết, lôi cuốn",
+    tag: "Tiếng Trung",
+  },
+  {
+    id: "ja-JP-NanamiNeural",
+    name: "Nanami (Nữ - Nhật)",
+    lang: "ja",
+    gender: "female",
+    desc: "Ngọt ngào, nhẹ nhàng, thích hợp Light Novel",
+    tag: "Tiếng Nhật",
+  },
+  {
+    id: "ja-JP-KeitaNeural",
+    name: "Keita (Nam - Nhật)",
+    lang: "ja",
+    gender: "male",
+    desc: "Trầm tĩnh, tự nhiên",
+    tag: "Tiếng Nhật",
+  },
+  {
+    id: "google",
+    name: "Google TTS",
+    lang: "any",
+    gender: "female",
+    desc: "Giọng đọc Google nhanh nhẹn (Chế độ dự phòng)",
+    tag: "Dự phòng",
+  },
+];
+
+/**
+ * Clean OCR spaced diacritics in MOBI/PRC text (e.g. "lắ m" -> "lắm", "dố i" -> "dối")
+ */
+function cleanVietnameseText(str: string): string {
+  if (!str) return "";
+  const vowels = "aáàảãạăắằẳẵặâấầẩẫậeéèẻẽẹêếềểễệiíìỉĩịoóòỏõọôốồổỗộơớờởỡợuúùủũụưứừửữựyýỳỷỹỵ";
+  const regex = /([a-zA-Z\u00C0-\u1EF9]+)\s+([mncptghk]|ng|nh|ch|i)(?=\s|[.,!?;:\-)]|$)/gi;
+  return str
+    .replace(regex, (match, p1, p2) => {
+      const last = p1.slice(-1).toLowerCase();
+      if (vowels.includes(last)) {
+        return p1 + p2;
+      }
+      return match;
+    })
+    .normalize("NFC");
+}
+
 export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
   const pathname = usePathname();
   const [isUnlocked, setIsUnlocked] = useState(!chapter.is_locked);
   const [userCoins] = useState(25);
   const [scrollProgress, setScrollProgress] = useState(0);
 
-  // Settings
+  // Reader Settings
   const [showSettings, setShowSettings] = useState(false);
   const [fontSize, setFontSize] = useState(18);
   const [lineHeight, setLineHeight] = useState(1.8);
@@ -54,18 +154,23 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
   const [readerTheme, setReaderTheme] = useState<"light" | "sepia" | "dark" | "black">("sepia");
 
   // Audio & TTS Engine State
+  const [isAudioOpen, setIsAudioOpen] = useState(false);
   const [audioEngine, setAudioEngine] = useState<AudioEngine>("ai");
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [isAudioPaused, setIsAudioPaused] = useState(false);
   const [speechRate, setSpeechRate] = useState(1.0);
+  const speechRateRef = useRef(1.0);
   const [showAudioSettings, setShowAudioSettings] = useState(false);
 
-  // Language & Voice
+  // Language & AI Voice
   const isDefaultEnglish = 
     story.genres?.some((g) => g.toLowerCase().includes("tiếng anh") || g.toLowerCase().includes("english")) ||
     story.title.toLowerCase().includes("tiếng anh") ||
     story.title.toLowerCase().includes("english");
   const [selectedLang, setSelectedLang] = useState<string>(isDefaultEnglish ? "en" : "vi");
+  const [selectedAiVoice, setSelectedAiVoice] = useState<string>(
+    isDefaultEnglish ? "en-US-JennyNeural" : "vi-VN-HoaiMyNeural"
+  );
 
   // System voices list
   const [systemVoices, setSystemVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -86,13 +191,13 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
   const prevChapter = currentIndex > 0 ? allChapters[currentIndex - 1] : null;
   const nextChapter = currentIndex < allChapters.length - 1 ? allChapters[currentIndex + 1] : null;
 
-  // 1. Prepare text chunks (split sentences cleanly)
+  // 1. Prepare text chunks (split sentences cleanly with OCR normalization)
   const parseChunks = useCallback((): string[] => {
-    const text = chapter.content_text || "";
-    if (!text.trim()) return [];
+    const rawContent = cleanVietnameseText(chapter.content_text || "");
+    if (!rawContent.trim()) return [];
 
     // Split text into coherent sentences or clauses
-    const raw = text
+    const raw = rawContent
       .split(/(?<=[.?!;\n])\s+/)
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
@@ -109,20 +214,20 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       }
     }
     if (current) grouped.push(current);
-    return grouped.length > 0 ? grouped : [text.slice(0, 300)];
+    return grouped.length > 0 ? grouped : [rawContent.slice(0, 300)];
   }, [chapter.content_text]);
 
-  // 2. STOP ALL AUDIO COMPLETELY (Clean teardown whenever navigating or unmounting)
-  const stopAllAudio = useCallback(() => {
-    // Stop HTML5 Audio (AI mode)
+  // 2. STOP AUDIO SOUND (Does not close player bar unless explicit)
+  const stopAudioSound = useCallback(() => {
     if (audioElementRef.current) {
       audioElementRef.current.pause();
       audioElementRef.current.src = "";
       audioElementRef.current.onended = null;
       audioElementRef.current.onerror = null;
+      audioElementRef.current.onplay = null;
+      audioElementRef.current.oncanplay = null;
     }
 
-    // Stop Web Speech Synthesis (System mode)
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -130,21 +235,26 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     isPlayingRef.current = false;
     setIsAudioPlaying(false);
     setIsAudioPaused(false);
-    setCurrentChunkIdx(0);
-    currentChunkRef.current = 0;
   }, []);
 
-  // 3. Stop audio immediately on chapter change, route change, or unmount
-  useEffect(() => {
-    // When chapter or pathname changes, kill previous chapter's audio!
-    stopAllAudio();
+  // 3. STOP ALL AUDIO & CLOSE PLAYER COMPLETELY (When navigating or closing)
+  const stopAllAudio = useCallback(() => {
+    stopAudioSound();
+    setIsAudioOpen(false);
+    setShowAudioSettings(false);
+    setCurrentChunkIdx(0);
+    currentChunkRef.current = 0;
+  }, [stopAudioSound]);
 
+  // 4. Stop audio immediately on chapter change, route change, or unmount
+  useEffect(() => {
+    stopAllAudio();
     return () => {
       stopAllAudio();
     };
   }, [pathname, chapter.id, stopAllAudio]);
 
-  // Also catch browser back/forward and tab leave events
+  // Browser navigation events (back/forward, close tab)
   useEffect(() => {
     const handleNavigationLeave = () => {
       stopAllAudio();
@@ -162,7 +272,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     };
   }, [stopAllAudio]);
 
-  // 4. Load System Voices
+  // 5. Load System Voices
   useEffect(() => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
 
@@ -190,7 +300,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, [selectedLang, selectedSystemVoice]);
 
-  // 5. Restore saved preferences
+  // 6. Restore saved preferences
   useEffect(() => {
     try {
       const savedSettings = localStorage.getItem("truyenhub_novel_settings");
@@ -204,6 +314,11 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       const savedAudioEngine = localStorage.getItem("truyenhub_audio_engine");
       if (savedAudioEngine === "ai" || savedAudioEngine === "system") {
         setAudioEngine(savedAudioEngine);
+      }
+
+      const savedVoice = localStorage.getItem("truyenhub_ai_voice");
+      if (savedVoice) {
+        setSelectedAiVoice(savedVoice);
       }
     } catch (_) {}
   }, []);
@@ -243,8 +358,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
         setShowToc(false);
         setShowAudioSettings(false);
       } else if (e.key === " ") {
-        // Spacebar toggles audio if playing
-        if (isPlayingRef.current) {
+        if (isAudioOpen) {
           e.preventDefault();
           togglePauseAudio();
         }
@@ -253,7 +367,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [prevChapter, nextChapter, story.slug, stopAllAudio]);
+  }, [prevChapter, nextChapter, story.slug, stopAllAudio, isAudioOpen]);
 
   // Track scroll
   useEffect(() => {
@@ -267,10 +381,15 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // 6. Play chunk using AI Audio (streaming Google TTS MP3 via /api/tts)
-  const playAiChunk = (chunkList: string[], idx: number, rate: number) => {
+  // 7. Play chunk using AI Audio (streaming Neural Edge TTS / Google TTS)
+  const playAiChunk = (
+    chunkList: string[],
+    idx: number,
+    overrideVoice?: string,
+    overrideLang?: string
+  ) => {
     if (!isPlayingRef.current || idx >= chunkList.length) {
-      stopAllAudio();
+      stopAudioSound();
       return;
     }
 
@@ -282,23 +401,45 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       audioElementRef.current = new Audio();
     }
     const audio = audioElementRef.current;
-    audio.playbackRate = rate;
 
-    const audioUrl = `/api/tts?lang=${encodeURIComponent(selectedLang)}&text=${encodeURIComponent(text)}`;
+    const activeVoice = overrideVoice || selectedAiVoice;
+    const activeLang = overrideLang || selectedLang;
+    const activeRate = speechRateRef.current;
+
+    // Apply speed rate
+    audio.defaultPlaybackRate = activeRate;
+    audio.playbackRate = activeRate;
+
+    // Format rate for Edge TTS (e.g. +0%, +25%, -25%)
+    const ratePercent = Math.round((activeRate - 1.0) * 100);
+    const rateParam = ratePercent >= 0 ? `+${ratePercent}%` : `${ratePercent}%`;
+
+    const audioUrl = `/api/tts?lang=${encodeURIComponent(activeLang)}&voice=${encodeURIComponent(
+      activeVoice
+    )}&rate=${encodeURIComponent(rateParam)}&text=${encodeURIComponent(text)}`;
+
     audio.src = audioUrl;
+
+    // Re-enforce playback speed whenever media is ready
+    audio.onplay = () => {
+      audio.playbackRate = speechRateRef.current;
+    };
+    audio.oncanplay = () => {
+      audio.playbackRate = speechRateRef.current;
+    };
 
     audio.onended = () => {
       if (isPlayingRef.current) {
-        playAiChunk(chunkList, idx + 1, rate);
+        playAiChunk(chunkList, idx + 1);
       }
     };
 
     audio.onerror = () => {
-      console.warn("AI Audio chunk error, moving to next sentence:", idx);
+      console.warn("AI Audio chunk error, advancing to next sentence:", idx);
       if (isPlayingRef.current && idx + 1 < chunkList.length) {
-        playAiChunk(chunkList, idx + 1, rate);
+        playAiChunk(chunkList, idx + 1);
       } else {
-        stopAllAudio();
+        stopAudioSound();
       }
     };
 
@@ -307,42 +448,49 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     });
   };
 
-  // 7. Play chunk using System Web Speech API
-  const playSystemChunk = (chunkList: string[], idx: number, rate: number) => {
+  // 8. Play chunk using System Web Speech API
+  const playSystemChunk = (
+    chunkList: string[],
+    idx: number,
+    overrideRate?: number,
+    overrideLang?: string
+  ) => {
     if (!window.speechSynthesis || !isPlayingRef.current || idx >= chunkList.length) {
-      stopAllAudio();
+      stopAudioSound();
       return;
     }
 
     setCurrentChunkIdx(idx);
     currentChunkRef.current = idx;
     const text = chunkList[idx];
+    const activeRate = typeof overrideRate === "number" ? overrideRate : speechRateRef.current;
+    const activeLang = overrideLang || selectedLang;
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = selectedLang === "vi" ? "vi-VN" : "en-US";
-    utterance.rate = rate;
+    utterance.lang = activeLang === "vi" ? "vi-VN" : "en-US";
+    utterance.rate = activeRate;
     if (selectedSystemVoice) {
       utterance.voice = selectedSystemVoice;
     }
 
     utterance.onend = () => {
       if (isPlayingRef.current) {
-        playSystemChunk(chunkList, idx + 1, rate);
+        playSystemChunk(chunkList, idx + 1);
       }
     };
 
     utterance.onerror = () => {
       if (isPlayingRef.current && idx + 1 < chunkList.length) {
-        playSystemChunk(chunkList, idx + 1, rate);
+        playSystemChunk(chunkList, idx + 1);
       } else {
-        stopAllAudio();
+        stopAudioSound();
       }
     };
 
     window.speechSynthesis.speak(utterance);
   };
 
-  // 8. Start / Resume Audio Playback
+  // 9. Start / Resume Audio Playback
   const startAudio = (fromIdx?: number) => {
     const list = chunks.length > 0 ? chunks : parseChunks();
     setChunks(list);
@@ -351,17 +499,26 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     isPlayingRef.current = true;
     setIsAudioPlaying(true);
     setIsAudioPaused(false);
+    setIsAudioOpen(true);
 
     if (audioEngine === "ai") {
-      playAiChunk(list, targetIdx, speechRate);
+      playAiChunk(list, targetIdx);
     } else {
-      playSystemChunk(list, targetIdx, speechRate);
+      playSystemChunk(list, targetIdx);
     }
   };
 
-  // 9. Toggle Pause / Resume
+  // 10. Toggle Pause / Resume
   const togglePauseAudio = () => {
-    if (!isAudioPlaying) return;
+    if (!isAudioOpen) {
+      startAudio();
+      return;
+    }
+
+    if (!isAudioPlaying) {
+      startAudio(currentChunkIdx);
+      return;
+    }
 
     if (isAudioPaused) {
       // Resume
@@ -383,12 +540,13 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     }
   };
 
-  // 10. Skip to Next / Previous Chunk
+  // 11. Skip to Next / Previous Chunk
   const skipChunk = (direction: "prev" | "next") => {
-    const nextIdx = direction === "next" 
-      ? Math.min(chunks.length - 1, currentChunkIdx + 1)
-      : Math.max(0, currentChunkIdx - 1);
-    
+    const nextIdx =
+      direction === "next"
+        ? Math.min(chunks.length - 1, currentChunkIdx + 1)
+        : Math.max(0, currentChunkIdx - 1);
+
     if (audioEngine === "ai" && audioElementRef.current) {
       audioElementRef.current.pause();
     } else if (audioEngine === "system" && window.speechSynthesis) {
@@ -398,11 +556,113 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     startAudio(nextIdx);
   };
 
-  // 11. Change Speech Rate
+  // 12. Change Speech Rate (Fixed to update immediately and persist across chunks)
   const changeSpeechRate = (newRate: number) => {
+    speechRateRef.current = newRate;
     setSpeechRate(newRate);
+
     if (audioElementRef.current) {
+      audioElementRef.current.defaultPlaybackRate = newRate;
       audioElementRef.current.playbackRate = newRate;
+    }
+
+    if (audioEngine === "system" && window.speechSynthesis && isPlayingRef.current && !isAudioPaused) {
+      window.speechSynthesis.cancel();
+      playSystemChunk(chunks, currentChunkIdx, newRate);
+    }
+  };
+
+  // 13. Switch AI Voice seamlessly WITHOUT closing player popup
+  const switchAiVoice = (voiceId: string) => {
+    setSelectedAiVoice(voiceId);
+    try {
+      localStorage.setItem("truyenhub_ai_voice", voiceId);
+    } catch (_) {}
+
+    const vObj = AI_VOICES.find((v) => v.id === voiceId);
+    if (vObj && vObj.lang !== "any" && vObj.lang !== selectedLang) {
+      setSelectedLang(vObj.lang);
+    }
+
+    // If currently playing, restart smoothly with the new voice
+    if (isPlayingRef.current) {
+      if (audioElementRef.current) {
+        audioElementRef.current.pause();
+        audioElementRef.current.src = "";
+      }
+      setTimeout(() => {
+        if (isPlayingRef.current) {
+          const list = chunks.length > 0 ? chunks : parseChunks();
+          playAiChunk(list, currentChunkRef.current, voiceId, vObj?.lang !== "any" ? vObj?.lang : selectedLang);
+        }
+      }, 50);
+    }
+  };
+
+  // 14. Switch Language seamlessly WITHOUT closing player popup
+  const switchLanguage = (langId: string) => {
+    setSelectedLang(langId);
+
+    let defaultVoice = selectedAiVoice;
+    if (langId === "vi" && !selectedAiVoice.startsWith("vi")) {
+      defaultVoice = "vi-VN-HoaiMyNeural";
+    } else if (langId === "en" && !selectedAiVoice.startsWith("en")) {
+      defaultVoice = "en-US-JennyNeural";
+    } else if (langId === "zh" && !selectedAiVoice.startsWith("zh")) {
+      defaultVoice = "zh-CN-XiaoxiaoNeural";
+    } else if (langId === "ja" && !selectedAiVoice.startsWith("ja")) {
+      defaultVoice = "ja-JP-NanamiNeural";
+    }
+    setSelectedAiVoice(defaultVoice);
+
+    if (isPlayingRef.current) {
+      if (audioElementRef.current) {
+        audioElementRef.current.pause();
+        audioElementRef.current.src = "";
+      }
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+
+      setTimeout(() => {
+        if (isPlayingRef.current) {
+          const list = chunks.length > 0 ? chunks : parseChunks();
+          if (audioEngine === "ai") {
+            playAiChunk(list, currentChunkRef.current, defaultVoice, langId);
+          } else {
+            playSystemChunk(list, currentChunkRef.current, speechRateRef.current, langId);
+          }
+        }
+      }, 50);
+    }
+  };
+
+  // 15. Switch Audio Engine seamlessly WITHOUT closing player popup
+  const switchEngine = (engine: AudioEngine) => {
+    setAudioEngine(engine);
+    try {
+      localStorage.setItem("truyenhub_audio_engine", engine);
+    } catch (_) {}
+
+    if (isPlayingRef.current) {
+      if (audioElementRef.current) {
+        audioElementRef.current.pause();
+        audioElementRef.current.src = "";
+      }
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+
+      setTimeout(() => {
+        if (isPlayingRef.current) {
+          const list = chunks.length > 0 ? chunks : parseChunks();
+          if (engine === "ai") {
+            playAiChunk(list, currentChunkRef.current);
+          } else {
+            playSystemChunk(list, currentChunkRef.current);
+          }
+        }
+      }, 50);
     }
   };
 
@@ -413,7 +673,11 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     black: "bg-black text-neutral-300 border-neutral-900",
   };
 
-  const paragraphs = (chapter.content_text || "").split("\n\n").filter(Boolean);
+  // Cleaned paragraphs for rendering
+  const cleanedText = cleanVietnameseText(chapter.content_text || "");
+  const paragraphs = cleanedText.split("\n\n").filter(Boolean);
+
+  const activeVoiceObj = AI_VOICES.find((v) => v.id === selectedAiVoice) || AI_VOICES[0];
 
   return (
     <div className={`min-h-screen transition-colors duration-300 relative ${themeClasses[readerTheme]}`}>
@@ -456,20 +720,30 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
             {/* Audio TTS Button */}
             <button
               onClick={() => {
-                if (isAudioPlaying) {
-                  stopAllAudio();
-                } else {
+                if (!isAudioOpen) {
+                  setIsAudioOpen(true);
                   startAudio();
+                } else {
+                  if (isAudioPlaying) {
+                    togglePauseAudio();
+                  } else {
+                    startAudio();
+                  }
                 }
               }}
-              className={`p-2 rounded-lg transition-colors flex items-center gap-1 ${
-                isAudioPlaying 
-                  ? "bg-rose-500 text-white shadow-md shadow-rose-500/30 animate-pulse" 
+              className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold ${
+                isAudioOpen
+                  ? "bg-rose-500 text-white shadow-md shadow-rose-500/30" 
                   : "hover:bg-black/10 dark:hover:bg-white/10"
               }`}
-              title={isAudioPlaying ? "Tắt đọc Audio" : "Bật đọc Audio bằng AI"}
+              title={isAudioOpen ? "Điều khiển Audio Đọc Truyện" : "Bật đọc Audio bằng AI"}
             >
-              {isAudioPlaying ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              {isAudioPlaying && !isAudioPaused ? (
+                <Volume2 className="w-4 h-4 animate-pulse" />
+              ) : (
+                <Volume2 className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline">Audio</span>
             </button>
 
             {/* Settings Button */}
@@ -578,14 +852,16 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
         )}
       </header>
 
-      {/* Floating Audio Player Bar when Audio is Active */}
-      {isAudioPlaying && (
+      {/* Floating Audio Player Bar (Remains stable & open during settings adjustments!) */}
+      {isAudioOpen && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-xl p-3.5 rounded-2xl bg-neutral-900/95 text-white border border-neutral-800 shadow-2xl backdrop-blur-xl flex flex-col gap-2.5 animate-in fade-in slide-in-from-bottom-4">
           <div className="flex items-center justify-between gap-3">
             {/* Info */}
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-9 h-9 rounded-xl bg-rose-500/20 text-rose-500 flex items-center justify-center shrink-0">
-                <Volume2 className="w-5 h-5 animate-pulse" />
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                isAudioPlaying && !isAudioPaused ? "bg-rose-500/20 text-rose-500" : "bg-neutral-800 text-neutral-400"
+              }`}>
+                <Volume2 className={`w-5 h-5 ${isAudioPlaying && !isAudioPaused ? "animate-pulse" : ""}`} />
               </div>
               <div className="truncate">
                 <div className="flex items-center gap-2 text-xs font-black">
@@ -593,11 +869,14 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold uppercase">
                     {audioEngine === "ai" ? "✨ AI Voice" : "💻 Hệ thống"} · {selectedLang.toUpperCase()}
                   </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-amber-400 font-bold">
+                    {speechRate}x
+                  </span>
                 </div>
                 <p className="text-[11px] text-neutral-400 truncate">
-                  {audioEngine === "ai" 
-                    ? (selectedLang === "vi" ? "Giọng đọc AI Chuẩn Tiếng Việt" : "AI Natural English Voice")
-                    : (selectedSystemVoice?.name || "Giọng đọc thiết bị")}
+                  {audioEngine === "ai"
+                    ? activeVoiceObj.name
+                    : (selectedSystemVoice?.name || "Giọng thiết bị")}
                   {" · "}Câu {currentChunkIdx + 1}/{chunks.length || 1}
                 </p>
               </div>
@@ -609,7 +888,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
               <button
                 onClick={() => skipChunk("prev")}
                 className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors"
-                title="Đoạn trước"
+                title="Câu trước"
               >
                 <SkipBack className="w-4 h-4" />
               </button>
@@ -618,16 +897,20 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
               <button
                 onClick={togglePauseAudio}
                 className="p-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white shadow-md shadow-rose-500/30 transition-all active:scale-95"
-                title={isAudioPaused ? "Tiếp tục phát" : "Tạm dừng"}
+                title={isAudioPaused || !isAudioPlaying ? "Tiếp tục phát" : "Tạm dừng"}
               >
-                {isAudioPaused ? <Play className="w-4 h-4 fill-white" /> : <Pause className="w-4 h-4 fill-white" />}
+                {isAudioPaused || !isAudioPlaying ? (
+                  <Play className="w-4 h-4 fill-white" />
+                ) : (
+                  <Pause className="w-4 h-4 fill-white" />
+                )}
               </button>
 
               {/* Next Chunk */}
               <button
                 onClick={() => skipChunk("next")}
                 className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white transition-colors"
-                title="Đoạn tiếp theo"
+                title="Câu tiếp theo"
               >
                 <SkipForward className="w-4 h-4" />
               </button>
@@ -636,37 +919,33 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
               <button
                 onClick={() => setShowAudioSettings(!showAudioSettings)}
                 className={`p-2 rounded-lg transition-colors ${
-                  showAudioSettings ? "bg-amber-500 text-white" : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
+                  showAudioSettings ? "bg-amber-500 text-white shadow-sm" : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
                 }`}
-                title="Cài đặt giọng đọc & ngôn ngữ"
+                title="Cài đặt giọng đọc AI, tốc độ & ngôn ngữ"
               >
                 <Settings className="w-4 h-4" />
               </button>
 
-              {/* Stop & Close */}
+              {/* Stop & Close Floating Bar */}
               <button
                 onClick={stopAllAudio}
                 className="p-2 rounded-lg bg-neutral-800 hover:bg-rose-500/20 text-neutral-400 hover:text-rose-400 transition-colors"
-                title="Dừng và đóng"
+                title="Dừng và đóng trình phát"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Voice & Language Settings Dropdown */}
+          {/* Voice & Speed & Language Settings Popover */}
           {showAudioSettings && (
-            <div className="pt-2.5 border-t border-neutral-800/80 flex flex-col gap-3 text-xs animate-in fade-in duration-150">
-              {/* Engine Selector */}
+            <div className="pt-3 border-t border-neutral-800/80 flex flex-col gap-3.5 text-xs animate-in fade-in duration-150">
+              {/* 1. Engine Selector */}
               <div className="flex items-center justify-between">
-                <span className="text-neutral-400">Bộ phát âm:</span>
+                <span className="text-neutral-400 font-semibold">Bộ phát âm:</span>
                 <div className="flex items-center gap-1.5">
                   <button
-                    onClick={() => {
-                      setAudioEngine("ai");
-                      localStorage.setItem("truyenhub_audio_engine", "ai");
-                      stopAllAudio();
-                    }}
+                    onClick={() => switchEngine("ai")}
                     className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all ${
                       audioEngine === "ai"
                         ? "bg-rose-500 text-white shadow-sm"
@@ -674,14 +953,10 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                     }`}
                   >
                     <Sparkles className="w-3 h-3 text-amber-300" />
-                    <span>Giọng AI (Tự nhiên)</span>
+                    <span>Giọng AI (Tự nhiên & Mềm mại)</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setAudioEngine("system");
-                      localStorage.setItem("truyenhub_audio_engine", "system");
-                      stopAllAudio();
-                    }}
+                    onClick={() => switchEngine("system")}
                     className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                       audioEngine === "system"
                         ? "bg-indigo-600 text-white shadow-sm"
@@ -693,25 +968,50 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                 </div>
               </div>
 
-              {/* Language Selector */}
+              {/* 2. Speed Rate Selector (Immediate applied without popup closing) */}
               <div className="flex items-center justify-between">
-                <span className="text-neutral-400">Ngôn ngữ:</span>
+                <span className="text-neutral-400 font-semibold flex items-center gap-1">
+                  <Gauge className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Tốc độ đọc:</span>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {[0.75, 1.0, 1.25, 1.5, 2.0].map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => changeSpeechRate(rate)}
+                      className={`px-2.5 py-1 rounded-lg font-extrabold transition-all text-xs ${
+                        speechRate === rate
+                          ? "bg-rose-500 text-white shadow-sm scale-105"
+                          : "bg-neutral-800 text-neutral-400 hover:text-white"
+                      }`}
+                    >
+                      {rate}x
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Language Selector */}
+              <div className="flex items-center justify-between">
+                <span className="text-neutral-400 font-semibold flex items-center gap-1">
+                  <Globe2 className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Ngôn ngữ:</span>
+                </span>
                 <div className="flex items-center gap-1.5">
                   {[
                     { id: "vi", label: "🇻🇳 Tiếng Việt" },
                     { id: "en", label: "🇺🇸 Tiếng Anh" },
-                    { id: "ja", label: "🇯🇵 Tiếng Nhật" },
                     { id: "zh", label: "🇨🇳 Tiếng Trung" },
+                    { id: "ja", label: "🇯🇵 Tiếng Nhật" },
                   ].map((lang) => (
                     <button
                       key={lang.id}
-                      onClick={() => {
-                        setSelectedLang(lang.id);
-                        stopAllAudio();
-                      }}
+                      type="button"
+                      onClick={() => switchLanguage(lang.id)}
                       className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                         selectedLang === lang.id
-                          ? "bg-neutral-100 text-neutral-900 font-black shadow-xs"
+                          ? "bg-neutral-100 text-neutral-900 font-black shadow-xs scale-105"
                           : "bg-neutral-800 text-neutral-400 hover:text-white"
                       }`}
                     >
@@ -721,18 +1021,67 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                 </div>
               </div>
 
-              {/* System Voice Selection if in System Mode */}
+              {/* 4. AI Voice Selector (Visible when Engine is AI) */}
+              {audioEngine === "ai" && (
+                <div className="flex flex-col gap-2">
+                  <span className="text-neutral-400 font-semibold flex items-center justify-between">
+                    <span>Chọn giọng đọc AI:</span>
+                    <span className="text-[10px] text-amber-400 font-normal">
+                      ✨ Neural AI Voices tự nhiên
+                    </span>
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                    {AI_VOICES.filter((v) => v.lang === selectedLang || v.lang === "any").map((v) => {
+                      const isSelected = selectedAiVoice === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => switchAiVoice(v.id)}
+                          className={`p-2 rounded-xl text-left transition-all border flex flex-col gap-1 ${
+                            isSelected
+                              ? "bg-rose-500/20 border-rose-500 text-white shadow-xs"
+                              : "bg-neutral-800/80 border-neutral-700/60 text-neutral-300 hover:bg-neutral-700/80"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-xs flex items-center gap-1.5">
+                              {v.gender === "female" ? "👩" : "👨"} {v.name}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
+                                isSelected ? "bg-rose-500 text-white" : "bg-neutral-700 text-neutral-400"
+                              }`}>
+                                {v.tag}
+                              </span>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-rose-400" />}
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-neutral-400 leading-snug line-clamp-2">
+                            {v.desc}
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. System Voices (Visible when Engine is System) */}
               {audioEngine === "system" && systemVoices.length > 0 && (
                 <div className="flex items-center justify-between">
-                  <span className="text-neutral-400">Giọng máy:</span>
+                  <span className="text-neutral-400 font-semibold">Giọng thiết bị:</span>
                   <select
                     value={selectedSystemVoice?.name || ""}
                     onChange={(e) => {
                       const found = systemVoices.find((v) => v.name === e.target.value);
                       if (found) setSelectedSystemVoice(found);
-                      stopAllAudio();
+                      if (isPlayingRef.current) {
+                        window.speechSynthesis.cancel();
+                        setTimeout(() => playSystemChunk(chunks, currentChunkIdx), 50);
+                      }
                     }}
-                    className="bg-neutral-800 text-white border border-neutral-700 rounded-lg px-2.5 py-1 text-xs max-w-[220px] truncate focus:outline-none"
+                    className="bg-neutral-800 text-white border border-neutral-700 rounded-lg px-2.5 py-1 text-xs max-w-[240px] truncate focus:outline-none"
                   >
                     {systemVoices.map((v) => (
                       <option key={v.name} value={v.name}>
@@ -742,26 +1091,6 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                   </select>
                 </div>
               )}
-
-              {/* Speed Rate Selector */}
-              <div className="flex items-center justify-between">
-                <span className="text-neutral-400">Tốc độ đọc:</span>
-                <div className="flex items-center gap-1">
-                  {[0.75, 1.0, 1.25, 1.5].map((rate) => (
-                    <button
-                      key={rate}
-                      onClick={() => changeSpeechRate(rate)}
-                      className={`px-2 py-0.5 rounded font-bold ${
-                        speechRate === rate
-                          ? "bg-rose-500 text-white"
-                          : "bg-neutral-800 text-neutral-400 hover:text-white"
-                      }`}
-                    >
-                      {rate}x
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
         </div>
@@ -841,7 +1170,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
         </div>
       </main>
 
-      {/* Slide-out Table of Contents Drawer for Novel - RENDERED OUTSIDE HEADER SO IT SPANS 100VH! */}
+      {/* Slide-out Table of Contents Drawer for Novel */}
       {showToc && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-sm h-full bg-neutral-900 border-l border-neutral-800 text-neutral-100 flex flex-col p-5 shadow-2xl animate-in slide-in-from-right duration-200">
