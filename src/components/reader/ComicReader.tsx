@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { normalizeMediaUrl, SITE_CONFIG } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { recordReadingProgress } from "@/lib/sync/syncService";
 
 interface ComicReaderProps {
   story: Story;
@@ -105,6 +107,14 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Ghi nhận tiến độ đọc & đồng bộ đa thiết bị
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      recordReadingProgress(story.id, chapter.id, scrollProgress, user?.id);
+    });
+  }, [story.id, chapter.id, scrollProgress > 80]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {

@@ -14,6 +14,9 @@ import {
   Copy
 } from "lucide-react";
 
+import { createClient } from "@/lib/supabase/client";
+import { toggleStoryBookmark, getLocalBookmarks } from "@/lib/sync/syncService";
+
 interface StoryActionButtonsProps {
   story: Story;
   firstChapterNumber: number;
@@ -33,16 +36,16 @@ export function StoryActionButtons({
   const [isLiked, setIsLiked] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Initialize bookmark & like status from localStorage
+  // Initialize bookmark & like status
   useEffect(() => {
     try {
-      const savedBookmarks = JSON.parse(localStorage.getItem("truyenhub_bookmarks") || "[]");
-      setIsBookmarked(savedBookmarks.some((item: any) => item.slug === story.slug));
+      const savedBookmarks = getLocalBookmarks();
+      setIsBookmarked(savedBookmarks.some((item: any) => item.slug === story.slug || item.id === story.id));
 
-      const savedLikes = JSON.parse(localStorage.getItem("truyenhub_likes") || "[]");
+      const savedLikes = JSON.parse(localStorage.getItem("doctruyen_likes") || localStorage.getItem("truyenhub_likes") || "[]");
       setIsLiked(savedLikes.includes(story.slug));
     } catch (_) {}
-  }, [story.slug]);
+  }, [story.slug, story.id]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -51,32 +54,14 @@ export function StoryActionButtons({
     }, 2800);
   };
 
-  // Toggle Bookmark
-  const handleToggleBookmark = () => {
+  // Toggle Bookmark with cloud sync
+  const handleToggleBookmark = async () => {
     try {
-      const savedBookmarks = JSON.parse(localStorage.getItem("truyenhub_bookmarks") || "[]");
-      if (isBookmarked) {
-        const next = savedBookmarks.filter((item: any) => item.slug !== story.slug);
-        localStorage.setItem("truyenhub_bookmarks", JSON.stringify(next));
-        setIsBookmarked(false);
-        showToast("Đã xóa khỏi Tủ truyện của bạn");
-      } else {
-        const newItem = {
-          id: story.id,
-          slug: story.slug,
-          title: story.title,
-          cover_url: story.cover_url,
-          author_name: story.author_name,
-          type: story.type,
-          total_chapters: totalChapters,
-          savedAt: new Date().toISOString(),
-          last_chapter: firstChapterNumber,
-        };
-        const next = [newItem, ...savedBookmarks.filter((item: any) => item.slug !== story.slug)];
-        localStorage.setItem("truyenhub_bookmarks", JSON.stringify(next));
-        setIsBookmarked(true);
-        showToast("Đã thêm vào Tủ truyện thành công! 📚");
-      }
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const newState = await toggleStoryBookmark(story, user?.id);
+      setIsBookmarked(newState);
+      showToast(newState ? "Đã lưu vào Tủ truyện (Đồng bộ đa thiết bị)! 📚" : "Đã xóa khỏi Tủ truyện");
     } catch (_) {}
   };
 

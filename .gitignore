@@ -44,3 +44,17 @@ next-env.d.ts
 .venv/
 __pycache__/
 *.pyc
+scripts/*.json
+
+# Android & iOS build artifacts
+android/.gradle
+android/build
+android/app/build
+android/.idea
+android/*.iml
+android/app/*.iml
+ios/App/App.xcworkspace/xcuserdata
+ios/App/App.xcworkspace/xcshareddata
+ios/App/Pods
+ios/DerivedData
+

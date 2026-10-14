@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { CapacitorAppHandler } from "@/components/common/CapacitorAppHandler";
 import "./globals.css";
 
 const inter = Inter({
@@ -18,9 +19,16 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "DocTruyen.vip",
+  },
   metadataBase: new URL("https://doctruyen.vip"),
   title: {
     default: "DocTruyen.vip - Đọc Truyện Tranh & Truyện Chữ Online Miễn Phí",
@@ -175,6 +183,18 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             `,
           }}
         />
+        {/* Register Service Worker for PWA (iOS & Android) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground transition-colors duration-150">
         {/* Google Tag Manager (noscript) */}
@@ -188,6 +208,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </noscript>
 
         {children}
+
+        {/* Native Capacitor App Handlers (Status bar, Android Back button) */}
+        <CapacitorAppHandler />
 
         {/* Vercel Web Analytics & Speed Insights */}
         <Analytics />

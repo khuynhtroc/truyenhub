@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DocTruyen.vip</string>
+    <string name="title_activity_main">DocTruyen.vip</string>
+    <string name="package_name">vip.doctruyen.app</string>
+    <string name="custom_url_scheme">vip.doctruyen.app</string>
+</resources>

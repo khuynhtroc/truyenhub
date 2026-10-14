@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
 import { SafeImage } from "@/components/common/SafeImage";
+import { useSyncState } from "@/lib/sync/useSyncState";
 import { 
   Bookmark, 
   Clock, 
@@ -14,46 +15,24 @@ import {
   Trash2, 
   Compass, 
   Sparkles,
-  BookMarked
+  BookMarked,
+  CloudCheck,
+  RefreshCw
 } from "lucide-react";
 
-interface BookmarkedStory {
-  id: string;
-  slug: string;
-  title: string;
-  cover_url: string;
-  author_name: string;
-  type: string;
-  total_chapters: number;
-  last_chapter?: number;
-  savedAt: string;
-}
-
 export default function BookshelfPage() {
-  const [bookmarks, setBookmarks] = useState<BookmarkedStory[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { user, bookmarks, isSyncing, toggleBookmark, refreshBookmarks } = useSyncState();
 
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("truyenhub_bookmarks") || "[]");
-      setBookmarks(saved);
-    } catch (_) {}
-    setIsLoaded(true);
-  }, []);
-
-  const handleRemove = (slug: string) => {
-    const next = bookmarks.filter((b) => b.slug !== slug);
-    setBookmarks(next);
-    try {
-      localStorage.setItem("truyenhub_bookmarks", JSON.stringify(next));
-    } catch (_) {}
+  const handleRemove = async (item: any) => {
+    await toggleBookmark(item);
   };
 
   const handleClearAll = () => {
     if (window.confirm("Bạn có chắc muốn xóa tất cả truyện khỏi Tủ Truyện?")) {
-      setBookmarks([]);
       try {
+        localStorage.removeItem("doctruyen_bookmarks");
         localStorage.removeItem("truyenhub_bookmarks");
+        refreshBookmarks();
       } catch (_) {}
     }
   };
@@ -71,28 +50,47 @@ export default function BookshelfPage() {
               Tủ Truyện Của Bạn
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Bộ sưu tập các tác phẩm bạn đã đánh dấu yêu thích để theo dõi tiện lợi.
+              Bộ sưu tập các tác phẩm bạn đã đánh dấu yêu thích, đồng bộ tự động giữa Web, Android và iOS.
             </p>
           </div>
 
-          {bookmarks.length > 0 && (
-            <button
-              onClick={handleClearAll}
-              className="text-xs font-bold text-muted-foreground hover:text-rose-500 transition-colors self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-muted"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Xóa tất cả</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {/* Sync Status Badge */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-[11px] font-semibold text-muted-foreground">
+              {isSyncing ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                  <span>Đang đồng bộ...</span>
+                </>
+              ) : user ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-emerald-500 font-bold">Cloud Sync</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-rose-500" />
+                  <Link href="/tai-khoan" className="hover:underline text-rose-500 font-bold">
+                    Đăng nhập để đồng bộ
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {bookmarks.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="text-xs font-bold text-muted-foreground hover:text-rose-500 transition-colors flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-muted"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Xóa tất cả</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* List or Empty State */}
-        {!isLoaded ? (
-          <div className="py-20 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-            <Clock className="w-4 h-4 animate-spin text-rose-500" />
-            <span>Đang tải tủ truyện...</span>
-          </div>
-        ) : bookmarks.length === 0 ? (
+        {bookmarks.length === 0 ? (
           <div className="py-16 px-6 text-center rounded-3xl bg-card border border-border/60 flex flex-col items-center justify-center gap-4 shadow-sm">
             <div className="w-16 h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500">
               <BookMarked className="w-8 h-8" />
@@ -116,9 +114,9 @@ export default function BookshelfPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {bookmarks.map((item) => {
-              const currentChapter = item.last_chapter || 1;
-              const totalChaps = item.total_chapters || 1;
-              const percent = Math.min(100, Math.round((currentChapter / totalChaps) * 100));
+              const currentChapter = Number(item.last_chapter || item.last_chapter_number || 1);
+              const totalChaps = Number(item.total_chapters || 1);
+              const percent = item.progress_percent ?? Math.min(100, Math.round((currentChapter / totalChaps) * 100));
 
               return (
                 <div
@@ -179,7 +177,7 @@ export default function BookshelfPage() {
                     </Link>
 
                     <button
-                      onClick={() => handleRemove(item.slug)}
+                      onClick={() => handleRemove(item)}
                       className="p-2.5 rounded-xl hover:bg-muted text-muted-foreground hover:text-rose-500 transition-colors"
                       title="Xóa khỏi tủ truyện"
                     >

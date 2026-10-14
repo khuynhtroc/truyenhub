@@ -1,0 +1,26 @@
+{
+  "name": "DocTruyen.vip - Đọc Truyện Tranh & Truyện Chữ",
+  "short_name": "DocTruyen.vip",
+  "description": "Nền tảng đọc truyện tranh Manga/Webtoon full HD và tiểu thuyết phong phú miễn phí",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#f43f5e",
+  "orientation": "portrait-primary",
+  "categories": ["books", "entertainment", "comics"],
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/covers/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/covers/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

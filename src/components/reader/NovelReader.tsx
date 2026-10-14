@@ -29,6 +29,8 @@ import {
   Gauge
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
+import { createClient } from "@/lib/supabase/client";
+import { recordReadingProgress } from "@/lib/sync/syncService";
 
 interface NovelReaderProps {
   story: Story;
@@ -331,17 +333,28 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     } catch (_) {}
   };
 
-  // Sync reading progress to bookmarks
+  // Sync reading progress to bookmarks & cloud
   useEffect(() => {
     try {
-      const savedBookmarks = JSON.parse(localStorage.getItem("truyenhub_bookmarks") || "[]");
-      const foundIdx = savedBookmarks.findIndex((b: any) => b.slug === story.slug);
+      const savedBookmarks = JSON.parse(
+        localStorage.getItem("doctruyen_bookmarks") ||
+        localStorage.getItem("truyenhub_bookmarks") ||
+        "[]"
+      );
+      const foundIdx = savedBookmarks.findIndex(
+        (b: any) => b.slug === story.slug || b.id === story.id
+      );
       if (foundIdx >= 0) {
         savedBookmarks[foundIdx].last_chapter = chapter.chapter_number;
-        localStorage.setItem("truyenhub_bookmarks", JSON.stringify(savedBookmarks));
+        localStorage.setItem("doctruyen_bookmarks", JSON.stringify(savedBookmarks));
       }
     } catch (_) {}
-  }, [story.slug, chapter.chapter_number]);
+
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      recordReadingProgress(story.id, chapter.id, 0, user?.id);
+    });
+  }, [story.id, story.slug, chapter.id, chapter.chapter_number]);
 
   // Keyboard navigation & scroll
   useEffect(() => {
