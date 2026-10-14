@@ -7,12 +7,13 @@ export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase.from("stories").select("id, title, slug, type").limit(5);
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "fallback";
     return NextResponse.json({
       success: !error,
       error: error ? error.message : null,
       data,
-      envUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? "set" : "not set",
-      envKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "set" : "not set",
+      projectUrl: rawUrl,
+      isFallback: rawUrl === "fallback",
     });
   } catch (err: unknown) {
     return NextResponse.json({
