@@ -129,12 +129,12 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-3xl bg-card border border-border/80 p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-150"
+        className="relative w-full max-w-md my-auto max-h-[92vh] overflow-y-auto rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-6 sm:p-8 shadow-2xl animate-in zoom-in-95 duration-150 text-neutral-900 dark:text-neutral-100"
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
           title="Đóng"
         >
           <X className="w-5 h-5" />
@@ -142,13 +142,13 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
 
         {/* Modal Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white mx-auto mb-3 shadow-md">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white mx-auto mb-3 shadow-md shadow-rose-500/20">
             <Sparkles className="w-6 h-6" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-foreground">
+          <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white">
             {mode === "login" ? "Chào Mừng Trở Lại!" : "Tạo Tài Khoản Mới"}
           </h2>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             {mode === "login"
               ? "Đăng nhập để đồng bộ tủ truyện và số dư xu trên mọi thiết bị"
               : "Đăng ký ngay để nhận 10 Xu tân thủ và lưu tiến độ đọc"}
@@ -162,7 +162,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
             type="button"
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full py-3 px-4 rounded-xl border border-border/80 bg-background hover:bg-muted font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-sm active:scale-[0.99]"
+            className="w-full py-3 px-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 font-bold text-xs text-neutral-800 dark:text-neutral-100 flex items-center justify-center gap-3 transition-all shadow-sm active:scale-[0.99]"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path
@@ -201,11 +201,11 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
 
         {/* Divider */}
         <div className="relative flex items-center justify-center mb-5">
-          <div className="border-t border-border/60 w-full" />
-          <span className="bg-card px-3 text-[11px] font-bold text-muted-foreground uppercase">
+          <div className="border-t border-neutral-200 dark:border-neutral-800 w-full" />
+          <span className="bg-white dark:bg-neutral-900 px-3 text-[11px] font-bold text-neutral-400 uppercase">
             Hoặc với Email
           </span>
-          <div className="border-t border-border/60 w-full" />
+          <div className="border-t border-neutral-200 dark:border-neutral-800 w-full" />
         </div>
 
         {/* Feedback alert */}
@@ -226,32 +226,32 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
         <form onSubmit={handleEmailAuth} className="flex flex-col gap-3">
           {mode === "register" && (
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
                 type="text"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Tên hiển thị / Biệt danh"
-                className="w-full h-10 pl-9 pr-3 rounded-xl bg-muted/60 text-xs border border-border/60 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+                className="w-full h-11 pl-10 pr-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs sm:text-sm text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
               />
             </div>
           )}
 
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Địa chỉ Email"
-              className="w-full h-10 pl-9 pr-3 rounded-xl bg-muted/60 text-xs border border-border/60 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+              className="w-full h-11 pl-10 pr-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs sm:text-sm text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
             />
           </div>
 
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input
               type="password"
               required
@@ -259,44 +259,63 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Mật khẩu (ít nhất 6 ký tự)"
-              className="w-full h-10 pl-9 pr-3 rounded-xl bg-muted/60 text-xs border border-border/60 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+              className="w-full h-11 pl-10 pr-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs sm:text-sm text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+            className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-rose-600 hover:opacity-95 text-white font-extrabold text-xs shadow-md shadow-rose-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
           >
-            <span>{isLoading ? "Đang xử lý..." : mode === "login" ? "Đăng Nhập" : "Đăng Ký Tài Khoản"}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            {isLoading ? (
+              <span className="animate-pulse">Đang xử lý...</span>
+            ) : mode === "login" ? (
+              <>
+                <span>Đăng Nhập</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            ) : (
+              <>
+                <span>Đăng Ký & Nhận 10 Xu</span>
+                <Sparkles className="w-4 h-4 text-amber-200" />
+              </>
+            )}
           </button>
         </form>
 
-        {/* Switch mode */}
-        <div className="mt-5 text-center text-xs text-muted-foreground">
+        {/* Footer Toggle Mode */}
+        <div className="mt-5 text-center text-xs text-neutral-500 dark:text-neutral-400">
           {mode === "login" ? (
-            <span>
+            <p>
               Chưa có tài khoản?{" "}
               <button
                 type="button"
-                onClick={() => setMode("register")}
+                onClick={() => {
+                  setMode("register");
+                  setErrorMessage("");
+                  setSuccessMessage("");
+                }}
                 className="font-bold text-rose-500 hover:underline"
               >
                 Đăng ký ngay (+10 Xu)
               </button>
-            </span>
+            </p>
           ) : (
-            <span>
+            <p>
               Đã có tài khoản?{" "}
               <button
                 type="button"
-                onClick={() => setMode("login")}
+                onClick={() => {
+                  setMode("login");
+                  setErrorMessage("");
+                  setSuccessMessage("");
+                }}
                 className="font-bold text-rose-500 hover:underline"
               >
-                Đăng nhập
+                Đăng nhập ngay
               </button>
-            </span>
+            </p>
           )}
         </div>
       </div>

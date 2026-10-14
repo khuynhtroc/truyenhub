@@ -15,6 +15,8 @@ import {
   X, 
   LogIn, 
   ChevronDown, 
+  ChevronLeft,
+  ChevronRight,
   Layers, 
   BookMarked, 
   Compass, 
@@ -75,12 +77,30 @@ export function Navbar() {
 
   const searchRef = useRef<HTMLDivElement>(null);
   const genreDropdownRef = useRef<HTMLDivElement>(null);
+  const subBarRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkSubBarScroll = () => {
+    const el = subBarRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 10);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const isDarkMode = document.documentElement.classList.contains("dark");
+      const isDarkMode = document.documentElement.classList.contains("dark") ||
+        localStorage.getItem("theme") === "dark" ||
+        (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches);
       setIsDark(isDarkMode);
+      if (isDarkMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
     }
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -92,11 +112,36 @@ export function Navbar() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
+
+    // Mouse wheel support for category sub-bar
+    const el = subBarRef.current;
+    if (el) {
+      checkSubBarScroll();
+      const onWheel = (e: WheelEvent) => {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          el.scrollLeft += e.deltaY * 1.5;
+          checkSubBarScroll();
+        }
+      };
+      el.addEventListener("wheel", onWheel, { passive: false });
+      el.addEventListener("scroll", checkSubBarScroll);
+      window.addEventListener("resize", checkSubBarScroll);
+
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        el.removeEventListener("wheel", onWheel);
+        el.removeEventListener("scroll", checkSubBarScroll);
+        window.removeEventListener("resize", checkSubBarScroll);
+      };
+    }
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const toggleTheme = () => {
-    const nextDark = !isDark;
+    const isCurrentlyDark = typeof window !== "undefined" && document.documentElement.classList.contains("dark");
+    const nextDark = !isCurrentlyDark;
     setIsDark(nextDark);
     if (nextDark) {
       document.documentElement.classList.add("dark");
@@ -105,6 +150,17 @@ export function Navbar() {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
     }
+  };
+
+  const scrollSubBar = (direction: "left" | "right") => {
+    const el = subBarRef.current;
+    if (!el) return;
+    const scrollAmount = 260;
+    el.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth"
+    });
+    setTimeout(checkSubBarScroll, 300);
   };
 
   const handleSearch = (query: string) => {
@@ -385,22 +441,50 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Horizontal Sub-Navbar Category Strip (Immune to collisions & 100% accessible on all screens!) */}
-      <div className="border-t border-border/40 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs font-bold text-muted-foreground">
-          {QUICK_SUB_BAR.map((sub) => {
-            const Icon = sub.icon;
-            return (
-              <Link
-                key={sub.label}
-                href={sub.href}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-background hover:text-foreground whitespace-nowrap transition-all shrink-0 border border-transparent hover:border-border/60 hover:shadow-xs"
-              >
-                <Icon className={`w-3.5 h-3.5 ${sub.color}`} />
-                <span>{sub.label}</span>
-              </Link>
-            );
-          })}
+      {/* Horizontal Sub-Navbar Category Strip with smooth mouse-wheel & button navigation */}
+      <div className="border-t border-border/40 bg-muted/30 relative">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 relative flex items-center">
+          {/* Scroll Left Button */}
+          {canScrollLeft && (
+            <button
+              onClick={() => scrollSubBar("left")}
+              aria-label="Cuộn sang trái"
+              className="absolute left-1 z-10 p-1 rounded-full bg-background/95 hover:bg-background border border-border/60 shadow-md text-foreground transition-all flex items-center justify-center hover:scale-110"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Sub-bar scroll container */}
+          <div 
+            ref={subBarRef}
+            className="w-full py-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs font-bold text-muted-foreground scroll-smooth px-1"
+          >
+            {QUICK_SUB_BAR.map((sub) => {
+              const Icon = sub.icon;
+              return (
+                <Link
+                  key={sub.label}
+                  href={sub.href}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-background hover:text-foreground whitespace-nowrap transition-all shrink-0 border border-transparent hover:border-border/60 hover:shadow-xs active:scale-95"
+                >
+                  <Icon className={`w-3.5 h-3.5 ${sub.color}`} />
+                  <span>{sub.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Scroll Right Button */}
+          {canScrollRight && (
+            <button
+              onClick={() => scrollSubBar("right")}
+              aria-label="Cuộn sang phải"
+              className="absolute right-1 z-10 p-1 rounded-full bg-background/95 hover:bg-background border border-border/60 shadow-md text-foreground transition-all flex items-center justify-center hover:scale-110"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -437,15 +521,29 @@ export function Navbar() {
             })}
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t text-xs font-bold text-muted-foreground">
-            <Link href="/kham-pha" onClick={() => setShowMobileMenu(false)} className="text-rose-500 flex items-center gap-1">
-              <Compass className="w-4 h-4" />
-              <span>Xem Tất Cả Truyện</span>
-            </Link>
-            <Link href="/tu-truyen" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-1">
-              <Bookmark className="w-4 h-4 text-rose-500" />
-              <span>Tủ Truyện</span>
-            </Link>
+          {/* Mobile Theme Toggle & Quick Links */}
+          <div className="flex flex-col gap-2 pt-2 border-t">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-muted-foreground">Chế độ hiển thị:</span>
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-bold text-foreground hover:bg-muted"
+              >
+                {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-muted-foreground" />}
+                <span>{isDark ? "Giao diện Sáng" : "Giao diện Tối"}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t text-xs font-bold text-muted-foreground">
+              <Link href="/kham-pha" onClick={() => setShowMobileMenu(false)} className="text-rose-500 flex items-center gap-1">
+                <Compass className="w-4 h-4" />
+                <span>Xem Tất Cả Truyện</span>
+              </Link>
+              <Link href="/tu-truyen" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-1">
+                <Bookmark className="w-4 h-4 text-rose-500" />
+                <span>Tủ Truyện</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}

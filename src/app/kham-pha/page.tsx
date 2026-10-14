@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -23,7 +23,9 @@ import {
   Flame, 
   Clock, 
   CheckCircle2,
-  SlidersHorizontal
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 const QUICK_PRESETS = [
@@ -58,6 +60,52 @@ function ExploreContent() {
   const [sortBy, setSortBy] = useState<string>("views");
   const [keyword, setKeyword] = useState<string>(paramQuery);
   const [loading, setLoading] = useState<boolean>(true);
+
+  const presetsRef = useRef<HTMLDivElement>(null);
+  const [canScrollPresetsLeft, setCanScrollPresetsLeft] = useState(false);
+  const [canScrollPresetsRight, setCanScrollPresetsRight] = useState(true);
+
+  const checkPresetsScroll = () => {
+    const el = presetsRef.current;
+    if (!el) return;
+    setCanScrollPresetsLeft(el.scrollLeft > 10);
+    setCanScrollPresetsRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  };
+
+  useEffect(() => {
+    const el = presetsRef.current;
+    if (!el) return;
+    checkPresetsScroll();
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        el.scrollLeft += e.deltaY * 1.5;
+        checkPresetsScroll();
+      }
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("scroll", checkPresetsScroll);
+    window.addEventListener("resize", checkPresetsScroll);
+
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("scroll", checkPresetsScroll);
+      window.removeEventListener("resize", checkPresetsScroll);
+    };
+  }, []);
+
+  const scrollPresets = (direction: "left" | "right") => {
+    const el = presetsRef.current;
+    if (!el) return;
+    const scrollAmount = 260;
+    el.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth"
+    });
+    setTimeout(checkPresetsScroll, 300);
+  };
 
   // Sync state if searchParams change externally (e.g. navigation)
   useEffect(() => {
@@ -219,31 +267,56 @@ function ExploreContent() {
         </div>
       </div>
 
-      {/* Quick Category Presets Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-        {QUICK_PRESETS.map((p) => {
-          const Icon = p.icon;
-          const isActive =
-            (p.id === "all" && selectedType === "all" && selectedGenre === "all" && selectedStatus === "all") ||
-            (p.type !== "all" && selectedType === p.type && selectedGenre === "all" && selectedStatus === "all") ||
-            (p.genre !== "all" && selectedGenre === p.genre) ||
-            (p.status !== "all" && selectedStatus === p.status);
+      {/* Quick Category Presets Chips with smooth mouse-wheel & button controls */}
+      <div className="relative flex items-center group -mx-4 px-4 sm:mx-0 sm:px-0">
+        {canScrollPresetsLeft && (
+          <button
+            onClick={() => scrollPresets("left")}
+            aria-label="Cuộn sang trái"
+            className="absolute left-1 sm:-left-3 z-20 p-1.5 rounded-full bg-background/95 hover:bg-background border border-border shadow-lg text-foreground transition-all flex items-center justify-center hover:scale-110"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
 
-          return (
-            <button
-              key={p.id}
-              onClick={() => handlePresetClick(p)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all active:scale-95 ${
-                isActive
-                  ? "bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md shadow-rose-500/20"
-                  : "bg-card hover:bg-muted text-muted-foreground hover:text-foreground border border-border/60"
-              }`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              <span>{p.label}</span>
-            </button>
-          );
-        })}
+        <div 
+          ref={presetsRef}
+          className="w-full flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none scroll-smooth px-1"
+        >
+          {QUICK_PRESETS.map((p) => {
+            const Icon = p.icon;
+            const isActive =
+              (p.id === "all" && selectedType === "all" && selectedGenre === "all" && selectedStatus === "all") ||
+              (p.type !== "all" && selectedType === p.type && selectedGenre === "all" && selectedStatus === "all") ||
+              (p.genre !== "all" && selectedGenre === p.genre) ||
+              (p.status !== "all" && selectedStatus === p.status);
+
+            return (
+              <button
+                key={p.id}
+                onClick={() => handlePresetClick(p)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all active:scale-95 ${
+                  isActive
+                    ? "bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md shadow-rose-500/20"
+                    : "bg-card hover:bg-muted text-muted-foreground hover:text-foreground border border-border/60 hover:border-border"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span>{p.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {canScrollPresetsRight && (
+          <button
+            onClick={() => scrollPresets("right")}
+            aria-label="Cuộn sang phải"
+            className="absolute right-1 sm:-right-3 z-20 p-1.5 rounded-full bg-background/95 hover:bg-background border border-border shadow-lg text-foreground transition-all flex items-center justify-center hover:scale-110"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Filters Panel */}
