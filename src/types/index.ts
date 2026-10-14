@@ -15,6 +15,16 @@ export interface Story {
   total_chapters: number;
   created_at: string;
   updated_at: string;
+  versions?: StoryVersion[];
+}
+
+export interface StoryVersion {
+  id: string;
+  title: string;
+  slug: string;
+  version_name: string;
+  total_chapters: number;
+  type?: StoryType;
 }
 
 export interface Chapter {

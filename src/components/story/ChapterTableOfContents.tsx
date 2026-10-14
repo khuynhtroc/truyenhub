@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Chapter } from "@/types";
+import { Chapter, StoryVersion } from "@/types";
 import { 
   BookOpen, 
   Search, 
@@ -11,13 +11,17 @@ import {
   Sparkles,
   ChevronRight,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  Layers
 } from "lucide-react";
 
 interface ChapterTableOfContentsProps {
   storySlug: string;
   storyTitle: string;
   chapters: Chapter[];
+  versions?: StoryVersion[];
+  currentVersionSlug?: string;
+  seriesGroupName?: string;
 }
 
 const CHUNK_SIZE = 50;
@@ -26,6 +30,9 @@ export function ChapterTableOfContents({
   storySlug,
   storyTitle,
   chapters,
+  versions = [],
+  currentVersionSlug,
+  seriesGroupName,
 }: ChapterTableOfContentsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortAsc, setSortAsc] = useState(true);
@@ -120,6 +127,48 @@ export function ChapterTableOfContents({
           )}
         </div>
       </div>
+
+      {/* Version Selector for Multi-Edition Stories */}
+      {versions && versions.length > 1 && (
+        <div className="flex flex-col gap-2.5 p-3.5 sm:p-4 rounded-2xl bg-muted/40 border border-border/70 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              Tùy chọn phiên bản đọc ({versions.length} phiên bản)
+            </span>
+            {seriesGroupName && (
+              <span className="hidden sm:inline-block text-[11px] font-bold text-muted-foreground">
+                Thuộc: <b className="text-foreground">{seriesGroupName}</b>
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {versions.map((ver) => {
+              const isCurrent = ver.slug === (currentVersionSlug || storySlug);
+              return (
+                <Link
+                  key={ver.slug}
+                  href={`/truyen/${ver.slug}#chapter-toc`}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap transition-all active:scale-95 ${
+                    isCurrent
+                      ? "bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md shadow-rose-500/25 ring-2 ring-rose-500/30"
+                      : "bg-card hover:bg-muted text-muted-foreground hover:text-foreground border border-border/70 hover:border-border"
+                  }`}
+                >
+                  <Layers className={`w-3.5 h-3.5 ${isCurrent ? "text-white" : "text-amber-500"}`} />
+                  <span>{ver.version_name || ver.title}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                    isCurrent ? "bg-black/20 text-white" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {ver.total_chapters} Tập
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Filter & Search Toolbar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">

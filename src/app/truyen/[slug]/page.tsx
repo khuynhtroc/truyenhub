@@ -25,7 +25,8 @@ import { ChapterTableOfContents } from "@/components/story/ChapterTableOfContent
 import { StoryInteractiveHero } from "@/components/story/StoryInteractiveHero";
 import { SafeImage } from "@/components/common/SafeImage";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { Story, Chapter } from "@/types";
+import { Story, Chapter, StoryVersion } from "@/types";
+import { getSeriesGroupForSlug } from "@/lib/series-versions";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,43 @@ export default async function StoryDetailPage({
 
   if (!story) {
     notFound();
+  }
+
+  // Load sibling versions for multi-edition series
+  let versions: StoryVersion[] = [];
+  const seriesGroup = getSeriesGroupForSlug(story.slug);
+
+  if (seriesGroup) {
+    try {
+      const supabase = await createServerSupabaseClient();
+      const siblingSlugs = seriesGroup.versions.map((v) => v.slug);
+      const { data: siblings } = await supabase
+        .from("stories")
+        .select("id, title, slug, total_chapters, type")
+        .in("slug", siblingSlugs);
+
+      if (siblings && siblings.length > 1) {
+        versions = siblings
+          .map((s) => {
+            const matchMeta = seriesGroup.versions.find((v) => v.slug === s.slug);
+            return {
+              id: s.id,
+              title: s.title,
+              slug: s.slug,
+              version_name: matchMeta?.version_name || s.title,
+              total_chapters: s.total_chapters,
+              type: s.type,
+            };
+          })
+          .sort((a, b) => {
+            const idxA = seriesGroup.versions.findIndex((v) => v.slug === a.slug);
+            const idxB = seriesGroup.versions.findIndex((v) => v.slug === b.slug);
+            return idxA - idxB;
+          });
+      }
+    } catch (e) {
+      console.error("Failed to load sibling versions:", e);
+    }
   }
 
   if (chapters.length === 0) {
@@ -167,6 +205,32 @@ export default async function StoryDetailPage({
                 ))}
               </div>
 
+              {/* Quick Multi-Version Switcher in Hero */}
+              {versions.length > 1 && (
+                <div className="mb-4 p-2.5 rounded-xl bg-muted/60 border border-border/60 flex flex-wrap items-center gap-1.5 justify-center sm:justify-start">
+                  <span className="text-[11px] font-black uppercase text-muted-foreground flex items-center gap-1 mr-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    Phiên bản:
+                  </span>
+                  {versions.map((v) => {
+                    const isCur = v.slug === story.slug;
+                    return (
+                      <Link
+                        key={v.slug}
+                        href={`/truyen/${v.slug}`}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                          isCur
+                            ? "bg-rose-500 text-white shadow-xs font-black"
+                            : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground border border-border/50"
+                        }`}
+                      >
+                        {v.version_name || v.title}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
             </div>
 
             {/* Interactive KPIs & Action buttons */}
@@ -202,6 +266,9 @@ export default async function StoryDetailPage({
             storySlug={story.slug}
             storyTitle={story.title}
             chapters={chapters}
+            versions={versions}
+            currentVersionSlug={story.slug}
+            seriesGroupName={seriesGroup?.groupName}
           />
         </div>
 
