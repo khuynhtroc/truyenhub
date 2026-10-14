@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { ChapterTableOfContents } from "@/components/story/ChapterTableOfContents";
-import { StoryActionButtons } from "@/components/story/StoryActionButtons";
+import { StoryInteractiveHero } from "@/components/story/StoryInteractiveHero";
 import { SafeImage } from "@/components/common/SafeImage";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Story, Chapter } from "@/types";
@@ -167,30 +167,10 @@ export default async function StoryDetailPage({
                 ))}
               </div>
 
-              {/* KPIs */}
-              <div className="flex items-center gap-6 justify-center sm:justify-start text-xs font-bold text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <Eye className="w-4 h-4 text-muted-foreground" />
-                  {formatNumber(story.total_views)} Lượt xem
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Heart className="w-4 h-4 text-rose-500" />
-                  {formatNumber(story.total_likes)} Thích
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <BookOpen className="w-4 h-4 text-indigo-500" />
-                  {chapters.length} Chương
-                </span>
-              </div>
             </div>
 
-            {/* Action buttons with interactive state */}
-            <StoryActionButtons
-              story={story}
-              firstChapterNumber={chapters[0]?.chapter_number || 1}
-              latestChapterNumber={chapters[chapters.length - 1]?.chapter_number || 1}
-              totalChapters={chapters.length}
-            />
+            {/* Interactive KPIs & Action buttons */}
+            <StoryInteractiveHero story={story} chapters={chapters} />
           </div>
         </section>
 

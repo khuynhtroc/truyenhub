@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { 
   Search, 
@@ -33,12 +33,12 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { SafeImage } from "@/components/common/SafeImage";
 
 const GENRE_MENU_ITEMS = [
-  { label: "Tất Cả Thể Loại", href: "/kham-pha", icon: Compass, desc: "Khám phá kho 880+ bộ truyện", color: "text-rose-500" },
-  { label: "Truyện Tranh (Manga)", href: "/kham-pha?type=comic", icon: Sparkles, desc: "Đội Quân Nhí Nhố, Doraemon, Ô Long Viện...", color: "text-amber-500" },
-  { label: "Truyện Chữ (Tiểu Thuyết)", href: "/kham-pha?type=novel", icon: BookOpen, desc: "Kiếm hiệp, tiên hiệp, huyền huyễn...", color: "text-indigo-500" },
+  { label: "Tất Cả Kho Truyện", href: "/kham-pha", icon: Compass, desc: "Khám phá 880+ tác phẩm phong phú", color: "text-rose-500" },
+  { label: "Truyện Tranh (Manga)", href: "/kham-pha?type=comic", icon: Sparkles, desc: "Đội Quân Nhí Nhố, Doraemon, Jindo...", color: "text-amber-500" },
+  { label: "Truyện Chữ (Tiểu Thuyết)", href: "/kham-pha?type=novel", icon: BookOpen, desc: "Tiên hiệp, kiếm hiệp, kỳ ảo...", color: "text-indigo-500" },
   { label: "Sách Kỹ Năng & Tư Duy", href: "/kham-pha?genre=S%C3%A1ch", icon: BrainCircuit, desc: "Đắc Nhân Tâm, 7 Thói Quen, Dám Nghĩ Lớn...", color: "text-emerald-500" },
   { label: "Tâm Lý Học Chuyên Sâu", href: "/kham-pha?genre=T%C3%A2m+L%C3%BD+H%E1%BB%8Dc", icon: GraduationCap, desc: "Tâm Lý Học Đám Đông, Thiên Tài Bên Trái...", color: "text-purple-500" },
-  { label: "Kinh Tế - Harvard HBR", href: "/kham-pha?genre=Kinh+T%E1%BA%BF+-+Qu%E1%BA%A3n+Tr%E1%BB%8B", icon: Briefcase, desc: "Bộ cẩm nang Harvard Business Review...", color: "text-blue-500" },
+  { label: "Kinh Tế - Harvard HBR", href: "/kham-pha?genre=Kinh+T%E1%BA%BF+-+Qu%E1%BA%A3n+Tr%E1%BB%8B", icon: Briefcase, desc: "Cẩm nang quản trị Harvard Business Review...", color: "text-blue-500" },
   { label: "Truyện & Sách Tiếng Anh", href: "/kham-pha?genre=Ti%E1%BA%BFng+Anh", icon: Globe2, desc: "Harry Potter, English Bestsellers...", color: "text-teal-500" },
   { label: "Trinh Thám & Kinh Dị", href: "/kham-pha?genre=Trinh+Th%C3%A1m", icon: BookMarked, desc: "Donato Carrisi, Sherlock Holmes...", color: "text-rose-600" },
   { label: "Tuổi Học Trò & Thiếu Nhi", href: "/kham-pha?genre=Tu%E1%BB%95i+H%E1%BB%8Dc+Tr%C3%B2", icon: Flame, desc: "Kính Vạn Hoa, Tứ Quái TKKG...", color: "text-orange-500" },
@@ -46,8 +46,22 @@ const GENRE_MENU_ITEMS = [
   { label: "✅ Đã Hoàn Thành (Full)", href: "/kham-pha?status=completed", icon: CheckCircle2, desc: "Trọn bộ đầy đủ 100% chương", color: "text-emerald-600" },
 ];
 
+const QUICK_SUB_BAR = [
+  { label: "Truyện Tranh", href: "/kham-pha?type=comic", icon: Sparkles, color: "text-amber-500" },
+  { label: "Truyện Chữ", href: "/kham-pha?type=novel", icon: BookOpen, color: "text-indigo-500" },
+  { label: "Sách Kỹ Năng", href: "/kham-pha?genre=S%C3%A1ch", icon: BrainCircuit, color: "text-emerald-500" },
+  { label: "Tiểu Thuyết", href: "/kham-pha?genre=Ti%E1%BB%83u+Thuy%E1%BA%BFt", icon: BookMarked, color: "text-rose-500" },
+  { label: "Tiếng Anh", href: "/kham-pha?genre=Ti%E1%BA%BFng+Anh", icon: Globe2, color: "text-teal-500" },
+  { label: "Tâm Lý Học", href: "/kham-pha?genre=T%C3%A2m+L%C3%BD+H%E1%BB%8Dc", icon: GraduationCap, color: "text-purple-500" },
+  { label: "Kinh Tế - HBR", href: "/kham-pha?genre=Kinh+T%E1%BA%BF+-+Qu%E1%BA%A3n+Tr%E1%BB%8B", icon: Briefcase, color: "text-blue-500" },
+  { label: "Trinh Thám", href: "/kham-pha?genre=Trinh+Th%C3%A1m", icon: BookMarked, color: "text-rose-600" },
+  { label: "Tuổi Học Trò", href: "/kham-pha?genre=Tu%E1%BB%95i+H%E1%BB%8Dc+Tr%C3%B2", icon: Flame, color: "text-orange-500" },
+  { label: "Đang Cập Nhật", href: "/kham-pha?status=ongoing", icon: Clock, color: "text-amber-600" },
+];
+
 export function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isDark, setIsDark] = useState(false);
   const [userCoins] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
@@ -133,10 +147,11 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-6">
-        {/* Brand Logo & Desktop Nav */}
-        <div className="flex items-center gap-4 lg:gap-6">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md shadow-sm">
+      {/* Main Top Header Bar */}
+      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-6 gap-3">
+        {/* Brand Logo & Core Nav */}
+        <div className="flex items-center gap-3 md:gap-5 shrink-0">
           {/* Mobile hamburger */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -160,41 +175,40 @@ export function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Nav links */}
-          <nav className="hidden md:flex items-center gap-3 lg:gap-5 text-xs lg:text-sm font-bold text-muted-foreground">
-            <Link href="/" className="hover:text-foreground transition-colors">
+          {/* Desktop Primary Nav links (Strictly spaced & never wrapping) */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2 text-xs lg:text-sm font-bold text-muted-foreground whitespace-nowrap">
+            <Link 
+              href="/" 
+              className={`px-2.5 py-1.5 rounded-lg hover:text-foreground hover:bg-muted/60 transition-colors ${
+                pathname === "/" ? "text-foreground font-black" : ""
+              }`}
+            >
               Trang chủ
             </Link>
-            
-            <Link href="/kham-pha?type=comic" className="hover:text-foreground transition-colors flex items-center gap-1">
+
+            <Link 
+              href="/kham-pha?type=comic" 
+              className="px-2.5 py-1.5 rounded-lg hover:text-foreground hover:bg-muted/60 transition-colors flex items-center gap-1.5"
+            >
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Truyện Tranh</span>
             </Link>
 
-            <Link href="/kham-pha?type=novel" className="hover:text-foreground transition-colors flex items-center gap-1">
+            <Link 
+              href="/kham-pha?type=novel" 
+              className="px-2.5 py-1.5 rounded-lg hover:text-foreground hover:bg-muted/60 transition-colors flex items-center gap-1.5"
+            >
               <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
               <span>Truyện Chữ</span>
             </Link>
 
-            <Link href="/kham-pha?genre=S%C3%A1ch" className="hover:text-foreground transition-colors flex items-center gap-1">
-              <BrainCircuit className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Sách Kỹ Năng</span>
-            </Link>
-
-            <Link href="/kham-pha?genre=Ti%E1%BB%83u+Thuy%E1%BA%BFt" className="hover:text-foreground transition-colors">
-              <span>Tiểu Thuyết</span>
-            </Link>
-
-            <Link href="/kham-pha?genre=Ti%E1%BA%BFng+Anh" className="hover:text-foreground transition-colors flex items-center gap-1">
-              <Globe2 className="w-3.5 h-3.5 text-teal-500" />
-              <span>Tiếng Anh</span>
-            </Link>
-
-            {/* Dropdown Thể loại */}
+            {/* Dropdown Thể loại (All Genres Popover) */}
             <div ref={genreDropdownRef} className="relative">
               <button
                 onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-                className="hover:text-foreground transition-colors flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-muted/60"
+                className={`px-2.5 py-1.5 rounded-lg hover:text-foreground hover:bg-muted/60 transition-colors flex items-center gap-1.5 ${
+                  showGenreDropdown ? "bg-muted text-foreground" : ""
+                }`}
               >
                 <Layers className="w-3.5 h-3.5 text-rose-500" />
                 <span>Thể Loại</span>
@@ -202,7 +216,7 @@ export function Navbar() {
               </button>
 
               {showGenreDropdown && (
-                <div className="absolute top-9 left-0 w-72 rounded-2xl bg-card border border-border shadow-2xl p-2 z-50 flex flex-col gap-1 max-h-[460px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="absolute top-10 left-0 w-80 rounded-2xl bg-card border border-border shadow-2xl p-2.5 z-50 flex flex-col gap-1 max-h-[460px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150">
                   <div className="px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-muted-foreground border-b pb-1.5 mb-1">
                     Phân Loại & Thể Loại
                   </div>
@@ -233,7 +247,10 @@ export function Navbar() {
               )}
             </div>
 
-            <Link href="/tu-truyen" className="hover:text-foreground transition-colors flex items-center gap-1">
+            <Link 
+              href="/tu-truyen" 
+              className="px-2.5 py-1.5 rounded-lg hover:text-foreground hover:bg-muted/60 transition-colors flex items-center gap-1.5"
+            >
               <Bookmark className="w-3.5 h-3.5 text-rose-500" />
               <span>Tủ Truyện</span>
             </Link>
@@ -241,9 +258,9 @@ export function Navbar() {
         </div>
 
         {/* Search bar with Live Dropdown & User tools */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Live Search */}
-          <div ref={searchRef} className="relative hidden sm:block w-44 md:w-60 lg:w-72">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Live Search Input */}
+          <div ref={searchRef} className="relative hidden sm:block w-36 md:w-48 lg:w-64">
             <form onSubmit={handleSearchSubmit}>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
@@ -251,7 +268,7 @@ export function Navbar() {
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
                 onFocus={() => searchQuery.trim() && setShowSearchDropdown(true)}
-                placeholder="Tìm truyện tranh, sách, tiểu thuyết..."
+                placeholder="Tìm truyện, sách, tác giả..."
                 className="w-full h-9 pl-9 pr-8 rounded-full bg-muted/60 hover:bg-muted text-xs sm:text-sm border border-border/50 focus:outline-none focus:ring-2 focus:ring-rose-500/50 transition-all"
               />
               {searchQuery && (
@@ -270,11 +287,11 @@ export function Navbar() {
 
             {/* Live Search Dropdown */}
             {showSearchDropdown && (
-              <div className="absolute top-11 left-0 right-0 rounded-2xl bg-card border border-border shadow-2xl p-2 z-50 flex flex-col gap-1 max-h-96 overflow-y-auto animate-in fade-in duration-150">
+              <div className="absolute top-11 right-0 w-80 rounded-2xl bg-card border border-border shadow-2xl p-2 z-50 flex flex-col gap-1 max-h-96 overflow-y-auto animate-in fade-in duration-150">
                 {isSearching ? (
                   <div className="p-4 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
                     <Clock className="w-3.5 h-3.5 animate-spin text-rose-500" />
-                    <span>Đang tìm kiếm trong kho 880+ bộ truyện...</span>
+                    <span>Đang tìm kiếm...</span>
                   </div>
                 ) : searchResults.length > 0 ? (
                   <>
@@ -328,7 +345,7 @@ export function Navbar() {
           {/* Nạp Xu Widget */}
           <Link
             href="/nap-xu"
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all shadow-sm shrink-0"
           >
             <Coins className="w-3.5 h-3.5 text-amber-500 animate-bounce" />
             <span>{userCoins} Xu</span>
@@ -340,7 +357,7 @@ export function Navbar() {
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
             title="Đổi giao diện Sáng / Tối"
             aria-label="Đổi giao diện Sáng / Tối"
           >
@@ -351,7 +368,7 @@ export function Navbar() {
           {isLoggedIn ? (
             <Link
               href="/tai-khoan"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold border-2 border-background shadow-sm hover:ring-2 hover:ring-indigo-500/40 transition-all"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold border-2 border-background shadow-sm hover:ring-2 hover:ring-indigo-500/40 transition-all shrink-0"
               title="Tài khoản cá nhân"
             >
               <User className="w-4 h-4" />
@@ -359,12 +376,31 @@ export function Navbar() {
           ) : (
             <button
               onClick={() => setIsAuthModalOpen(true)}
-              className="py-1.5 px-3 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+              className="py-1.5 px-3 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Đăng Nhập</span>
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Horizontal Sub-Navbar Category Strip (Immune to collisions & 100% accessible on all screens!) */}
+      <div className="border-t border-border/40 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-1.5 flex items-center gap-1.5 overflow-x-auto scrollbar-none text-xs font-bold text-muted-foreground">
+          {QUICK_SUB_BAR.map((sub) => {
+            const Icon = sub.icon;
+            return (
+              <Link
+                key={sub.label}
+                href={sub.href}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg hover:bg-background hover:text-foreground whitespace-nowrap transition-all shrink-0 border border-transparent hover:border-border/60 hover:shadow-xs"
+              >
+                <Icon className={`w-3.5 h-3.5 ${sub.color}`} />
+                <span>{sub.label}</span>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
@@ -377,7 +413,7 @@ export function Navbar() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               placeholder="Tìm kiếm truyện, tác giả..."
               className="w-full h-10 pl-9 pr-4 rounded-xl bg-card border border-border/70 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/50"
             />
