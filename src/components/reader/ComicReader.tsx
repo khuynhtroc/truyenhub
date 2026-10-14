@@ -20,6 +20,7 @@ import {
   Lock
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
+import { normalizeMediaUrl, SITE_CONFIG } from "@/lib/utils";
 
 interface ComicReaderProps {
   story: Story;
@@ -282,17 +283,25 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
       <main ref={containerRef} className={`w-full ${imageWidth} mx-auto flex flex-col items-center my-4`}>
         {isUnlocked ? (
           <div className="w-full flex flex-col items-center">
-            {pages.map((imgUrl, idx) => (
-              <div key={idx} className="relative w-full overflow-hidden bg-neutral-900 border-b border-neutral-900/40">
-                <img
-                  src={imgUrl}
-                  alt={`Trang ${idx + 1}`}
-                  className="w-full h-auto object-cover block select-none"
-                  loading={idx === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                />
-              </div>
-            ))}
+            {pages.map((rawUrl, idx) => {
+              const imgUrl = normalizeMediaUrl(rawUrl);
+              return (
+                <div key={idx} className="relative w-full overflow-hidden bg-neutral-900 border-b border-neutral-900/40">
+                  <img
+                    src={imgUrl}
+                    alt={`Trang ${idx + 1}`}
+                    className="w-full h-auto object-cover block select-none"
+                    loading={idx === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    onError={(e) => {
+                      if (imgUrl.includes("media.doctruyen.vip") || e.currentTarget.src.includes("media.doctruyen.vip")) {
+                        e.currentTarget.src = imgUrl.replace("https://media.doctruyen.vip", SITE_CONFIG.fallbackR2Url);
+                      }
+                    }}
+                  />
+                </div>
+              );
+            })}
           </div>
         ) : (
           /* Locked State Preview */

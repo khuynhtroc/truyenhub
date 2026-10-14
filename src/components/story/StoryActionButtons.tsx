@@ -106,8 +106,8 @@ export function StoryActionButtons({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${story.title} - TruyenHub`,
-          text: `Đọc truyện ${story.title} chất lượng cao trên TruyenHub!`,
+          title: `${story.title} - DocTruyen.vip`,
+          text: `Đọc truyện ${story.title} chất lượng cao trên DocTruyen.vip!`,
           url: url,
         });
         return;

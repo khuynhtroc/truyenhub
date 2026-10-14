@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { Footer } from "@/components/layout/Footer";
 import Link from "next/link";
 import { Coins, Crown, Shield, History, Sparkles, ChevronRight, User } from "lucide-react";
 
@@ -22,7 +23,7 @@ export default function ProfilePage() {
                   <Crown className="w-3 h-3" /> VIP 3
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">user888@truyenhub.vn</p>
+              <p className="text-xs text-muted-foreground mt-0.5">user888@doctruyen.vip</p>
             </div>
           </div>
         </div>
@@ -77,6 +78,7 @@ export default function ProfilePage() {
         </div>
       </main>
 
+      <Footer />
       <BottomNav />
     </div>
   );

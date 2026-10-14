@@ -117,7 +117,7 @@ export function CommentSection({ storyId, storyTitle, chapterNumber }: CommentSe
           </p>
         </div>
 
-        {/* Tab switchers: TruyenHub vs Facebook */}
+        {/* Tab switchers: DocTruyen.vip vs Facebook */}
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/60 border border-border/50 w-fit">
           <button
             type="button"
@@ -147,7 +147,7 @@ export function CommentSection({ storyId, storyTitle, chapterNumber }: CommentSe
         </div>
       </div>
 
-      {/* Tab 1: Internal TruyenHub Comments */}
+      {/* Tab 1: Internal DocTruyen.vip Comments */}
       {activeTab === "internal" && (
         <div className="flex flex-col gap-6">
           {/* Post Form */}

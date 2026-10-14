@@ -1,0 +1,153 @@
+import { NextResponse } from "next/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+
+export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const q = (searchParams.get("q") || "").trim();
+    const type = searchParams.get("type");
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const supabase = createAdminSupabaseClient();
+    let query = supabase
+      .from("stories")
+      .select("*", { count: "exact" })
+      .order("updated_at", { ascending: false });
+
+    if (q) {
+      query = query.or(`title.ilike.%${q}%,author_name.ilike.%${q}%,slug.ilike.%${q}%`);
+    }
+
+    if (type && (type === "comic" || type === "novel")) {
+      query = query.eq("type", type);
+    }
+
+    const { data: stories, count, error } = await query.range(from, to);
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      success: true,
+      stories: stories || [],
+      total: count || 0,
+      page,
+      limit,
+      totalPages: Math.ceil((count || 0) / limit),
+    });
+  } catch (error: any) {
+    console.error("Admin stories GET error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { title, slug, type, description, cover_url, author_name, status, genres } = body;
+
+    if (!title || !slug || !type) {
+      return NextResponse.json(
+        { success: false, error: "Tiêu đề, slug và loại truyện là bắt buộc" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createAdminSupabaseClient();
+    const { data, error } = await supabase
+      .from("stories")
+      .insert({
+        title,
+        slug: slug.trim().toLowerCase(),
+        type,
+        description: description || "",
+        cover_url: cover_url || "https://media.doctruyen.vip/covers/doraemon-cover.webp",
+        author_name: author_name || "Đang cập nhật",
+        status: status || "ongoing",
+        genres: Array.isArray(genres) ? genres : typeof genres === "string" ? genres.split(",").map((g: string) => g.trim()).filter(Boolean) : [],
+        total_chapters: 0,
+        total_views: 0,
+        total_likes: 0,
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, story: data });
+  } catch (error: any) {
+    console.error("Admin stories POST error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, title, slug, type, description, cover_url, author_name, status, genres } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "ID truyện là bắt buộc" }, { status: 400 });
+    }
+
+    const supabase = createAdminSupabaseClient();
+    const updatePayload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (title !== undefined) updatePayload.title = title;
+    if (slug !== undefined) updatePayload.slug = slug.trim().toLowerCase();
+    if (type !== undefined) updatePayload.type = type;
+    if (description !== undefined) updatePayload.description = description;
+    if (cover_url !== undefined) updatePayload.cover_url = cover_url;
+    if (author_name !== undefined) updatePayload.author_name = author_name;
+    if (status !== undefined) updatePayload.status = status;
+    if (genres !== undefined) {
+      updatePayload.genres = Array.isArray(genres)
+        ? genres
+        : typeof genres === "string"
+        ? genres.split(",").map((g: string) => g.trim()).filter(Boolean)
+        : [];
+    }
+
+    const { data, error } = await supabase
+      .from("stories")
+      .update(updatePayload)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, story: data });
+  } catch (error: any) {
+    console.error("Admin stories PUT error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "ID truyện là bắt buộc" }, { status: 400 });
+    }
+
+    const supabase = createAdminSupabaseClient();
+    const { error } = await supabase.from("stories").delete().eq("id", id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, message: "Đã xóa truyện thành công" });
+  } catch (error: any) {
+    console.error("Admin stories DELETE error:", error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

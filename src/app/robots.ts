@@ -5,8 +5,11 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        disallow: "/",
+        allow: "/",
+        disallow: ["/api/", "/tai-khoan/", "/auth/"],
       },
     ],
+    sitemap: "https://doctruyen.vip/sitemap.xml",
+    host: "https://doctruyen.vip",
   };
 }

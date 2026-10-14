@@ -128,8 +128,8 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${story.title} - TruyenHub`,
-          text: `Đọc truyện ${story.title} chuẩn HD trên TruyenHub!`,
+          title: `${story.title} - DocTruyen.vip`,
+          text: `Đọc truyện ${story.title} chuẩn HD trên DocTruyen.vip!`,
           url: url,
         });
         return;

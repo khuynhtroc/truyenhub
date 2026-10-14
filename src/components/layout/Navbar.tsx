@@ -221,12 +221,12 @@ export function Navbar() {
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20 group-hover:scale-105 transition-transform">
               <BookOpen className="w-5 h-5" />
             </div>
-            <div>
+            <div className="flex items-center">
               <span className="font-extrabold text-lg sm:text-xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
-                TruyenHub
+                DocTruyen
               </span>
-              <span className="hidden sm:inline-block ml-1.5 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                PRO
+              <span className="ml-1 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-sm">
+                VIP
               </span>
             </div>
           </Link>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { Footer } from "@/components/layout/Footer";
 import { SafeImage } from "@/components/common/SafeImage";
 import { 
   Bookmark, 
@@ -192,6 +193,7 @@ export default function BookshelfPage() {
         )}
       </main>
 
+      <Footer />
       <BottomNav />
     </div>
   );

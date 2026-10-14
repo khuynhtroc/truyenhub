@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { Footer } from "@/components/layout/Footer";
 import { StoryCard } from "@/components/story/StoryCard";
 import { SafeImage } from "@/components/common/SafeImage";
 import { MOCK_STORIES } from "@/lib/mock-data";
@@ -225,6 +226,7 @@ export default async function HomePage({
         </section>
       </main>
 
+      <Footer />
       <BottomNav />
     </div>
   );

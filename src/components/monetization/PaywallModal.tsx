@@ -159,7 +159,7 @@ export function PaywallModal({
           {/* Dynamic Mock VietQR Image */}
           <div className="p-3 bg-white rounded-2xl shadow-md border border-border/50 mb-4">
             <img
-              src="https://api.vietqr.io/image/970422-0388888888-compact2.jpg?amount=20000&addInfo=NAPXU%20888&accountName=TRUYENHUB"
+              src="https://api.vietqr.io/image/970422-0388888888-compact2.jpg?amount=20000&addInfo=NAPXU%20888&accountName=DOCTRUYENVIP"
               alt="Mã VietQR"
               className="w-56 h-auto rounded-lg"
             />

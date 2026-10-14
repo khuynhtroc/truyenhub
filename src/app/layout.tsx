@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,53 +21,74 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://doctruyen.vip"),
   title: {
-    default: "TruyenHub - Nền Tảng Đọc Truyện Tranh & Truyện Chữ Online",
-    template: "%s | TruyenHub",
+    default: "DocTruyen.vip - Đọc Truyện Tranh & Truyện Chữ Online Miễn Phí",
+    template: "%s | DocTruyen.vip",
   },
   description:
-    "Đọc truyện tranh webtoon full HD và tiểu thuyết truyện chữ phong phú, cập nhật chương mới liên tục mỗi ngày tại TruyenHub. Tốc độ cao, không giật lag.",
+    "Kho truyện tranh Webtoon, Manga full HD và tiểu thuyết truyện chữ phong phú hàng đầu Việt Nam. Cập nhật chương mới mỗi ngày tại DocTruyen.vip. Đọc mượt mà, hỗ trợ AI đọc truyện tự nhiên.",
   keywords: [
     "đọc truyện",
+    "đọc truyện online",
+    "doctruyen.vip",
     "truyện tranh",
     "truyện chữ",
     "manga",
     "webtoon",
+    "manhwa",
     "tiên hiệp",
-    "trinh thám",
-    "truyen online",
+    "kiếm hiệp",
+    "ngôn tình",
+    "thám tử lừng danh conan",
+    "one piece",
+    "doraemon",
+    "thần đồng đất việt",
+    "audio truyện",
   ],
-  authors: [{ name: "TruyenHub Team" }],
+  authors: [{ name: "DocTruyen.vip Team", url: "https://doctruyen.vip" }],
+  creator: "DocTruyen.vip",
+  publisher: "DocTruyen.vip",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  alternates: {
+    canonical: "https://doctruyen.vip",
+  },
   openGraph: {
     type: "website",
     locale: "vi_VN",
-    url: "https://truyenhub.vn",
-    siteName: "TruyenHub",
-    title: "TruyenHub - Nền Tảng Đọc Truyện Tranh & Truyện Chữ Online",
+    url: "https://doctruyen.vip",
+    siteName: "DocTruyen.vip",
+    title: "DocTruyen.vip - Đọc Truyện Tranh & Truyện Chữ Online Miễn Phí",
     description:
-      "Đọc truyện tranh và tiểu thuyết truyện chữ chất lượng cao, cập nhật chương mới liên tục tại TruyenHub.",
+      "Kho truyện tranh Manga/Webtoon full HD và tiểu thuyết phong phú. Nghe truyện với giọng đọc AI thông minh trên DocTruyen.vip.",
     images: [
       {
-        url: "https://pub-996745da873f42adb3c8b53c9ed97e85.r2.dev/covers/dragon-ball-cover.webp",
+        url: "https://media.doctruyen.vip/covers/doraemon-cover.webp",
         width: 1200,
         height: 630,
-        alt: "TruyenHub Cover",
+        alt: "DocTruyen.vip Cover",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "TruyenHub - Nền Tảng Đọc Truyện Tranh & Truyện Chữ Online",
-    description: "Đọc truyện tranh và truyện chữ trực tuyến tốc độ cao.",
+    title: "DocTruyen.vip - Đọc Truyện Tranh & Truyện Chữ Online Miễn Phí",
+    description:
+      "Kho truyện tranh và tiểu thuyết truyện chữ phong phú, đọc mượt mà tại DocTruyen.vip.",
   },
   robots: {
-    index: false,
-    follow: false,
-    nocache: true,
+    index: true,
+    follow: true,
     googleBot: {
-      index: false,
-      follow: false,
-      noimageindex: true,
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
 };
@@ -92,9 +115,83 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* JSON-LD Schema.org Structured Data for Google rich results */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "WebSite",
+                  "@id": "https://doctruyen.vip/#website",
+                  "url": "https://doctruyen.vip",
+                  "name": "DocTruyen.vip",
+                  "description":
+                    "Nền tảng đọc truyện tranh Webtoon, Manga full HD và tiểu thuyết truyện chữ phong phú",
+                  "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": "https://doctruyen.vip/kham-pha?q={search_term_string}",
+                    "query-input": "required name=search_term_string",
+                  },
+                  "inLanguage": "vi-VN",
+                },
+                {
+                  "@type": "Organization",
+                  "@id": "https://doctruyen.vip/#organization",
+                  "name": "DocTruyen.vip",
+                  "url": "https://doctruyen.vip",
+                },
+              ],
+            }),
+          }}
+        />
+        {/* Google Tag Manager (GTM-N7TTTGPL) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-N7TTTGPL');`,
+          }}
+        />
+
+        {/* Google Analytics 4 (G-0CBF77MVXY) */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-0CBF77MVXY"
+        />
+        <script
+          id="google-analytics"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-0CBF77MVXY', {
+                page_path: window.location.pathname,
+              });
+            `,
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground transition-colors duration-150">
+        {/* Google Tag Manager (noscript) */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-N7TTTGPL"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
+
         {children}
+
+        {/* Vercel Web Analytics & Speed Insights */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

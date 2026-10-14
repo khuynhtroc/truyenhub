@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { MOCK_STORIES, MOCK_CHAPTERS } from "@/lib/mock-data";
 import { ComicReader } from "@/components/reader/ComicReader";
 import { NovelReader } from "@/components/reader/NovelReader";
@@ -6,6 +7,58 @@ import { Story, Chapter } from "@/types";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; chapterNumber: string }>;
+}): Promise<Metadata> {
+  const { slug, chapterNumber } = await params;
+  const num = parseFloat(chapterNumber);
+  let storyTitle = "Đọc Truyện";
+  let chapTitle = `Chương ${num}`;
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: story } = await supabase
+      .from("stories")
+      .select("id, title")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (story) {
+      storyTitle = story.title;
+      const { data: chap } = await supabase
+        .from("chapters")
+        .select("title")
+        .eq("story_id", story.id)
+        .eq("chapter_number", num)
+        .maybeSingle();
+      if (chap && chap.title) chapTitle = chap.title;
+    }
+  } catch (_) {}
+
+  const title = `${chapTitle} - ${storyTitle} | DocTruyen.vip`;
+  const description = `Đọc ${chapTitle} bộ truyện ${storyTitle} online chất lượng cao, hình ảnh sắc nét, tốc độ tải siêu tốc tại DocTruyen.vip.`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: `https://doctruyen.vip/truyen/${slug}/${chapterNumber}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `https://doctruyen.vip/truyen/${slug}/${chapterNumber}`,
+      siteName: "DocTruyen.vip",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  };
+}
 
 export default async function ChapterPage({
   params,

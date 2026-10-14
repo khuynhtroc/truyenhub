@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { Footer } from "@/components/layout/Footer";
 import { formatVND } from "@/lib/utils";
 import { Coins, QrCode, Sparkles, CheckCircle2, Copy, ShieldCheck, Zap } from "lucide-react";
 
@@ -29,7 +30,7 @@ export default function NapXuPage() {
 
   const qrUrl = `https://api.vietqr.io/image/970422-0388888888-compact2.jpg?amount=${selectedPkg.amount}&addInfo=${encodeURIComponent(
     transferCode
-  )}&accountName=TRUYENHUB`;
+  )}&accountName=DOCTRUYENVIP`;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12">
@@ -148,6 +149,7 @@ export default function NapXuPage() {
         </div>
       </main>
 
+      <Footer />
       <BottomNav />
     </div>
   );

@@ -1,7 +1,9 @@
+import { Metadata } from "next";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { Footer } from "@/components/layout/Footer";
 import { MOCK_STORIES, MOCK_CHAPTERS } from "@/lib/mock-data";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, normalizeMediaUrl } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -29,6 +31,83 @@ import { Story, Chapter, StoryVersion } from "@/types";
 import { getSeriesGroupForSlug } from "@/lib/series-versions";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  let story: Story | null = null;
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data } = await supabase
+      .from("stories")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (data) story = data as unknown as Story;
+  } catch (_) {}
+
+  if (!story) {
+    story = MOCK_STORIES.find((s) => s.slug === slug) || null;
+  }
+
+  if (!story) {
+    return {
+      title: "Truyện Không Tồn Tại | DocTruyen.vip",
+    };
+  }
+
+  const typeLabel = story.type === "comic" ? "Truyện Tranh" : "Truyện Chữ";
+  const title = `Đọc truyện ${story.title} Full HD | DocTruyen.vip`;
+  const description = story.description
+    ? story.description.slice(0, 160)
+    : `Đọc ${typeLabel.toLowerCase()} ${story.title} online miễn phí chất lượng cao tại DocTruyen.vip. Tác giả: ${story.author_name || "Đang cập nhật"}.`;
+
+  const coverUrl = story.cover_url
+    ? normalizeMediaUrl(story.cover_url)
+    : "https://media.doctruyen.vip/covers/doraemon-cover.webp";
+
+  return {
+    title,
+    description,
+    keywords: [
+      story.title,
+      `đọc truyện ${story.title}`,
+      `${story.title} full`,
+      `${story.title} doctruyen`,
+      story.author_name || "",
+      typeLabel,
+      ...(story.genres || []),
+    ].filter(Boolean),
+    alternates: {
+      canonical: `https://doctruyen.vip/truyen/${slug}`,
+    },
+    openGraph: {
+      type: "article",
+      locale: "vi_VN",
+      url: `https://doctruyen.vip/truyen/${slug}`,
+      siteName: "DocTruyen.vip",
+      title,
+      description,
+      images: [
+        {
+          url: coverUrl,
+          width: 800,
+          height: 1200,
+          alt: story.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [coverUrl],
+    },
+  };
+}
 
 export default async function StoryDetailPage({
   params,

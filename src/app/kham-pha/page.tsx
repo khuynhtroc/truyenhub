@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { Footer } from "@/components/layout/Footer";
 import { StoryCard } from "@/components/story/StoryCard";
 import { MOCK_STORIES } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/client";
@@ -504,6 +505,7 @@ export default function ExplorePage() {
       >
         <ExploreContent />
       </Suspense>
+      <Footer />
       <BottomNav />
     </div>
   );

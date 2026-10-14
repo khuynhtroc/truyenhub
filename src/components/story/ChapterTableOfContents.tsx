@@ -273,7 +273,7 @@ export function ChapterTableOfContents({
           Hiển thị {displayedChapters.length} / {chapters.length} chương
         </span>
         <span>
-          Cập nhật định kỳ từ TruyenHub
+          Cập nhật định kỳ từ DocTruyen.vip
         </span>
       </div>
     </section>
