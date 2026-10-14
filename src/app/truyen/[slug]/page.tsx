@@ -15,7 +15,10 @@ import {
   Unlock, 
   ChevronRight, 
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  RefreshCw,
+  Clock,
+  CheckCircle2
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { ChapterTableOfContents } from "@/components/story/ChapterTableOfContents";
@@ -134,11 +137,21 @@ export default async function StoryDetailPage({
               <h1 className="text-2xl sm:text-3xl font-black text-foreground mb-2 leading-tight">
                 {story.title}
               </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground mb-3">
-                Tác giả: <b className="text-foreground">{story.author_name}</b> · Tình trạng:{" "}
-                <span className="text-emerald-500 font-bold">
-                  {story.status === "completed" ? "Đã hoàn thành" : "Đang phát hành"}
-                </span>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                <span>Tác giả: <b className="text-foreground">{story.author_name}</b></span>
+                <span>·</span>
+                <span>Tình trạng:</span>
+                {story.status === "ongoing" || story.genres?.includes("Đang Cập Nhật") ? (
+                  <span className="inline-flex items-center gap-1.5 text-amber-500 font-bold bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full text-xs">
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    Đang xử lý / Cập nhật
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-emerald-500 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-xs">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Đã hoàn thành (Full)
+                  </span>
+                )}
               </p>
 
               {/* Genre badges */}
@@ -198,6 +211,20 @@ export default async function StoryDetailPage({
             {story.description}
           </p>
         </section>
+
+        {/* Notice for Ongoing / In-progress processing stories */}
+        {(story.status === "ongoing" || story.genres?.includes("Đang Cập Nhật")) && (
+          <div className="rounded-2xl bg-amber-500/10 border border-amber-500/25 p-4 sm:p-5 flex items-start sm:items-center gap-3.5 shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+              <Clock className="w-5 h-5 animate-pulse" />
+            </div>
+            <div className="text-xs sm:text-sm text-foreground leading-relaxed">
+              <span className="font-extrabold text-amber-600 dark:text-amber-400">⚡ Tiến độ xử lý & cập nhật:</span>{" "}
+              Tác phẩm này đang trong quá trình bóc tách và đồng bộ các tập/chương mới lên hệ thống. Hiện tại đã có{" "}
+              <b className="text-rose-500 font-black">{chapters.length} chương</b> đã sẵn sàng để đọc ngay! Các chương tiếp theo đang được cập nhật tự động.
+            </div>
+          </div>
+        )}
 
         {/* Interactive Chapter Table of Contents */}
         <ChapterTableOfContents

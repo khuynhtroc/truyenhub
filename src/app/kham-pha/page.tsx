@@ -163,8 +163,8 @@ export default function ExplorePage() {
             <span className="text-xs font-bold text-muted-foreground w-20 shrink-0">Tình trạng:</span>
             {[
               { id: "all", label: "Tất cả" },
-              { id: "ongoing", label: "Đang tiến hành" },
-              { id: "completed", label: "Đã hoàn thành" },
+              { id: "ongoing", label: "⚡ Đang xử lý / Cập nhật" },
+              { id: "completed", label: "✅ Hoàn thành (Full)" },
             ].map((s) => (
               <button
                 key={s.id}
