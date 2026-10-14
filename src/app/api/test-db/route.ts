@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient, SUPABASE_URL } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -7,13 +7,11 @@ export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase.from("stories").select("id, title, slug, type").limit(5);
-    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "fallback";
     return NextResponse.json({
       success: !error,
       error: error ? error.message : null,
-      data,
-      projectUrl: rawUrl,
-      isFallback: rawUrl === "fallback",
+      projectUrl: SUPABASE_URL,
+      sampleStories: data,
     });
   } catch (err: unknown) {
     return NextResponse.json({
