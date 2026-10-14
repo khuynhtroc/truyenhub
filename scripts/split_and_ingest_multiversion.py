@@ -173,7 +173,7 @@ def ingest_sub_series(s3, title, slug, folder_path, author="Fujiko F. Fujio", ge
                 "title": f"Tập {chap_num} - {os.path.splitext(fname)[0]}",
                 "is_locked": chap_num > 3,
                 "price_coins": 10 if chap_num > 3 else 0,
-                "pages_images": json.dumps(page_urls)
+                "pages_images": page_urls
             }
             supabase_upsert("chapters", [ch_data], on_conflict="story_id,chapter_number")
             print(f"    ✓ Xong Tập {chap_num}: {len(page_urls)} trang lên R2!", flush=True)
@@ -181,15 +181,21 @@ def ingest_sub_series(s3, title, slug, folder_path, author="Fujiko F. Fujio", ge
             print(f"    ✗ Lỗi: {e}")
             
     # Cập nhật số tập thực tế đã nạp
-    supabase_upsert("stories", [{
-        "id": story_id,
-        "slug": slug,
-        "title": title,
-        "type": "comic",
-        "author_name": author,
+    update_data = {
         "total_chapters": len(to_process),
         "status": "ongoing" if len(to_process) < len(files) else "completed"
-    }], on_conflict="slug")
+    }
+    url_up = f"{SUPABASE_URL}/rest/v1/stories?id=eq.{story_id}"
+    req_up = urllib.request.Request(url_up, data=json.dumps(update_data).encode("utf-8"), headers={
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json"
+    }, method="PATCH")
+    try:
+        with urllib.request.urlopen(req_up) as resp:
+            pass
+    except Exception as e:
+        print(f"Update story error: {e}")
     print(f"  🎉 Hoàn tất tách phiên bản: {title} ({len(to_process)}/{len(files)} tập)!")
 
 def ingest_tkkg_series():
