@@ -15,6 +15,11 @@ import {
   Sun,
   Moon,
   Coffee,
+  List,
+  BookOpen,
+  Search,
+  X,
+  Lock,
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 
@@ -38,6 +43,8 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
 
   // Web Speech API Text-to-Speech
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showToc, setShowToc] = useState(false);
+  const [tocSearch, setTocSearch] = useState("");
 
   const currentIndex = allChapters.findIndex((c) => c.id === chapter.id);
   const prevChapter = currentIndex > 0 ? allChapters[currentIndex - 1] : null;
@@ -147,6 +154,18 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
             <p className="text-xs opacity-75">{chapter.title}</p>
           </div>
           <div className="flex items-center gap-2">
+            {/* TOC Drawer Toggle */}
+            <button
+              onClick={() => setShowToc(!showToc)}
+              className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${
+                showToc ? "bg-rose-500 text-white" : "hover:bg-black/10 dark:hover:bg-white/10"
+              }`}
+              title="Mục lục các chương"
+            >
+              <List className="w-4 h-4" />
+              <span className="hidden sm:inline">Mục lục</span>
+            </button>
+
             <button
               onClick={toggleSpeech}
               className={`p-2 rounded-lg transition-colors ${
@@ -165,6 +184,81 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
             </button>
           </div>
         </div>
+
+        {/* Slide-out Table of Contents Drawer for Novel */}
+        {showToc && (
+          <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+            <div className="w-full max-w-sm h-full bg-neutral-900 border-l border-neutral-800 text-neutral-100 flex flex-col p-5 shadow-2xl animate-in slide-in-from-right duration-200">
+              <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-rose-500" />
+                    Mục lục ({allChapters.length} chương)
+                  </h3>
+                  <p className="text-xs text-neutral-400 truncate max-w-[200px]">{story.title}</p>
+                </div>
+                <button
+                  onClick={() => setShowToc(false)}
+                  className="p-1.5 rounded-lg hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="my-3 relative">
+                <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={tocSearch}
+                  onChange={(e) => setTocSearch(e.target.value)}
+                  placeholder="Tìm số chương / tên..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-neutral-950 border border-neutral-800 text-xs text-white focus:outline-none focus:border-rose-500 transition-colors"
+                />
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+                {allChapters
+                  .filter(
+                    (c) =>
+                      !tocSearch.trim() ||
+                      c.chapter_number.toString().includes(tocSearch.trim()) ||
+                      c.title.toLowerCase().includes(tocSearch.toLowerCase().trim())
+                  )
+                  .map((c) => {
+                    const isCurrent = c.chapter_number === chapter.chapter_number;
+                    return (
+                      <Link
+                        key={c.id || c.chapter_number}
+                        href={`/truyen/${story.slug}/${c.chapter_number}`}
+                        onClick={() => setShowToc(false)}
+                        className={`flex items-center justify-between p-2.5 rounded-xl text-xs transition-all ${
+                          isCurrent
+                            ? "bg-rose-500/20 text-rose-400 border border-rose-500/40 font-bold"
+                            : "hover:bg-neutral-800 text-neutral-300 border border-transparent"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate pr-2">
+                          <span className={`text-xs ${isCurrent ? "text-rose-400 font-black" : "text-neutral-500 font-semibold"}`}>
+                            C.{c.chapter_number}
+                          </span>
+                          <span className="truncate">{c.title}</span>
+                        </div>
+                        {c.is_locked ? (
+                          <span className="shrink-0 text-[10px] text-amber-500 flex items-center gap-0.5 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                            <Lock className="w-3 h-3" /> {c.price_coins}
+                          </span>
+                        ) : (
+                          <span className="shrink-0 text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                            Free
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Reader Settings Panel */}
         {showSettings && (

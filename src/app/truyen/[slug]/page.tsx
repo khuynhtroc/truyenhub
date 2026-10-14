@@ -18,6 +18,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
+import { ChapterTableOfContents } from "@/components/story/ChapterTableOfContents";
 import { SafeImage } from "@/components/common/SafeImage";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Story, Chapter } from "@/types";
@@ -198,46 +199,12 @@ export default async function StoryDetailPage({
           </p>
         </section>
 
-        {/* Chapter List */}
-        <section className="rounded-2xl bg-card border border-border/50 p-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between pb-2 border-b">
-            <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-rose-500" />
-              Danh sách chương ({chapters.length})
-            </h2>
-            <span className="text-xs text-muted-foreground font-semibold">Cập nhật mới nhất</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {chapters.map((ch) => (
-              <Link
-                key={ch.id}
-                href={`/truyen/${story.slug}/${ch.chapter_number}`}
-                className="flex items-center justify-between p-3.5 rounded-xl border border-border/60 hover:border-rose-500/40 hover:bg-muted/40 transition-all group"
-              >
-                <div className="flex items-center gap-2.5 truncate">
-                  <span className="text-xs font-bold text-muted-foreground group-hover:text-rose-500 transition-colors">
-                    C.{ch.chapter_number}
-                  </span>
-                  <span className="text-xs sm:text-sm font-semibold truncate text-foreground">
-                    {ch.title}
-                  </span>
-                </div>
-
-                {ch.is_locked ? (
-                  <span className="shrink-0 flex items-center gap-1 text-[11px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
-                    <Lock className="w-3 h-3" />
-                    {ch.price_coins} Xu
-                  </span>
-                ) : (
-                  <span className="shrink-0 text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                    Free
-                  </span>
-                )}
-              </Link>
-            ))}
-          </div>
-        </section>
+        {/* Interactive Chapter Table of Contents */}
+        <ChapterTableOfContents
+          storySlug={story.slug}
+          storyTitle={story.title}
+          chapters={chapters}
+        />
 
         {/* Comment & Discussion Section (Dual TruyenHub & Facebook) */}
         <CommentSection storyId={story.id} storyTitle={story.title} />
