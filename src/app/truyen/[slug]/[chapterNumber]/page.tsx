@@ -29,15 +29,39 @@ export default async function ChapterPage({
 
     if (dbStory) {
       story = dbStory as unknown as Story;
+
+      // Lấy danh sách chương nhẹ để điều hướng (không tải text/ảnh nặng của toàn bộ chương)
       const { data: dbChapters } = await supabase
         .from("chapters")
-        .select("*")
+        .select("id, story_id, chapter_number, title, is_locked, price_coins, created_at")
         .eq("story_id", story.id)
         .order("chapter_number", { ascending: true });
 
       if (dbChapters) {
-        chapters = dbChapters as unknown as Chapter[];
-        chapter = chapters.find((c) => Number(c.chapter_number) === num) || null;
+        chapters = dbChapters as Chapter[];
+      }
+
+      // Lấy chi tiết chương hiện tại với nội dung đầy đủ (ảnh hoặc text)
+      const { data: dbChapter } = await supabase
+        .from("chapters")
+        .select("*")
+        .eq("story_id", story.id)
+        .eq("chapter_number", num)
+        .maybeSingle();
+
+      if (dbChapter) {
+        let pages = dbChapter.pages_images;
+        if (typeof pages === "string") {
+          try {
+            pages = JSON.parse(pages);
+          } catch {
+            pages = [];
+          }
+        }
+        chapter = {
+          ...dbChapter,
+          pages_images: Array.isArray(pages) ? pages : [],
+        } as Chapter;
       }
     }
   } catch (error) {

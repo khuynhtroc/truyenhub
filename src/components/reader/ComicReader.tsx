@@ -102,7 +102,19 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
     setUserCoins((prev) => Math.max(0, prev - chapter.price_coins));
   };
 
-  const pages = chapter.pages_images || [];
+  const rawPages = chapter.pages_images;
+  const pages: string[] = Array.isArray(rawPages)
+    ? rawPages
+    : typeof rawPages === "string"
+    ? (() => {
+        try {
+          const parsed = JSON.parse(rawPages);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      })()
+    : [];
 
   return (
     <div className="relative min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center select-none">

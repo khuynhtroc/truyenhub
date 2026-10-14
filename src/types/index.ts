@@ -25,7 +25,7 @@ export interface Chapter {
   is_locked: boolean;
   price_coins: number;
   content_text?: string | null; // For novel
-  pages_images?: string[] | null; // For comic
+  pages_images?: string[] | string | null; // For comic
   created_at: string;
 }
 
