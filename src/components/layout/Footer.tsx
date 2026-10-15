@@ -101,23 +101,38 @@ export function Footer() {
           {/* Col 4: Legal & DMCA */}
           <div className="flex flex-col gap-3">
             <h4 className="text-xs font-black uppercase tracking-wider text-foreground">
-              Bản Quyền & Liên Hệ
+              Chính Sách & Bản Quyền
             </h4>
-            <p className="text-[11px] leading-relaxed text-muted-foreground/80">
-              Mọi tài nguyên trên website đều được tổng hợp tự động từ internet. Chúng tôi cam kết bảo vệ quyền sở hữu trí tuệ của tác giả và nhà xuất bản.
-            </p>
-            <div className="flex flex-col gap-1.5 text-xs font-medium">
-              <a
-                href="mailto:contact@doctruyen.vip"
-                className="flex items-center gap-1.5 text-foreground hover:text-rose-500 transition-colors"
-              >
-                <Mail className="w-3.5 h-3.5 text-amber-500" />
-                <span>contact@doctruyen.vip</span>
-              </a>
-              <span className="flex items-center gap-1.5 text-[11px] text-emerald-500">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Cloudflare R2 SSL Secure</span>
-              </span>
+            <ul className="flex flex-col gap-1.5 text-xs font-medium">
+              <li>
+                <Link href="/chinh-sach-bao-mat" className="hover:text-rose-500 transition-colors">
+                  Chính Sách Bảo Mật
+                </Link>
+              </li>
+              <li>
+                <Link href="/dieu-khoan-su-dung" className="hover:text-rose-500 transition-colors">
+                  Điều Khoản Dịch Vụ
+                </Link>
+              </li>
+              <li>
+                <Link href="/chinh-sach-cookie" className="hover:text-rose-500 transition-colors">
+                  Chính Sách Cookie
+                </Link>
+              </li>
+              <li>
+                <Link href="/mien-tru-trach-nhiem" className="hover:text-rose-500 transition-colors">
+                  Miễn Trừ Trách Nhiệm & DMCA
+                </Link>
+              </li>
+              <li>
+                <Link href="/lien-he" className="hover:text-rose-500 transition-colors">
+                  Liên Hệ & Hỗ Trợ Độc Giả
+                </Link>
+              </li>
+            </ul>
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-500 pt-1">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Cloudflare R2 SSL Secure</span>
             </div>
           </div>
         </div>

@@ -22,6 +22,16 @@ export async function GET(request: Request) {
       .select("*", { count: "exact", head: true })
       .eq("type", "novel");
 
+    const { count: totalBooks } = await supabase
+      .from("stories")
+      .select("*", { count: "exact", head: true })
+      .eq("type", "book");
+
+    const { count: totalTrash } = await supabase
+      .from("stories")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "trash");
+
     // 2. Total chapters & locked
     const { count: totalChapters } = await supabase
       .from("chapters")
@@ -32,15 +42,24 @@ export async function GET(request: Request) {
       .select("*", { count: "exact", head: true })
       .eq("is_locked", true);
 
-    // 3. Total profiles
+    // 3. Profiles, Posts, Media, Comments
     const { count: totalUsers } = await supabase
       .from("profiles")
+      .select("*", { count: "exact", head: true });
+
+    const { count: totalPosts } = await supabase
+      .from("posts")
+      .select("*", { count: "exact", head: true });
+
+    const { count: totalComments } = await supabase
+      .from("comments")
       .select("*", { count: "exact", head: true });
 
     // 4. Recent stories
     const { data: recentStories } = await supabase
       .from("stories")
       .select("id, title, slug, type, total_chapters, total_views, updated_at")
+      .neq("status", "trash")
       .order("updated_at", { ascending: false })
       .limit(6);
 
@@ -50,9 +69,13 @@ export async function GET(request: Request) {
         totalStories: totalStories || 0,
         totalComics: totalComics || 0,
         totalNovels: totalNovels || 0,
+        totalBooks: totalBooks || 0,
+        totalTrash: totalTrash || 0,
         totalChapters: totalChapters || 0,
         totalLockedChapters: totalLockedChapters || 0,
         totalUsers: totalUsers || 0,
+        totalPosts: totalPosts || 0,
+        totalComments: totalComments || 0,
         recentStories: recentStories || [],
         system: {
           domain: "https://doctruyen.vip",

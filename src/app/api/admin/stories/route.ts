@@ -8,23 +8,48 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const q = (searchParams.get("q") || "").trim();
     const type = searchParams.get("type");
+    const status = searchParams.get("status");
+    const sort = searchParams.get("sort") || "date_desc";
+    const genre = searchParams.get("genre");
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "20", 10);
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
     const supabase = createAdminSupabaseClient();
-    let query = supabase
-      .from("stories")
-      .select("*", { count: "exact" })
-      .order("updated_at", { ascending: false });
+    let query = supabase.from("stories").select("*", { count: "exact" });
+
+    // Handle Sorting
+    if (sort === "views_desc") {
+      query = query.order("total_views", { ascending: false });
+    } else if (sort === "chapters_desc") {
+      query = query.order("total_chapters", { ascending: false });
+    } else if (sort === "title_asc") {
+      query = query.order("title", { ascending: true });
+    } else {
+      query = query.order("updated_at", { ascending: false });
+    }
 
     if (q) {
       query = query.or(`title.ilike.%${q}%,author_name.ilike.%${q}%,slug.ilike.%${q}%`);
     }
 
-    if (type && (type === "comic" || type === "novel")) {
+    // Type filter (comic, novel, book)
+    if (type && (type === "comic" || type === "novel" || type === "book")) {
       query = query.eq("type", type);
+    }
+
+    // Status / Trash filter
+    if (status === "trash") {
+      query = query.eq("status", "trash");
+    } else if (status && status !== "all") {
+      query = query.eq("status", status);
+    } else if (!status) {
+      query = query.neq("status", "trash");
+    }
+
+    if (genre) {
+      query = query.contains("genres", [genre]);
     }
 
     const { data: stories, count, error } = await query.range(from, to);

@@ -2,37 +2,70 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  BookOpen, 
-  Layers, 
-  Users, 
-  Settings, 
-  BarChart3, 
-  Search, 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  ExternalLink, 
-  ShieldCheck, 
-  Lock, 
-  Unlock, 
-  Coins, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  BookOpen,
+  Layers,
+  Users,
+  Settings,
+  BarChart3,
+  Search,
+  Plus,
+  Edit3,
+  Trash2,
+  ExternalLink,
+  ShieldCheck,
+  Lock,
+  Unlock,
+  Coins,
+  CheckCircle2,
+  AlertCircle,
   RefreshCw,
   Sparkles,
   ChevronLeft,
   ChevronRight,
   Globe,
   Database,
-  ArrowRight
+  ArrowRight,
+  Upload,
+  FileText,
+  Image as ImageIcon,
+  MessageSquare,
+  Bookmark,
+  RotateCcw,
+  CheckSquare,
+  Square,
+  Download,
+  Filter,
+  SlidersHorizontal,
+  Palette,
+  QrCode,
+  Smartphone,
+  HelpCircle,
+  Copy,
+  Check,
+  Eye,
+  FileSpreadsheet,
+  AlertTriangle,
 } from "lucide-react";
+import { AdminAiSeoModal } from "@/components/admin/AdminAiSeoModal";
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passcode, setPasscode] = useState("");
   const [authError, setAuthError] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "stories" | "chapters" | "users" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<
+    | "overview"
+    | "stories"
+    | "books"
+    | "chapters"
+    | "posts"
+    | "media"
+    | "comments"
+    | "users"
+    | "import"
+    | "trash"
+    | "settings"
+  >("overview");
 
   // Stats state
   const [stats, setStats] = useState<any>(null);
@@ -43,9 +76,20 @@ export default function AdminPage() {
   const [loadingStories, setLoadingStories] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("");
+  const [genreFilter, setGenreFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<string>("date_desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalStoriesCount, setTotalStoriesCount] = useState(0);
+
+  // Bulk Selection State
+  const [selectedStoryIds, setSelectedStoryIds] = useState<string[]>([]);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+  // AI SEO Modal State
+  const [aiSeoModalOpen, setAiSeoModalOpen] = useState(false);
+  const [targetAiStory, setTargetAiStory] = useState<any>(null);
 
   // Story edit/create modal
   const [showStoryModal, setShowStoryModal] = useState(false);
@@ -59,7 +103,16 @@ export default function AdminPage() {
     cover_url: "",
     status: "ongoing",
     genres: "",
+    seo_title: "",
+    seo_description: "",
+    focus_keyword: "",
   });
+
+  // Books State (dedicated tab)
+  const [books, setBooks] = useState<any[]>([]);
+  const [loadingBooks, setLoadingBooks] = useState(false);
+  const [booksPage, setBooksPage] = useState(1);
+  const [totalBooksCount, setTotalBooksCount] = useState(0);
 
   // Chapters state
   const [selectedStory, setSelectedStory] = useState<any>(null);
@@ -76,13 +129,70 @@ export default function AdminPage() {
     pages_images_str: "",
   });
 
-  // Users state
+  // Posts / Pages State
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [postTypeFilter, setPostTypeFilter] = useState<string>("page");
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [postForm, setPostForm] = useState({
+    title: "",
+    slug: "",
+    type: "page",
+    excerpt: "",
+    content_html: "",
+    status: "published",
+    seo_title: "",
+    seo_description: "",
+    focus_keyword: "",
+  });
+
+  // Media Library State
+  const [mediaList, setMediaList] = useState<any[]>([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
+  const [mediaSearch, setMediaSearch] = useState("");
+  const [showUploadMediaModal, setShowUploadMediaModal] = useState(false);
+  const [newMediaForm, setNewMediaForm] = useState({
+    name: "",
+    url: "",
+    alt_text: "",
+  });
+  const [copiedMediaUrl, setCopiedMediaUrl] = useState<string | null>(null);
+
+  // Comments State
+  const [comments, setComments] = useState<any[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentSearch, setCommentSearch] = useState("");
+
+  // Users State
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userCoinsModal, setUserCoinsModal] = useState<any>(null);
   const [coinAmount, setCoinAmount] = useState(100);
+  const [userVipFilter, setUserVipFilter] = useState<string>("");
+  const [userSourceFilter, setUserSourceFilter] = useState<string>("");
 
-  // Toast
+  // Dynamic VietQR Generator
+  const [qrModalUser, setQrModalUser] = useState<any>(null);
+  const [qrAmount, setQrAmount] = useState<number>(50000);
+
+  // Trash Bin State
+  const [trashItems, setTrashItems] = useState<any[]>([]);
+  const [loadingTrash, setLoadingTrash] = useState(false);
+
+  // Bulk Import State
+  const [importType, setImportType] = useState<"json" | "text" | "chapters">("json");
+  const [importJsonText, setImportJsonText] = useState("");
+  const [importLinesText, setImportLinesText] = useState("");
+  const [importStatusMsg, setImportStatusMsg] = useState("");
+  const [importing, setImporting] = useState(false);
+
+  // Settings State
+  const [settings, setSettings] = useState<any>(null);
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  // Toast Notification
   const [toastMessage, setToastMessage] = useState("");
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -113,7 +223,22 @@ export default function AdminPage() {
     setIsAuthenticated(false);
   };
 
-  // Fetch stats
+  // Initial Data Fetching when Authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetchStats();
+    if (activeTab === "overview") fetchStats();
+    if (activeTab === "stories") fetchStories(1);
+    if (activeTab === "books") fetchBooks(1);
+    if (activeTab === "posts") fetchPosts();
+    if (activeTab === "media") fetchMedia();
+    if (activeTab === "comments") fetchComments();
+    if (activeTab === "users") fetchUsers();
+    if (activeTab === "trash") fetchTrash();
+    if (activeTab === "settings") fetchSettings();
+  }, [isAuthenticated, activeTab]);
+
+  // 1. Fetch Stats
   const fetchStats = async () => {
     setLoadingStats(true);
     try {
@@ -129,7 +254,7 @@ export default function AdminPage() {
     }
   };
 
-  // Fetch stories
+  // 2. Fetch Stories
   const fetchStories = async (page = 1) => {
     setLoadingStories(true);
     try {
@@ -137,8 +262,11 @@ export default function AdminPage() {
         page: page.toString(),
         limit: "15",
         q: searchQuery,
+        sort: sortOrder,
       });
       if (typeFilter) params.set("type", typeFilter);
+      if (genreFilter) params.set("genre", genreFilter);
+      if (statusFilter) params.set("status", statusFilter);
 
       const res = await fetch(`/api/admin/stories?${params.toString()}`);
       const data = await res.json();
@@ -147,6 +275,7 @@ export default function AdminPage() {
         setTotalPages(data.totalPages);
         setTotalStoriesCount(data.total);
         setCurrentPage(page);
+        setSelectedStoryIds([]);
       }
     } catch (e) {
       console.error(e);
@@ -155,7 +284,31 @@ export default function AdminPage() {
     }
   };
 
-  // Fetch chapters for selected story
+  // 3. Fetch Books
+  const fetchBooks = async (page = 1) => {
+    setLoadingBooks(true);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "15",
+        type: "book",
+        q: searchQuery,
+      });
+      const res = await fetch(`/api/admin/stories?${params.toString()}`);
+      const data = await res.json();
+      if (data.success) {
+        setBooks(data.stories);
+        setTotalBooksCount(data.total);
+        setBooksPage(page);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingBooks(false);
+    }
+  };
+
+  // 4. Fetch Chapters
   const fetchChapters = async (storyId: string) => {
     setLoadingChapters(true);
     try {
@@ -171,7 +324,55 @@ export default function AdminPage() {
     }
   };
 
-  // Fetch users
+  // 5. Fetch Posts / Pages
+  const fetchPosts = async () => {
+    setLoadingPosts(true);
+    try {
+      const res = await fetch(`/api/admin/posts?type=${postTypeFilter}`);
+      const data = await res.json();
+      if (data.success) {
+        setPosts(data.posts);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  // 6. Fetch Media
+  const fetchMedia = async () => {
+    setLoadingMedia(true);
+    try {
+      const res = await fetch(`/api/admin/media?q=${encodeURIComponent(mediaSearch)}`);
+      const data = await res.json();
+      if (data.success) {
+        setMediaList(data.media);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingMedia(false);
+    }
+  };
+
+  // 7. Fetch Comments
+  const fetchComments = async () => {
+    setLoadingComments(true);
+    try {
+      const res = await fetch(`/api/admin/comments?q=${encodeURIComponent(commentSearch)}`);
+      const data = await res.json();
+      if (data.success) {
+        setComments(data.comments);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  // 8. Fetch Users
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
@@ -187,53 +388,216 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (activeTab === "overview") fetchStats();
-      if (activeTab === "stories") fetchStories(1);
-      if (activeTab === "users") fetchUsers();
+  // 9. Fetch Trash
+  const fetchTrash = async () => {
+    setLoadingTrash(true);
+    try {
+      const res = await fetch("/api/admin/stories?status=trash&limit=50");
+      const data = await res.json();
+      if (data.success) {
+        setTrashItems(data.stories);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingTrash(false);
     }
-  }, [isAuthenticated, activeTab]);
-
-  // Story Form Handlers
-  const openNewStoryModal = () => {
-    setEditingStory(null);
-    setStoryForm({
-      title: "",
-      slug: "",
-      type: "comic",
-      author_name: "",
-      description: "",
-      cover_url: "",
-      status: "ongoing",
-      genres: "Huyền Huyễn, Phiêu Lưu",
-    });
-    setShowStoryModal(true);
   };
 
-  const openEditStoryModal = (s: any) => {
-    setEditingStory(s);
-    setStoryForm({
-      title: s.title || "",
-      slug: s.slug || "",
-      type: s.type || "comic",
-      author_name: s.author_name || "",
-      description: s.description || "",
-      cover_url: s.cover_url || "",
-      status: s.status || "ongoing",
-      genres: Array.isArray(s.genres) ? s.genres.join(", ") : "",
-    });
-    setShowStoryModal(true);
+  // 10. Fetch Settings
+  const fetchSettings = async () => {
+    setLoadingSettings(true);
+    try {
+      const res = await fetch("/api/admin/settings");
+      const data = await res.json();
+      if (data.success) {
+        setSettings(data.settings);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingSettings(false);
+    }
   };
 
+  // Save Settings
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Đã lưu toàn bộ cấu hình website thành công!");
+      } else {
+        alert(data.error || "Lỗi lưu cấu hình");
+      }
+    } catch (e: any) {
+      alert(e.message || "Lỗi kết nối");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  // Bulk Actions
+  const toggleSelectStory = (id: string) => {
+    if (selectedStoryIds.includes(id)) {
+      setSelectedStoryIds(selectedStoryIds.filter((item) => item !== id));
+    } else {
+      setSelectedStoryIds([...selectedStoryIds, id]);
+    }
+  };
+
+  const toggleSelectAllOnPage = () => {
+    if (selectedStoryIds.length === stories.length && stories.length > 0) {
+      setSelectedStoryIds([]);
+    } else {
+      setSelectedStoryIds(stories.map((s) => s.id));
+    }
+  };
+
+  const handleBulkMoveToTrash = async () => {
+    if (selectedStoryIds.length === 0) return;
+    if (!confirm(`Bạn có chắc muốn đưa ${selectedStoryIds.length} bộ truyện đã chọn vào Thùng rác?`)) return;
+
+    setBulkActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "trash", ids: selectedStoryIds }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchStories(currentPage);
+        fetchStats();
+      } else {
+        alert(data.error || "Lỗi thực hiện");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedStoryIds.length === 0) return;
+    if (!confirm(`CẢNH BÁO: Xóa vĩnh viễn ${selectedStoryIds.length} bộ truyện và toàn bộ chương liên quan? Thao tác này không thể hoàn tác!`)) return;
+
+    setBulkActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", ids: selectedStoryIds }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchStories(currentPage);
+        fetchStats();
+      } else {
+        alert(data.error || "Lỗi xóa vĩnh viễn");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkChangeStatus = async (newStatus: "ongoing" | "completed") => {
+    if (selectedStoryIds.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "status", ids: selectedStoryIds, new_status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchStories(currentPage);
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleExportSelectedJson = () => {
+    const selectedStories = stories.filter((s) => selectedStoryIds.includes(s.id));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(selectedStories, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `doctruyen_export_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  // Trash Operations
+  const handleRestoreFromTrash = async (ids: string[]) => {
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restore", ids }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchTrash();
+        fetchStats();
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const handleForceDeleteFromTrash = async (ids: string[]) => {
+    if (!confirm(`Xóa vĩnh viễn ${ids.length} mục khỏi CSDL?`)) return;
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", ids }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchTrash();
+        fetchStats();
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  // Story Form Save
   const handleSaveStory = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const method = editingStory ? "PUT" : "POST";
       const payload: any = {
-        ...storyForm,
+        title: storyForm.title,
+        slug: storyForm.slug,
+        type: storyForm.type,
+        author_name: storyForm.author_name,
+        description: storyForm.description,
+        cover_url: storyForm.cover_url,
+        status: storyForm.status,
         genres: storyForm.genres.split(",").map((g) => g.trim()).filter(Boolean),
       };
+
       if (editingStory) payload.id = editingStory.id;
 
       const res = await fetch("/api/admin/stories", {
@@ -243,9 +607,10 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(editingStory ? "Đã cập nhật thông tin truyện!" : "Đã thêm truyện mới thành công!");
+        showToast(editingStory ? "Đã sửa truyện thành công!" : "Đã thêm truyện mới!");
         setShowStoryModal(false);
         fetchStories(currentPage);
+        fetchStats();
       } else {
         alert(data.error || "Có lỗi xảy ra khi lưu truyện");
       }
@@ -254,62 +619,25 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteStory = async (storyId: string, title: string) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn bộ truyện "${title}" và tất cả các chương của nó?`)) {
-      return;
-    }
-    try {
-      const res = await fetch(`/api/admin/stories?id=${storyId}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        showToast("Đã xóa truyện thành công!");
-        fetchStories(currentPage);
-      } else {
-        alert(data.error || "Không thể xóa truyện");
-      }
-    } catch (err: any) {
-      alert(err.message);
-    }
+  // AI SEO trigger
+  const openAiSeoForStory = (s: any) => {
+    setTargetAiStory(s);
+    setAiSeoModalOpen(true);
   };
 
-  // Chapters Management Handlers
-  const handleSelectStoryForChapters = (s: any) => {
-    setSelectedStory(s);
-    setActiveTab("chapters");
-    fetchChapters(s.id);
+  const handleApplyAiSeoToForm = (seoData: any) => {
+    setStoryForm((prev) => ({
+      ...prev,
+      seo_title: seoData.seoTitle,
+      seo_description: seoData.seoDescription,
+      focus_keyword: seoData.focusKeyword,
+      genres: seoData.tags.join(", "),
+      description: seoData.seoDescription + "\n\n" + (prev.description || ""),
+    }));
+    showToast("Đã áp dụng toàn bộ từ khóa và tiêu đề AI vào form truyện!");
   };
 
-  const openNewChapterModal = () => {
-    setEditingChapter(null);
-    const nextNum = chapters.length > 0 ? (Math.max(...chapters.map((c) => c.chapter_number)) + 1).toString() : "1";
-    setChapterForm({
-      chapter_number: nextNum,
-      title: `Chương ${nextNum}`,
-      is_locked: false,
-      price_coins: 0,
-      content_text: "",
-      pages_images_str: "",
-    });
-    setShowChapterModal(true);
-  };
-
-  const openEditChapterModal = (c: any) => {
-    setEditingChapter(c);
-    let imgStr = "";
-    if (c.pages_images) {
-      imgStr = Array.isArray(c.pages_images) ? c.pages_images.join("\n") : JSON.stringify(c.pages_images);
-    }
-    setChapterForm({
-      chapter_number: c.chapter_number.toString(),
-      title: c.title || "",
-      is_locked: c.is_locked || false,
-      price_coins: c.price_coins || 0,
-      content_text: c.content_text || "",
-      pages_images_str: imgStr,
-    });
-    setShowChapterModal(true);
-  };
-
+  // Chapter handlers
   const handleSaveChapter = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStory) return;
@@ -323,14 +651,13 @@ export default function AdminPage() {
         price_coins: chapterForm.price_coins,
       };
 
-      if (selectedStory.type === "novel") {
+      if (selectedStory.type === "novel" || selectedStory.type === "book") {
         payload.content_text = chapterForm.content_text;
       } else {
-        const lines = chapterForm.pages_images_str
+        payload.pages_images = chapterForm.pages_images_str
           .split("\n")
           .map((l) => l.trim())
           .filter(Boolean);
-        payload.pages_images = lines;
       }
 
       if (editingChapter) payload.id = editingChapter.id;
@@ -353,17 +680,100 @@ export default function AdminPage() {
     }
   };
 
-  const handleDeleteChapter = async (chapterId: string, num: number) => {
-    if (!confirm(`Xóa chương ${num}?`)) return;
+  // Posts Handlers
+  const handleSavePost = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const res = await fetch(`/api/admin/chapters?id=${chapterId}`, { method: "DELETE" });
+      const method = editingPost ? "PUT" : "POST";
+      const payload: any = { ...postForm };
+      if (editingPost) payload.id = editingPost.id;
+
+      const res = await fetch("/api/admin/posts", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const data = await res.json();
       if (data.success) {
-        showToast("Đã xóa chương!");
-        if (selectedStory) fetchChapters(selectedStory.id);
+        showToast("Đã lưu trang/bài viết thành công!");
+        setShowPostModal(false);
+        fetchPosts();
+      } else {
+        alert(data.error || "Lỗi lưu trang");
       }
-    } catch (err: any) {
-      alert(err.message);
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const handleDeletePost = async (id: string, title: string) => {
+    if (!confirm(`Xóa bài viết "${title}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/posts?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Đã xóa bài viết!");
+        fetchPosts();
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  // Media Handlers
+  const handleSaveMedia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/admin/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMediaForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Đã thêm ảnh vào thư viện!");
+        setShowUploadMediaModal(false);
+        setNewMediaForm({ name: "", url: "", alt_text: "" });
+        fetchMedia();
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const handleDeleteMedia = async (id: string) => {
+    if (!confirm("Xóa ảnh này khỏi thư viện?")) return;
+    try {
+      const res = await fetch(`/api/admin/media?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Đã xóa ảnh!");
+        fetchMedia();
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const copyMediaUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedMediaUrl(url);
+    showToast("Đã sao chép link ảnh CDN!");
+    setTimeout(() => setCopiedMediaUrl(null), 2000);
+  };
+
+  // Comments Handlers
+  const handleDeleteComment = async (id: string) => {
+    if (!confirm("Xóa bình luận này?")) return;
+    try {
+      const res = await fetch(`/api/admin/comments?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Đã xóa bình luận!");
+        fetchComments();
+      }
+    } catch (e: any) {
+      alert(e.message);
     }
   };
 
@@ -382,65 +792,115 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`Đã cập nhật xu cho ${userCoinsModal.email}!`);
+        showToast(`Đã ${action === "add" ? "cộng" : "thiết lập"} xu thành công!`);
         setUserCoinsModal(null);
         fetchUsers();
       } else {
-        alert(data.error || "Không thể cập nhật xu");
+        alert(data.error || "Lỗi điều chỉnh xu");
       }
     } catch (err: any) {
       alert(err.message);
     }
   };
 
-  // Render Passcode Screen if Not Authenticated
+  // Bulk Import Submit
+  const handleRunBulkImport = async () => {
+    setImporting(true);
+    setImportStatusMsg("Đang xử lý dữ liệu...");
+    try {
+      if (importType === "json") {
+        const parsed = JSON.parse(importJsonText);
+        const storiesArray = Array.isArray(parsed) ? parsed : [parsed];
+        const res = await fetch("/api/admin/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "import_stories", stories: storiesArray }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setImportStatusMsg(`✓ ${data.message}`);
+          showToast(data.message);
+          fetchStories(1);
+          fetchStats();
+        } else {
+          setImportStatusMsg(`✗ Lỗi: ${data.error}`);
+        }
+      } else if (importType === "text") {
+        const lines = importLinesText.split("\n").map((l) => l.trim()).filter(Boolean);
+        const storiesArray = lines.map((l) => {
+          const parts = l.split("|").map((p) => p.trim());
+          return {
+            title: parts[0] || "",
+            author_name: parts[1] || "Nhiều Tác Giả",
+            genres: parts[2] ? parts[2].split(",").map((g) => g.trim()) : ["Đặc Sắc"],
+            description: parts[3] || "",
+            type: "novel",
+          };
+        });
+
+        const res = await fetch("/api/admin/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "import_stories", stories: storiesArray }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setImportStatusMsg(`✓ ${data.message}`);
+          showToast(data.message);
+          fetchStories(1);
+          fetchStats();
+        } else {
+          setImportStatusMsg(`✗ Lỗi: ${data.error}`);
+        }
+      }
+    } catch (e: any) {
+      setImportStatusMsg(`✗ Lỗi định dạng: ${e.message}`);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  // Render Login Screen if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md p-8 rounded-3xl bg-card border border-border/60 shadow-2xl flex flex-col gap-6">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="w-full max-w-md p-8 rounded-2xl bg-card border border-border shadow-2xl flex flex-col gap-6">
           <div className="flex flex-col items-center text-center gap-2">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/25">
-              <ShieldCheck className="w-8 h-8" />
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/20">
+              <ShieldCheck className="w-7 h-7" />
             </div>
-            <h1 className="text-2xl font-black mt-2">DocTruyen.vip Admin</h1>
+            <h1 className="text-2xl font-black text-foreground">DocTruyen.vip Admin</h1>
             <p className="text-xs text-muted-foreground">
-              Vui lòng nhập mật mã quản trị viên để truy cập bảng điều khiển hệ thống
+              Cổng Quản Trị Hệ Thống Tối Cao (SEO, Sách, Truyện, Media & Độc Giả)
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <div>
-              <label className="text-xs font-bold text-muted-foreground block mb-1.5">
-                Mật Mã Quản Trị
-              </label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-foreground">Mật Mã Quản Trị</label>
               <input
                 type="password"
                 placeholder="Nhập mã bảo mật (Mặc định: admin888)"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-muted/60 border border-border text-sm focus:outline-none focus:ring-2 focus:ring-rose-500"
+                className="w-full px-4 py-3 rounded-xl bg-muted/60 border border-border text-sm text-foreground focus:outline-none focus:border-rose-500 transition-colors"
                 autoFocus
               />
-              {authError && (
-                <span className="text-xs text-rose-500 font-semibold mt-1.5 flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> {authError}
-                </span>
-              )}
             </div>
+
+            {authError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{authError}</span>
+              </div>
+            )}
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-sm shadow-md shadow-rose-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              Đăng Nhập Quản Trị
+              <Lock className="w-4 h-4" /> Đăng Nhập Quản Trị
             </button>
-
-            <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-              <Link href="/" className="hover:text-foreground flex items-center gap-1">
-                <ChevronLeft className="w-3.5 h-3.5" /> Về trang chủ
-              </Link>
-              <span>DocTruyen.vip v2.0</span>
-            </div>
           </form>
         </div>
       </div>
@@ -448,11 +908,11 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-20">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl font-bold text-sm flex items-center gap-2 animate-in slide-in-from-bottom">
-          <CheckCircle2 className="w-5 h-5" />
+        <div className="fixed bottom-6 right-6 z-50 py-3 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-2xl animate-in slide-in-from-bottom-3 flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -469,7 +929,7 @@ export default function AdminPage() {
                 DocTruyen
               </span>
               <span className="ml-1 text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-500 to-rose-500 text-white">
-                ADMIN
+                VIP
               </span>
             </div>
           </Link>
@@ -485,7 +945,7 @@ export default function AdminPage() {
             target="_blank"
             className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all"
           >
-            <Globe className="w-3.5 h-3.5" /> Xem Website <ExternalLink className="w-3 h-3" />
+            <Globe className="w-3.5 h-3.5" /> Xem Web <ExternalLink className="w-3 h-3" />
           </Link>
           <button
             onClick={handleLogout}
@@ -498,76 +958,64 @@ export default function AdminPage() {
 
       {/* Main Admin Content */}
       <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 border-b border-border/50">
-          <button
-            onClick={() => setActiveTab("overview")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === "overview"
-                ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" /> Tổng Quan
-          </button>
-          <button
-            onClick={() => setActiveTab("stories")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === "stories"
-                ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <BookOpen className="w-4 h-4" /> Quản Lý Truyện
-          </button>
-          <button
-            onClick={() => setActiveTab("chapters")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === "chapters"
-                ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Layers className="w-4 h-4" /> Quản Lý Chương
-          </button>
-          <button
-            onClick={() => setActiveTab("users")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === "users"
-                ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Users className="w-4 h-4" /> Độc Giả & Nạp Xu
-          </button>
-          <button
-            onClick={() => setActiveTab("settings")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-              activeTab === "settings"
-                ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Settings className="w-4 h-4" /> Cài Đặt & SEO
-          </button>
+        {/* Navigation Tabs (Scrollable Bar) */}
+        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1.5 border-b border-border/50 text-xs sm:text-sm font-bold no-scrollbar">
+          {[
+            { id: "overview", label: "Tổng Quan", icon: BarChart3 },
+            { id: "stories", label: "Quản Lý Truyện", icon: BookOpen },
+            { id: "books", label: "Quản Lý Sách", icon: Bookmark },
+            { id: "chapters", label: "Quản Lý Chương", icon: Layers },
+            { id: "posts", label: "Trang & Bài Viết", icon: FileText },
+            { id: "media", label: "Thư Viện Media", icon: ImageIcon },
+            { id: "comments", label: "Bình Luận", icon: MessageSquare },
+            { id: "users", label: "Độc Giả & Nạp Xu", icon: Users },
+            { id: "import", label: "Nhập Hàng Loạt", icon: Upload },
+            { id: "trash", label: "Thùng Rác", icon: Trash2 },
+            { id: "settings", label: "Cấu Hình & SEO", icon: Settings },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                  isActive
+                    ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+                {tab.id === "trash" && stats?.totalTrash > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-rose-700 text-white text-[10px] font-black">
+                    {stats.totalTrash}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
+        {/* ============================================================== */}
         {/* TAB 1: OVERVIEW */}
+        {/* ============================================================== */}
         {activeTab === "overview" && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 animate-in fade-in">
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-2">
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span className="text-xs font-bold uppercase">Tổng Số Bộ Truyện</span>
                   <BookOpen className="w-4 h-4 text-rose-500" />
                 </div>
                 <div className="text-2xl sm:text-3xl font-black text-foreground">
-                  {stats?.totalStories || "..."}
+                  {stats?.totalStories ? stats.totalStories.toLocaleString() : "..."}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
                   <span className="text-amber-500 font-bold">{stats?.totalComics || 0} Tranh</span> ·{" "}
-                  <span className="text-indigo-400 font-bold">{stats?.totalNovels || 0} Chữ</span>
+                  <span className="text-indigo-400 font-bold">{stats?.totalNovels || 0} Chữ</span> ·{" "}
+                  <span className="text-emerald-400 font-bold">{stats?.totalBooks || 0} Sách</span>
                 </div>
               </div>
 
@@ -580,723 +1028,1595 @@ export default function AdminPage() {
                   {stats?.totalChapters ? stats.totalChapters.toLocaleString() : "..."}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
-                  <span className="text-amber-500 font-bold">{stats?.totalLockedChapters ? stats.totalLockedChapters.toLocaleString() : 0} VIP</span> ·{" "}
-                  <span className="text-emerald-500 font-bold">{stats?.totalChapters ? (stats.totalChapters - (stats.totalLockedChapters || 0)).toLocaleString() : 0} Miễn Phí</span>
+                  <span className="text-amber-500 font-bold">
+                    {stats?.totalLockedChapters ? stats.totalLockedChapters.toLocaleString() : 0} VIP
+                  </span>{" "}
+                  ·{" "}
+                  <span className="text-emerald-500 font-bold">
+                    {stats?.totalChapters
+                      ? (stats.totalChapters - (stats.totalLockedChapters || 0)).toLocaleString()
+                      : 0}{" "}
+                    Free
+                  </span>
                 </div>
               </div>
 
               <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-2">
                 <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-bold uppercase">Người Dùng Đăng Ký</span>
+                  <span className="text-xs font-bold uppercase">Tài Khoản & Độc Giả</span>
                   <Users className="w-4 h-4 text-indigo-500" />
                 </div>
                 <div className="text-2xl sm:text-3xl font-black text-indigo-400">
-                  {stats?.totalUsers || "..."}
+                  {stats?.totalUsers || 0}
                 </div>
-                <div className="text-[11px] text-muted-foreground">Tài khoản Supabase Auth</div>
+                <div className="text-[11px] text-muted-foreground">Supabase Cloud Auth</div>
               </div>
 
               <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-2">
                 <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-xs font-bold uppercase">Hệ Thống Lưu Trữ</span>
-                  <Database className="w-4 h-4 text-emerald-500" />
+                  <span className="text-xs font-bold uppercase">Trang & Bài Viết</span>
+                  <FileText className="w-4 h-4 text-emerald-500" />
                 </div>
-                <div className="text-sm font-extrabold text-emerald-500 flex items-center gap-1.5 mt-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Cloudflare R2 + CDN
+                <div className="text-2xl sm:text-3xl font-black text-emerald-400">
+                  {stats?.totalPosts || 5}
                 </div>
-                <div className="text-[11px] text-muted-foreground truncate">
-                  Domain: media.doctruyen.vip
-                </div>
+                <div className="text-[11px] text-muted-foreground">Chính sách & Review truyện</div>
               </div>
             </div>
 
-            {/* Tracking & Domain Verification Box */}
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-indigo-600/10 border border-border/60 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  Trạng Thái Cấu Hình Tên Miền & Tracking SEO
-                </h3>
-                <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                  Đã Kích Hoạt Toàn Diện
-                </span>
-              </div>
+            {/* Quick Actions & Recent Updates */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-border/50 pb-3">
+                  <h3 className="font-extrabold text-sm flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" /> Truyện Mới Cập Nhật Gần Đây
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab("stories")}
+                    className="text-xs text-rose-500 hover:underline font-bold"
+                  >
+                    Xem tất cả ({stats?.totalStories || 0})
+                  </button>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-card/80 border border-border/40 flex flex-col gap-1">
-                  <span className="text-muted-foreground font-semibold">Tên Miền Chính:</span>
-                  <strong className="text-foreground text-sm font-bold">doctruyen.vip</strong>
-                  <span className="text-[11px] text-emerald-500">SSL Vercel Active</span>
-                </div>
-                <div className="p-3 rounded-xl bg-card/80 border border-border/40 flex flex-col gap-1">
-                  <span className="text-muted-foreground font-semibold">Media CDN R2:</span>
-                  <strong className="text-foreground text-sm font-bold">media.doctruyen.vip</strong>
-                  <span className="text-[11px] text-emerald-500">Cloudflare Edge Cache</span>
-                </div>
-                <div className="p-3 rounded-xl bg-card/80 border border-border/40 flex flex-col gap-1">
-                  <span className="text-muted-foreground font-semibold">Google Analytics 4:</span>
-                  <strong className="text-foreground text-sm font-mono font-bold">G-0CBF77MVXY</strong>
-                  <span className="text-[11px] text-emerald-500">gtag.js Loaded</span>
-                </div>
-                <div className="p-3 rounded-xl bg-card/80 border border-border/40 flex flex-col gap-1">
-                  <span className="text-muted-foreground font-semibold">Google Tag Manager:</span>
-                  <strong className="text-foreground text-sm font-mono font-bold">GTM-N7TTTGPL</strong>
-                  <span className="text-[11px] text-emerald-500">Head + Body Noscript</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Stories */}
-            <div className="p-6 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-sm flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-rose-500" /> Truyện Mới Cập Nhật Gần Đây
-                </h3>
-                <button
-                  onClick={() => setActiveTab("stories")}
-                  className="text-xs font-bold text-rose-500 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  Xem tất cả ({stats?.totalStories || 0}) <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-border/50 text-muted-foreground font-bold">
-                      <th className="pb-3">Tên Truyện</th>
-                      <th className="pb-3">Loại</th>
-                      <th className="pb-3">Số Chương</th>
-                      <th className="pb-3">Lượt Xem</th>
-                      <th className="pb-3 text-right">Thao Tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {stats?.recentStories?.map((s: any) => (
-                      <tr key={s.id} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-3 font-bold text-foreground">
-                          <Link href={`/truyen/${s.slug}`} target="_blank" className="hover:text-rose-500">
-                            {s.title}
-                          </Link>
-                        </td>
-                        <td className="py-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                              s.type === "comic"
-                                ? "bg-amber-500/10 text-amber-500"
-                                : "bg-indigo-500/10 text-indigo-400"
-                            }`}
-                          >
-                            {s.type === "comic" ? "Tranh" : "Chữ"}
+                <div className="flex flex-col gap-2.5">
+                  {stats?.recentStories?.map((st: any) => (
+                    <div
+                      key={st.id}
+                      className="flex items-center justify-between p-3 rounded-xl bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                            st.type === "comic"
+                              ? "bg-amber-500/10 text-amber-500"
+                              : st.type === "book"
+                              ? "bg-emerald-500/10 text-emerald-500"
+                              : "bg-indigo-500/10 text-indigo-400"
+                          }`}
+                        >
+                          {st.type === "comic" ? "Tranh" : st.type === "book" ? "Sách" : "Chữ"}
+                        </span>
+                        <div>
+                          <h4 className="font-bold text-xs sm:text-sm text-foreground">{st.title}</h4>
+                          <span className="text-[11px] text-muted-foreground">
+                            {st.total_chapters} chương · {st.total_views || 0} lượt xem
                           </span>
-                        </td>
-                        <td className="py-3 font-semibold">{s.total_chapters || 0} chương</td>
-                        <td className="py-3 text-muted-foreground">{s.total_views || 0}</td>
-                        <td className="py-3 text-right">
-                          <button
-                            onClick={() => handleSelectStoryForChapters(s)}
-                            className="px-2.5 py-1 rounded bg-muted hover:bg-muted/80 text-[11px] font-bold cursor-pointer"
-                          >
-                            Quản lý chương
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/truyen/${st.slug}`}
+                        target="_blank"
+                        className="p-1.5 rounded-lg bg-muted hover:text-rose-500 transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* System & Infrastructure */}
+              <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
+                <h3 className="font-extrabold text-sm border-b border-border/50 pb-3 flex items-center gap-2">
+                  <Database className="w-4 h-4 text-emerald-500" /> Hạ Tầng & Tên Miền
+                </h3>
+                <div className="flex flex-col gap-3 text-xs">
+                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-muted/40">
+                    <span className="text-muted-foreground">Tên miền chính:</span>
+                    <strong className="text-foreground">doctruyen.vip</strong>
+                  </div>
+                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-muted/40">
+                    <span className="text-muted-foreground">Media CDN:</span>
+                    <strong className="text-emerald-500">media.doctruyen.vip</strong>
+                  </div>
+                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-muted/40">
+                    <span className="text-muted-foreground">Google Analytics 4:</span>
+                    <strong className="text-foreground">G-0CBF77MVXY</strong>
+                  </div>
+                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-muted/40">
+                    <span className="text-muted-foreground">Google Tag Manager:</span>
+                    <strong className="text-foreground">GTM-N7TTTGPL</strong>
+                  </div>
+                  <div className="flex justify-between items-center p-2.5 rounded-xl bg-muted/40">
+                    <span className="text-muted-foreground">Lưu trữ hình ảnh:</span>
+                    <strong className="text-emerald-500">Cloudflare R2 Bucket</strong>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2: STORIES MANAGEMENT */}
+        {/* ============================================================== */}
+        {/* TAB 2: STORIES MANAGEMENT (Comic & Novel) */}
+        {/* ============================================================== */}
         {activeTab === "stories" && (
-          <div className="flex flex-col gap-5">
-            {/* Action Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-1 max-w-md">
-                <div className="relative w-full">
+          <div className="flex flex-col gap-4 animate-in fade-in">
+            {/* Filter & Search Bar */}
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="relative flex-1">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
-                    placeholder="Tìm theo tên truyện, tác giả, slug..."
+                    placeholder="Tìm theo tên truyện, tác giả hoặc slug..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && fetchStories(1)}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-card border border-border text-xs focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs focus:outline-none focus:border-rose-500"
                   />
                 </div>
                 <button
                   onClick={() => fetchStories(1)}
-                  className="px-3.5 py-2 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold cursor-pointer shrink-0"
+                  className="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold cursor-pointer"
                 >
                   Tìm
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+                {/* Type Filter */}
                 <select
                   value={typeFilter}
                   onChange={(e) => {
                     setTypeFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="px-3 py-2 rounded-xl bg-card border border-border text-xs font-semibold focus:outline-none"
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
                 >
-                  <option value="">Tất cả thể loại</option>
-                  <option value="comic">Truyện Tranh</option>
-                  <option value="novel">Truyện Chữ</option>
+                  <option value="">Tất cả loại truyện</option>
+                  <option value="comic">Chỉ Truyện Tranh</option>
+                  <option value="novel">Chỉ Truyện Chữ</option>
                 </select>
 
-                <button
-                  onClick={openNewStoryModal}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-md shadow-rose-500/20 cursor-pointer shrink-0"
+                {/* Status Filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
                 >
-                  <Plus className="w-4 h-4" /> Thêm Truyện Mới
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="ongoing">Đang tiến hành</option>
+                  <option value="completed">Đã hoàn thành</option>
+                </select>
+
+                {/* Sort Order */}
+                <select
+                  value={sortOrder}
+                  onChange={(e) => {
+                    setSortOrder(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value="date_desc">Mới cập nhật</option>
+                  <option value="views_desc">Xem nhiều nhất</option>
+                  <option value="chapters_desc">Nhiều chương nhất</option>
+                  <option value="title_asc">Tên A-Z</option>
+                </select>
+
+                {/* New Story Button */}
+                <button
+                  onClick={() => {
+                    setEditingStory(null);
+                    setStoryForm({
+                      title: "",
+                      slug: "",
+                      type: "comic",
+                      author_name: "",
+                      description: "",
+                      cover_url: "",
+                      status: "ongoing",
+                      genres: "Hành Động, Phiêu Lưu",
+                      seo_title: "",
+                      seo_description: "",
+                      focus_keyword: "",
+                    });
+                    setShowStoryModal(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4" /> Thêm Truyện
                 </button>
               </div>
             </div>
 
-            {/* Stories Table */}
-            <div className="p-4 rounded-2xl bg-card border border-border/50 shadow-sm overflow-x-auto">
-              {loadingStories ? (
-                <div className="py-12 flex items-center justify-center text-muted-foreground text-xs gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin" /> Đang tải dữ liệu truyện...
-                </div>
-              ) : stories.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground text-xs">
-                  Không tìm thấy truyện nào phù hợp
-                </div>
-              ) : (
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-border/50 text-muted-foreground font-bold">
-                      <th className="pb-3">Bìa</th>
-                      <th className="pb-3">Tên & Slug</th>
-                      <th className="pb-3">Loại</th>
-                      <th className="pb-3">Tác Giả</th>
-                      <th className="pb-3">Số Chương</th>
-                      <th className="pb-3">Trạng Thái</th>
-                      <th className="pb-3 text-right">Thao Tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {stories.map((s) => (
-                      <tr key={s.id} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-3">
-                          <img
-                            src={s.cover_url || "https://media.doctruyen.vip/covers/doraemon-cover.webp"}
-                            alt={s.title}
-                            className="w-10 h-14 object-cover rounded-lg bg-neutral-900 border border-border/40"
-                          />
-                        </td>
-                        <td className="py-3 max-w-[200px]">
-                          <div className="font-bold text-foreground truncate">{s.title}</div>
-                          <div className="text-[10px] text-muted-foreground font-mono truncate">{s.slug}</div>
-                        </td>
-                        <td className="py-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                              s.type === "comic"
-                                ? "bg-amber-500/10 text-amber-500"
-                                : "bg-indigo-500/10 text-indigo-400"
-                            }`}
-                          >
-                            {s.type === "comic" ? "Tranh" : "Chữ"}
-                          </span>
-                        </td>
-                        <td className="py-3 text-muted-foreground truncate max-w-[120px]">
-                          {s.author_name || "Chưa rõ"}
-                        </td>
-                        <td className="py-3 font-bold text-rose-500">{s.total_chapters || 0}</td>
-                        <td className="py-3">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              s.status === "completed"
-                                ? "bg-emerald-500/10 text-emerald-500"
-                                : "bg-amber-500/10 text-amber-500"
-                            }`}
-                          >
-                            {s.status === "completed" ? "Hoàn thành" : "Đang ra"}
-                          </span>
-                        </td>
-                        <td className="py-3 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleSelectStoryForChapters(s)}
-                              className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer"
-                              title="Quản lý chương"
-                            >
-                              <Layers className="w-3.5 h-3.5 text-amber-500" />
-                            </button>
-                            <button
-                              onClick={() => openEditStoryModal(s)}
-                              className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer"
-                              title="Chỉnh sửa truyện"
-                            >
-                              <Edit3 className="w-3.5 h-3.5 text-indigo-400" />
-                            </button>
-                            <Link
-                              href={`/truyen/${s.slug}`}
-                              target="_blank"
-                              className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer"
-                              title="Xem trên web"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteStory(s.id, s.title)}
-                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 cursor-pointer"
-                              title="Xóa truyện"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/40 text-xs text-muted-foreground">
-                  <span>
-                    Tổng cộng: <b>{totalStoriesCount}</b> bộ truyện
+            {/* Bulk Actions Floating Bar */}
+            {selectedStoryIds.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-card to-muted border border-rose-500/30 shadow-lg flex items-center justify-between gap-3 text-xs animate-in slide-in-from-top-2">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-rose-500" />
+                  <span className="font-bold">
+                    Đã chọn <strong className="text-rose-500">{selectedStoryIds.length}</strong> bộ truyện
                   </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      disabled={currentPage <= 1}
-                      onClick={() => fetchStories(currentPage - 1)}
-                      className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-40 cursor-pointer"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <span className="px-2 font-bold text-foreground">
-                      {currentPage} / {totalPages}
-                    </span>
-                    <button
-                      disabled={currentPage >= totalPages}
-                      onClick={() => fetchStories(currentPage + 1)}
-                      className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-40 cursor-pointer"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: CHAPTERS MANAGEMENT */}
-        {activeTab === "chapters" && (
-          <div className="flex flex-col gap-5">
-            {/* Story Picker */}
-            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-muted-foreground shrink-0">Đang chọn truyện:</span>
-                {selectedStory ? (
-                  <div className="flex items-center gap-2">
-                    <strong className="text-foreground text-sm font-black">{selectedStory.title}</strong>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                        selectedStory.type === "comic"
-                          ? "bg-amber-500/10 text-amber-500"
-                          : "bg-indigo-500/10 text-indigo-400"
-                      }`}
-                    >
-                      {selectedStory.type === "comic" ? "Tranh" : "Chữ"}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-amber-500 font-semibold">
-                    (Vui lòng chọn truyện từ danh sách để quản lý chương)
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab("stories")}
-                  className="px-3 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold cursor-pointer"
-                >
-                  Chọn truyện khác
-                </button>
-                {selectedStory && (
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={openNewChapterModal}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-md cursor-pointer"
+                    onClick={() => handleBulkChangeStatus("completed")}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold cursor-pointer"
                   >
-                    <Plus className="w-4 h-4" /> Thêm Chương
+                    Đánh dấu Hoàn thành
                   </button>
-                )}
-              </div>
-            </div>
-
-            {/* Chapters Table */}
-            {selectedStory ? (
-              <div className="p-4 rounded-2xl bg-card border border-border/50 shadow-sm overflow-x-auto">
-                <div className="flex items-center justify-between pb-3 mb-2 border-b border-border/40">
-                  <span className="text-xs font-bold text-muted-foreground">
-                    Danh sách chương của bộ truyện (Tổng: {chapters.length} chương)
-                  </span>
                   <button
-                    onClick={() => fetchChapters(selectedStory.id)}
-                    className="p-1 rounded bg-muted hover:bg-muted/80 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                    onClick={() => handleBulkChangeStatus("ongoing")}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-bold cursor-pointer"
                   >
-                    <RefreshCw className="w-3 h-3" /> Làm mới
+                    Đánh dấu Đang ra
+                  </button>
+                  <button
+                    onClick={handleExportSelectedJson}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 font-bold cursor-pointer flex items-center gap-1"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Xuất JSON
+                  </button>
+                  <button
+                    onClick={handleBulkMoveToTrash}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold cursor-pointer flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Đưa vào Thùng Rác
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-bold cursor-pointer"
+                  >
+                    Xóa Vĩnh Viễn
                   </button>
                 </div>
-
-                {loadingChapters ? (
-                  <div className="py-12 flex items-center justify-center text-muted-foreground text-xs gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin" /> Đang tải danh sách chương...
-                  </div>
-                ) : chapters.length === 0 ? (
-                  <div className="py-12 text-center text-muted-foreground text-xs">
-                    Bộ truyện này hiện chưa có chương nào được tạo
-                  </div>
-                ) : (
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-border/50 text-muted-foreground font-bold">
-                        <th className="pb-3">Số Chương</th>
-                        <th className="pb-3">Tiêu Đề Chương</th>
-                        <th className="pb-3">Loại Khóa</th>
-                        <th className="pb-3">Giá Xu</th>
-                        <th className="pb-3">Nội Dung</th>
-                        <th className="pb-3 text-right">Thao Tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/30">
-                      {chapters.map((c) => (
-                        <tr key={c.id} className="hover:bg-muted/40 transition-colors">
-                          <td className="py-3 font-mono font-bold text-foreground">#{c.chapter_number}</td>
-                          <td className="py-3 font-semibold text-foreground max-w-[240px] truncate">
-                            {c.title || `Chương ${c.chapter_number}`}
-                          </td>
-                          <td className="py-3">
-                            {c.is_locked ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500 flex items-center gap-1 w-fit">
-                                <Lock className="w-3 h-3" /> Khóa VIP
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-500 flex items-center gap-1 w-fit">
-                                <Unlock className="w-3 h-3" /> Miễn Phí
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 font-bold text-amber-500">{c.price_coins || 0} Xu</td>
-                          <td className="py-3 text-muted-foreground">
-                            {selectedStory.type === "comic"
-                              ? `${Array.isArray(c.pages_images) ? c.pages_images.length : 0} trang ảnh`
-                              : `${(c.content_text || "").length.toLocaleString()} ký tự`}
-                          </td>
-                          <td className="py-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => openEditChapterModal(c)}
-                                className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer"
-                                title="Chỉnh sửa chương"
-                              >
-                                <Edit3 className="w-3.5 h-3.5 text-indigo-400" />
-                              </button>
-                              <Link
-                                href={`/truyen/${selectedStory.slug}/${c.chapter_number}`}
-                                target="_blank"
-                                className="p-1.5 rounded-lg bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer"
-                                title="Đọc thử chương"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
-                              </Link>
-                              <button
-                                onClick={() => handleDeleteChapter(c.id, c.chapter_number)}
-                                className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 cursor-pointer"
-                                title="Xóa chương"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            ) : (
-              <div className="py-16 text-center text-muted-foreground text-xs flex flex-col items-center gap-2">
-                <Layers className="w-8 h-8 text-muted-foreground/40" />
-                <span>Hãy chọn một bộ truyện từ tab "Quản Lý Truyện" để xem và biên tập các chương.</span>
               </div>
             )}
-          </div>
-        )}
 
-        {/* TAB 4: USERS & MONETIZATION */}
-        {activeTab === "users" && (
-          <div className="flex flex-col gap-5">
-            <div className="p-6 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-extrabold flex items-center gap-2">
-                    <Users className="w-5 h-5 text-indigo-400" /> Quản Lý Độc Giả & Số Dư Xu
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Xem hồ sơ thành viên, điều chỉnh cộng/trừ xu và cấp độ VIP
-                  </p>
-                </div>
-                <button
-                  onClick={fetchUsers}
-                  className="px-3 py-1.5 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" /> Tải lại
-                </button>
-              </div>
-
-              {loadingUsers ? (
-                <div className="py-12 flex items-center justify-center text-muted-foreground text-xs gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin" /> Đang tải danh sách người dùng...
-                </div>
-              ) : users.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground text-xs">
-                  Chưa có người dùng nào đăng ký
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-border/50 text-muted-foreground font-bold">
-                        <th className="pb-3">Email Độc Giả</th>
-                        <th className="pb-3">Tên Hiển Thị</th>
-                        <th className="pb-3">Số Dư Xu</th>
-                        <th className="pb-3">Cấp VIP</th>
-                        <th className="pb-3">Ngày Tạo</th>
-                        <th className="pb-3 text-right">Thao Tác</th>
+            {/* Stories Table */}
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
+                    <tr>
+                      <th className="p-3.5 w-10 text-center">
+                        <button
+                          onClick={toggleSelectAllOnPage}
+                          className="text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                          {selectedStoryIds.length === stories.length && stories.length > 0 ? (
+                            <CheckSquare className="w-4 h-4 text-rose-500" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+                      </th>
+                      <th className="p-3.5">Bộ Truyện</th>
+                      <th className="p-3.5">Phân Loại</th>
+                      <th className="p-3.5">Số Chương</th>
+                      <th className="p-3.5">Trạng Thái</th>
+                      <th className="p-3.5">Lượt Xem</th>
+                      <th className="p-3.5 text-right">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {loadingStories ? (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
+                          <span className="block mt-2 font-semibold">Đang tải danh sách truyện...</span>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/30">
-                      {users.map((u) => (
-                        <tr key={u.id} className="hover:bg-muted/40 transition-colors">
-                          <td className="py-3 font-semibold text-foreground">{u.email}</td>
-                          <td className="py-3 text-muted-foreground">{u.display_name || "Chưa đặt"}</td>
-                          <td className="py-3 font-bold text-amber-500">
-                            {u.coins_balance || 0} <span className="text-[10px] text-foreground">Xu</span>
-                          </td>
-                          <td className="py-3">
-                            <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-500/10 text-indigo-400">
-                              VIP {u.vip_level || 0}
-                            </span>
-                          </td>
-                          <td className="py-3 text-muted-foreground">
-                            {new Date(u.created_at).toLocaleDateString("vi-VN")}
-                          </td>
-                          <td className="py-3 text-right">
-                            <button
-                              onClick={() => {
-                                setUserCoinsModal(u);
-                                setCoinAmount(100);
-                              }}
-                              className="px-3 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 font-bold text-xs flex items-center gap-1 ml-auto cursor-pointer"
-                            >
-                              <Coins className="w-3.5 h-3.5" /> Điều chỉnh Xu
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                    ) : stories.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                          Không tìm thấy bộ truyện nào phù hợp.
+                        </td>
+                      </tr>
+                    ) : (
+                      stories.map((s) => {
+                        const isSelected = selectedStoryIds.includes(s.id);
+                        return (
+                          <tr
+                            key={s.id}
+                            className={`hover:bg-muted/30 transition-colors ${
+                              isSelected ? "bg-rose-500/5" : ""
+                            }`}
+                          >
+                            <td className="p-3.5 text-center">
+                              <button
+                                onClick={() => toggleSelectStory(s.id)}
+                                className="cursor-pointer"
+                              >
+                                {isSelected ? (
+                                  <CheckSquare className="w-4 h-4 text-rose-500" />
+                                ) : (
+                                  <Square className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                                )}
+                              </button>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-14 rounded-lg bg-muted overflow-hidden shrink-0 border border-border/40">
+                                  {s.cover_url && (
+                                    <img
+                                      src={s.cover_url}
+                                      alt={s.title}
+                                      className="w-full h-full object-cover"
+                                      loading="lazy"
+                                    />
+                                  )}
+                                </div>
+                                <div className="flex flex-col gap-0.5 max-w-xs sm:max-w-md">
+                                  <Link
+                                    href={`/truyen/${s.slug}`}
+                                    target="_blank"
+                                    className="font-bold text-foreground hover:text-rose-500 transition-colors truncate"
+                                  >
+                                    {s.title}
+                                  </Link>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    Tác giả: {s.author_name || "Nhiều Tác Giả"}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground/70 font-mono">
+                                    /{s.slug}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3.5">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                  s.type === "comic"
+                                    ? "bg-amber-500/10 text-amber-500"
+                                    : "bg-indigo-500/10 text-indigo-400"
+                                }`}
+                              >
+                                {s.type === "comic" ? "Tranh" : "Chữ"}
+                              </span>
+                            </td>
+                            <td className="p-3.5 font-bold text-foreground">
+                              {s.total_chapters || 0}
+                            </td>
+                            <td className="p-3.5">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  s.status === "completed"
+                                    ? "bg-emerald-500/10 text-emerald-500"
+                                    : "bg-amber-500/10 text-amber-500"
+                                }`}
+                              >
+                                {s.status === "completed" ? "Hoàn thành" : "Đang ra"}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-muted-foreground font-mono">
+                              {s.total_views ? s.total_views.toLocaleString() : 0}
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => openAiSeoForStory(s)}
+                                  className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-rose-500/10 text-rose-500 hover:scale-105 transition-all cursor-pointer"
+                                  title="Tối ưu SEO bằng AI"
+                                >
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedStory(s);
+                                    setActiveTab("chapters");
+                                    fetchChapters(s.id);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-muted hover:text-amber-500 transition-colors cursor-pointer"
+                                  title="Quản lý chương"
+                                >
+                                  <Layers className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingStory(s);
+                                    setStoryForm({
+                                      title: s.title,
+                                      slug: s.slug,
+                                      type: s.type,
+                                      author_name: s.author_name || "",
+                                      description: s.description || "",
+                                      cover_url: s.cover_url || "",
+                                      status: s.status || "ongoing",
+                                      genres: Array.isArray(s.genres) ? s.genres.join(", ") : s.genres || "",
+                                      seo_title: "",
+                                      seo_description: "",
+                                      focus_keyword: "",
+                                    });
+                                    setShowStoryModal(true);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 transition-colors cursor-pointer"
+                                  title="Sửa thông tin"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Chuyển "${s.title}" vào Thùng rác?`)) {
+                                      fetch("/api/admin/bulk", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ action: "trash", ids: [s.id] }),
+                                      }).then(() => {
+                                        showToast("Đã đưa vào thùng rác");
+                                        fetchStories(currentPage);
+                                        fetchStats();
+                                      });
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-lg bg-muted hover:text-rose-500 transition-colors cursor-pointer"
+                                  title="Xóa vào thùng rác"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="p-4 border-t border-border/50 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <span className="text-muted-foreground">
+                  Trang <strong>{currentPage}</strong> / <strong>{totalPages}</strong> (Tổng cộng{" "}
+                  <strong>{totalStoriesCount.toLocaleString()}</strong> bộ truyện)
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => fetchStories(currentPage - 1)}
+                    disabled={currentPage <= 1 || loadingStories}
+                    className="p-2 rounded-lg bg-muted border border-border/60 hover:bg-muted/80 disabled:opacity-40 cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => fetchStories(currentPage + 1)}
+                    disabled={currentPage >= totalPages || loadingStories}
+                    className="p-2 rounded-lg bg-muted border border-border/60 hover:bg-muted/80 disabled:opacity-40 cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* TAB 5: SETTINGS & SEO */}
-        {activeTab === "settings" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Domain & CDN */}
-            <div className="p-6 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
-              <h3 className="text-sm font-black flex items-center gap-2">
-                <Globe className="w-4 h-4 text-rose-500" /> Cấu Hình Tên Miền & Mạng CDN
-              </h3>
-              <div className="flex flex-col gap-3 text-xs">
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Tên Website</label>
-                  <input
-                    type="text"
-                    disabled
-                    value="DocTruyen.vip"
-                    className="px-3 py-2 rounded-xl bg-muted/60 border border-border font-bold text-foreground"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">URL Chính (Vercel + Cloudflare DNS)</label>
-                  <input
-                    type="text"
-                    disabled
-                    value="https://doctruyen.vip"
-                    className="px-3 py-2 rounded-xl bg-muted/60 border border-border font-mono text-foreground"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Media R2 Domain (Cloudflare R2 Bucket)</label>
-                  <input
-                    type="text"
-                    disabled
-                    value="https://media.doctruyen.vip"
-                    className="px-3 py-2 rounded-xl bg-muted/60 border border-border font-mono text-emerald-500 font-bold"
-                  />
-                </div>
+        {/* ============================================================== */}
+        {/* TAB 3: BOOKS MANAGEMENT (SÁCH EBOOK & AUDIO) */}
+        {/* ============================================================== */}
+        {activeTab === "books" && (
+          <div className="flex flex-col gap-4 animate-in fade-in">
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex items-center justify-between shadow-sm">
+              <div>
+                <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                  <Bookmark className="w-4 h-4 text-emerald-500" /> Quản Lý Danh Mục Sách & Ebook
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Phân loại riêng cho sách điện tử, sách nói AudioBook và tài liệu nghiên cứu
+                </p>
               </div>
-            </div>
-
-            {/* Tracking & Analytics */}
-            <div className="p-6 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
-              <h3 className="text-sm font-black flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-amber-500" /> Mã Theo Dõi & SEO
-              </h3>
-              <div className="flex flex-col gap-3 text-xs">
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Google Analytics 4 ID</label>
-                  <input
-                    type="text"
-                    disabled
-                    value="G-0CBF77MVXY"
-                    className="px-3 py-2 rounded-xl bg-muted/60 border border-border font-mono text-amber-500 font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Google Tag Manager ID</label>
-                  <input
-                    type="text"
-                    disabled
-                    value="GTM-N7TTTGPL"
-                    className="px-3 py-2 rounded-xl bg-muted/60 border border-border font-mono text-indigo-400 font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-bold text-muted-foreground">Vercel Insights & Analytics</label>
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 font-semibold text-xs flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4" /> @vercel/analytics & @vercel/speed-insights tích hợp sẵn
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick SEO Links */}
-            <div className="p-6 rounded-2xl bg-card border border-border/50 shadow-sm md:col-span-2 flex flex-col gap-4">
-              <h3 className="text-sm font-black flex items-center gap-2">
-                <ExternalLink className="w-4 h-4 text-indigo-400" /> Liên Kết Kiểm Tra SEO Nhanh
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <a
-                  href="https://doctruyen.vip/sitemap.xml"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-3.5 rounded-xl bg-muted/60 hover:bg-muted border border-border flex items-center justify-between"
-                >
-                  <span className="font-bold">Xem Sitemap XML</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                </a>
-                <a
-                  href="https://doctruyen.vip/robots.txt"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-3.5 rounded-xl bg-muted/60 hover:bg-muted border border-border flex items-center justify-between"
-                >
-                  <span className="font-bold">Xem Robots.txt</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                </a>
-                <a
-                  href="https://search.google.com/search-console"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="p-3.5 rounded-xl bg-muted/60 hover:bg-muted border border-border flex items-center justify-between"
-                >
-                  <span className="font-bold">Google Search Console</span>
-                  <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* MODAL: STORY EDIT / CREATE */}
-      {showStoryModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-card border border-border rounded-3xl p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-2 border-b border-border/40">
-              <h3 className="font-black text-base">
-                {editingStory ? "Chỉnh Sửa Bộ Truyện" : "Thêm Bộ Truyện Mới"}
-              </h3>
               <button
-                onClick={() => setShowStoryModal(false)}
-                className="text-muted-foreground hover:text-foreground text-xs font-bold cursor-pointer"
+                onClick={() => {
+                  setEditingStory(null);
+                  setStoryForm({
+                    title: "",
+                    slug: "",
+                    type: "book",
+                    author_name: "",
+                    description: "",
+                    cover_url: "",
+                    status: "completed",
+                    genres: "Sách Hay, Kinh Doanh, Phát Triển Bản Thân",
+                    seo_title: "",
+                    seo_description: "",
+                    focus_keyword: "",
+                  });
+                  setShowStoryModal(true);
+                }}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5"
               >
-                Đóng
+                <Plus className="w-4 h-4" /> Thêm Sách Mới
               </button>
             </div>
 
-            <form onSubmit={handleSaveStory} className="flex flex-col gap-3 text-xs">
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
+                  <tr>
+                    <th className="p-3.5">Tác Phẩm Sách</th>
+                    <th className="p-3.5">Tác Giả</th>
+                    <th className="p-3.5">Số Chương / Phần</th>
+                    <th className="p-3.5">Trạng Thái</th>
+                    <th className="p-3.5 text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {loadingBooks ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-500" />
+                        <span className="block mt-2 font-semibold">Đang tải danh mục sách...</span>
+                      </td>
+                    </tr>
+                  ) : books.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        Chưa có cuốn sách nào trong hệ thống. Hãy bấm &quot;Thêm Sách Mới&quot; để tạo cuốn đầu tiên!
+                      </td>
+                    </tr>
+                  ) : (
+                    books.map((b) => (
+                      <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3.5 font-bold text-foreground">
+                          <Link href={`/truyen/${b.slug}`} target="_blank" className="hover:text-emerald-500">
+                            {b.title}
+                          </Link>
+                        </td>
+                        <td className="p-3.5 text-muted-foreground">{b.author_name || "Nhiều Tác Giả"}</td>
+                        <td className="p-3.5 font-bold">{b.total_chapters || 0}</td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
+                            Hoàn tất
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => {
+                              setSelectedStory(b);
+                              setActiveTab("chapters");
+                              fetchChapters(b.id);
+                            }}
+                            className="p-1.5 rounded-lg bg-muted hover:text-emerald-500 mr-1"
+                          >
+                            <Layers className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 4: CHAPTERS MANAGEMENT */}
+        {/* ============================================================== */}
+        {activeTab === "chapters" && (
+          <div className="flex flex-col gap-4 animate-in fade-in">
+            {/* Story Picker */}
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActiveTab("stories")}
+                  className="p-2 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div>
+                  <h3 className="font-extrabold text-sm text-foreground">
+                    Đang quản lý chương:{" "}
+                    <span className="text-rose-500">{selectedStory?.title || "Chưa chọn bộ truyện"}</span>
+                  </h3>
+                  <span className="text-[11px] text-muted-foreground">
+                    Loại: {selectedStory?.type === "comic" ? "Truyện Tranh" : "Truyện Chữ / Sách"} ·{" "}
+                    {chapters.length} chương hiện có
+                  </span>
+                </div>
+              </div>
+
+              {selectedStory && (
+                <button
+                  onClick={() => {
+                    setEditingChapter(null);
+                    const nextNum = chapters.length > 0 ? (Math.max(...chapters.map((c) => c.chapter_number)) + 1).toString() : "1";
+                    setChapterForm({
+                      chapter_number: nextNum,
+                      title: `Chương ${nextNum}`,
+                      is_locked: false,
+                      price_coins: 0,
+                      content_text: "",
+                      pages_images_str: "",
+                    });
+                    setShowChapterModal(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Thêm Chương Mới
+                </button>
+              )}
+            </div>
+
+            {/* Chapters Table */}
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
+                  <tr>
+                    <th className="p-3.5">Số Chương</th>
+                    <th className="p-3.5">Tiêu Đề Chương</th>
+                    <th className="p-3.5">Trạng Thái VIP</th>
+                    <th className="p-3.5">Giá Xu</th>
+                    <th className="p-3.5 text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {loadingChapters ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
+                        <span className="block mt-2 font-semibold">Đang tải danh sách chương...</span>
+                      </td>
+                    </tr>
+                  ) : chapters.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        Vui lòng chọn một bộ truyện từ tab &quot;Quản Lý Truyện&quot; để xem các chương.
+                      </td>
+                    </tr>
+                  ) : (
+                    chapters.map((c) => (
+                      <tr key={c.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3.5 font-bold text-foreground">Chương {c.chapter_number}</td>
+                        <td className="p-3.5 font-medium">{c.title || `Chương ${c.chapter_number}`}</td>
+                        <td className="p-3.5">
+                          {c.is_locked ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 flex items-center gap-1 w-fit">
+                              <Lock className="w-3 h-3" /> VIP
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 flex items-center gap-1 w-fit">
+                              <Unlock className="w-3 h-3" /> Miễn phí
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3.5 font-mono text-amber-500 font-bold">{c.price_coins || 0} xu</td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => {
+                              setEditingChapter(c);
+                              let imgStr = "";
+                              if (c.pages_images) {
+                                imgStr = Array.isArray(c.pages_images) ? c.pages_images.join("\n") : JSON.stringify(c.pages_images);
+                              }
+                              setChapterForm({
+                                chapter_number: c.chapter_number.toString(),
+                                title: c.title || "",
+                                is_locked: c.is_locked || false,
+                                price_coins: c.price_coins || 0,
+                                content_text: c.content_text || "",
+                                pages_images_str: imgStr,
+                              });
+                              setShowChapterModal(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 mr-1"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`Xóa chương ${c.chapter_number}?`)) {
+                                fetch(`/api/admin/chapters?id=${c.id}`, { method: "DELETE" }).then(() => {
+                                  showToast("Đã xóa chương");
+                                  if (selectedStory) fetchChapters(selectedStory.id);
+                                });
+                              }
+                            }}
+                            className="p-1.5 rounded-lg bg-muted hover:text-rose-500"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 5: PAGES & POLICY ARTICLES */}
+        {/* ============================================================== */}
+        {activeTab === "posts" && (
+          <div className="flex flex-col gap-4 animate-in fade-in">
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
               <div>
-                <label className="font-bold text-muted-foreground block mb-1">Tên Truyện *</label>
+                <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-rose-500" /> Quản Lý Trang Tĩnh & Bài Viết Chính Sách
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Chính sách bảo mật, Điều khoản, Cookie, DMCA và bài viết đánh giá truyện
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={postTypeFilter}
+                  onChange={(e) => setPostTypeFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value="page">Chỉ các trang tĩnh (Chính sách)</option>
+                  <option value="article">Bài viết tin tức / Review</option>
+                </select>
+
+                <button
+                  onClick={() => {
+                    setEditingPost(null);
+                    setPostForm({
+                      title: "",
+                      slug: "",
+                      type: postTypeFilter,
+                      excerpt: "",
+                      content_html: "",
+                      status: "published",
+                      seo_title: "",
+                      seo_description: "",
+                      focus_keyword: "",
+                    });
+                    setShowPostModal(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Tạo Trang Mới
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
+                  <tr>
+                    <th className="p-3.5">Tiêu Đề Trang</th>
+                    <th className="p-3.5">Đường Dẫn (Slug)</th>
+                    <th className="p-3.5">Phân Loại</th>
+                    <th className="p-3.5">Trạng Thái</th>
+                    <th className="p-3.5 text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {loadingPosts ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
+                        <span className="block mt-2 font-semibold">Đang tải danh sách trang...</span>
+                      </td>
+                    </tr>
+                  ) : posts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        Chưa có trang nào trong cơ sở dữ liệu. Bấm &quot;Tạo Trang Mới&quot; để thiết lập.
+                      </td>
+                    </tr>
+                  ) : (
+                    posts.map((p) => (
+                      <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3.5 font-bold text-foreground">{p.title}</td>
+                        <td className="p-3.5 font-mono text-indigo-400">/{p.slug}</td>
+                        <td className="p-3.5 uppercase font-black text-[10px] text-muted-foreground">{p.type}</td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
+                            {p.status || "published"}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <Link
+                            href={`/${p.slug}`}
+                            target="_blank"
+                            className="p-1.5 rounded-lg bg-muted hover:text-foreground inline-block mr-1"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+                          <button
+                            onClick={() => {
+                              setEditingPost(p);
+                              setPostForm({
+                                title: p.title || "",
+                                slug: p.slug || "",
+                                type: p.type || "page",
+                                excerpt: p.excerpt || "",
+                                content_html: p.content_html || "",
+                                status: p.status || "published",
+                                seo_title: p.seo_title || "",
+                                seo_description: p.seo_description || "",
+                                focus_keyword: p.focus_keyword || "",
+                              });
+                              setShowPostModal(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 mr-1"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePost(p.id, p.title)}
+                            className="p-1.5 rounded-lg bg-muted hover:text-rose-500"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 6: MEDIA MANAGER (Cloudflare R2 CDN) */}
+        {/* ============================================================== */}
+        {activeTab === "media" && (
+          <div className="flex flex-col gap-4 animate-in fade-in">
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-sm">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
-                  required
-                  value={storyForm.title}
-                  onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })}
-                  placeholder="Ví dụ: Thám Tử Lừng Danh Conan"
-                  className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border focus:ring-2 focus:ring-rose-500"
+                  placeholder="Tìm kiếm media theo tên hoặc mô tả..."
+                  value={mediaSearch}
+                  onChange={(e) => setMediaSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && fetchMedia()}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs focus:outline-none focus:border-rose-500"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-muted-foreground block mb-1">Slug URL *</label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchMedia}
+                  className="px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Làm Mới
+                </button>
+                <button
+                  onClick={() => setShowUploadMediaModal(true)}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Upload className="w-4 h-4" /> Thêm Ảnh Mới
+                </button>
+              </div>
+            </div>
+
+            {/* Media Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {loadingMedia ? (
+                <div className="col-span-full py-12 text-center text-muted-foreground">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
+                  <span className="block mt-2 font-semibold text-xs">Đang tải thư viện media...</span>
+                </div>
+              ) : mediaList.length === 0 ? (
+                <div className="col-span-full py-12 text-center text-muted-foreground text-xs">
+                  Không tìm thấy hình ảnh nào trong thư viện.
+                </div>
+              ) : (
+                mediaList.map((m) => (
+                  <div
+                    key={m.id}
+                    className="group relative rounded-xl border border-border/60 bg-card overflow-hidden shadow-sm flex flex-col hover:border-rose-500/50 transition-all"
+                  >
+                    <div className="aspect-[3/4] w-full bg-muted overflow-hidden relative">
+                      <img
+                        src={m.url}
+                        alt={m.name || "media"}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => copyMediaUrl(m.url)}
+                          className="p-2 rounded-lg bg-white/20 hover:bg-white/40 text-white cursor-pointer"
+                          title="Sao chép link CDN"
+                        >
+                          {copiedMediaUrl === m.url ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                        <a
+                          href={m.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 rounded-lg bg-white/20 hover:bg-white/40 text-white cursor-pointer"
+                          title="Mở ảnh gốc"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                    </div>
+                    <div className="p-2 flex flex-col gap-0.5 text-[11px]">
+                      <span className="font-bold text-foreground truncate">{m.name}</span>
+                      <span className="text-[10px] text-muted-foreground/70 truncate">{m.url}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 7: COMMENTS MODERATION */}
+        {/* ============================================================== */}
+        {activeTab === "comments" && (
+          <div className="flex flex-col gap-4 animate-in fade-in">
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex items-center justify-between shadow-sm">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Lọc bình luận theo nội dung hoặc người gửi..."
+                  value={commentSearch}
+                  onChange={(e) => setCommentSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && fetchComments()}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs focus:outline-none focus:border-rose-500"
+                />
+              </div>
+              <button
+                onClick={fetchComments}
+                className="px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Làm Mới
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
+                  <tr>
+                    <th className="p-3.5">Nội Dung Bình Luận</th>
+                    <th className="p-3.5">Bộ Truyện</th>
+                    <th className="p-3.5">Lượt Thích</th>
+                    <th className="p-3.5">Thời Gian</th>
+                    <th className="p-3.5 text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {loadingComments ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
+                        <span className="block mt-2 font-semibold">Đang tải bình luận...</span>
+                      </td>
+                    </tr>
+                  ) : comments.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        Chưa có bình luận nào cần kiểm duyệt.
+                      </td>
+                    </tr>
+                  ) : (
+                    comments.map((cm) => (
+                      <tr key={cm.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3.5 font-medium text-foreground max-w-sm truncate">{cm.content}</td>
+                        <td className="p-3.5 text-rose-500 font-bold">{cm.stories?.title || "Chung"}</td>
+                        <td className="p-3.5 font-mono">{cm.likes_count || 0}</td>
+                        <td className="p-3.5 text-muted-foreground">
+                          {new Date(cm.created_at).toLocaleDateString("vi-VN")}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => handleDeleteComment(cm.id)}
+                            className="p-1.5 rounded-lg bg-muted hover:text-rose-500"
+                            title="Xóa bình luận"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 8: USERS & VIETQR DYNAMIC WALLET */}
+        {/* ============================================================== */}
+        {activeTab === "users" && (
+          <div className="flex flex-col gap-4 animate-in fade-in">
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
+              <div>
+                <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                  <Users className="w-4 h-4 text-indigo-400" /> Phân Loại Độc Giả & Nạp Xu Tự Động
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Quản lý số dư xu, cấp độ thành viên VIP, nguồn khách hàng và sinh mã VietQR cá nhân
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <select
+                  value={userVipFilter}
+                  onChange={(e) => setUserVipFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value="">Tất cả Cấp độ</option>
+                  <option value="vip_diamond">VIP Kim Cương</option>
+                  <option value="vip_gold">VIP Vàng</option>
+                  <option value="vip_silver">VIP Bạc</option>
+                  <option value="normal">Độc giả thường</option>
+                </select>
+
+                <select
+                  value={userSourceFilter}
+                  onChange={(e) => setUserSourceFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value="">Tất cả Nguồn KH</option>
+                  <option value="seo">Google SEO</option>
+                  <option value="facebook">Facebook / Zalo</option>
+                  <option value="app">App Mobile</option>
+                  <option value="direct">Truy cập trực tiếp</option>
+                </select>
+
+                <button
+                  onClick={fetchUsers}
+                  className="px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
+                  <tr>
+                    <th className="p-3.5">Độc Giả</th>
+                    <th className="p-3.5">Cấp Bậc VIP</th>
+                    <th className="p-3.5">Nguồn KH</th>
+                    <th className="p-3.5">Số Dư Xu</th>
+                    <th className="p-3.5 text-right">Thao Tác Nạp & QR</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {loadingUsers ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-indigo-500" />
+                        <span className="block mt-2 font-semibold">Đang tải danh sách độc giả...</span>
+                      </td>
+                    </tr>
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        Chưa có người dùng nào đăng ký tài khoản.
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map((u) => (
+                      <tr key={u.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-rose-500 text-white font-bold flex items-center justify-center shrink-0">
+                              {(u.display_name || u.email || "U")[0].toUpperCase()}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-foreground">{u.display_name || "Chưa đặt tên"}</span>
+                              <span className="text-[11px] text-muted-foreground font-mono">{u.email}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500">
+                            {u.vip_level || "Thành viên"}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-muted-foreground">Google / Direct</td>
+                        <td className="p-3.5 font-bold text-amber-500 font-mono text-sm">
+                          {(u.coins_balance || 0).toLocaleString()} xu
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => {
+                              setQrModalUser(u);
+                              setQrAmount(50000);
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold mr-1.5 cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <QrCode className="w-3.5 h-3.5" /> Tạo VietQR
+                          </button>
+                          <button
+                            onClick={() => {
+                              setUserCoinsModal(u);
+                              setCoinAmount(100);
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <Coins className="w-3.5 h-3.5" /> Điều Chỉnh Xu
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 9: BULK IMPORT */}
+        {/* ============================================================== */}
+        {activeTab === "import" && (
+          <div className="flex flex-col gap-6 animate-in fade-in">
+            <div className="p-5 rounded-2xl bg-card border border-border/50 flex flex-col gap-4 shadow-sm">
+              <div>
+                <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-amber-500" /> Nhập Hàng Loạt Dữ Liệu (Bulk Import Engine)
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Nhập danh sách hàng trăm bộ truyện cùng lúc qua định dạng JSON chuẩn hoặc dán văn bản nhanh
+                </p>
+              </div>
+
+              {/* Import Type Toggle */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setImportType("json")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold cursor-pointer ${
+                    importType === "json"
+                      ? "bg-rose-500 text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  File / Dữ liệu JSON
+                </button>
+                <button
+                  onClick={() => setImportType("text")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold cursor-pointer ${
+                    importType === "text"
+                      ? "bg-rose-500 text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  Dán Văn Bản Nhanh (Title | Author | Genres | Desc)
+                </button>
+              </div>
+
+              {importType === "json" ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Mẫu JSON: [ {`{ "title": "...", "author_name": "...", "genres": ["..."], "type": "novel" }`} ]</span>
+                  </div>
+                  <textarea
+                    rows={10}
+                    value={importJsonText}
+                    onChange={(e) => setImportJsonText(e.target.value)}
+                    placeholder={`[\n  {\n    "title": "Truyện Mẫu Số 1",\n    "author_name": "Tác Giả A",\n    "genres": ["Tiên Hiệp", "Huyền Huyễn"],\n    "type": "novel",\n    "description": "Mô tả ngắn của truyện..."\n  }\n]`}
+                    className="w-full p-4 rounded-xl bg-muted/40 border border-border/60 text-xs font-mono focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    Mỗi dòng một bộ truyện theo cú pháp: <code>Tiêu đề | Tác giả | Thể loại (cách nhau dấu phẩy) | Mô tả</code>
+                  </span>
+                  <textarea
+                    rows={10}
+                    value={importLinesText}
+                    onChange={(e) => setImportLinesText(e.target.value)}
+                    placeholder={`Đấu Phá Thương Khung | Thiên Tằm Thổ Đậu | Tiên Hiệp, Huyền Huyễn | Thế giới thuộc về đấu khí...\nVõ Luyện Đỉnh Phong | Mạc Mặc | Kiếm Hiệp, Tu Chân | Con đường võ đạo đỉnh cao...`}
+                    className="w-full p-4 rounded-xl bg-muted/40 border border-border/60 text-xs font-mono focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+              )}
+
+              {importStatusMsg && (
+                <div className="p-3.5 rounded-xl bg-muted/60 border border-border text-xs font-bold text-foreground">
+                  {importStatusMsg}
+                </div>
+              )}
+
+              <button
+                onClick={handleRunBulkImport}
+                disabled={importing}
+                className="py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                {importing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {importing ? "Đang tiến hành nhập vào CSDL..." : "Bắt Đầu Nhập Hàng Loạt"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 10: TRASH BIN */}
+        {/* ============================================================== */}
+        {activeTab === "trash" && (
+          <div className="flex flex-col gap-4 animate-in fade-in">
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex items-center justify-between shadow-sm">
+              <div>
+                <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                  <Trash2 className="w-4 h-4 text-rose-500" /> Thùng Rác (Trash Bin & Khôi Phục)
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Các bộ truyện đã xóa tạm thời. Bạn có thể khôi phục lại bất kỳ lúc nào hoặc xóa vĩnh viễn.
+                </p>
+              </div>
+
+              {trashItems.length > 0 && (
+                <button
+                  onClick={() => handleForceDeleteFromTrash(trashItems.map((t) => t.id))}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs shadow-md shadow-rose-600/20 cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Dọn Sạch Thùng Rác
+                </button>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
+                  <tr>
+                    <th className="p-3.5">Tên Bộ Truyện</th>
+                    <th className="p-3.5">Phân Loại</th>
+                    <th className="p-3.5">Số Chương</th>
+                    <th className="p-3.5 text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {loadingTrash ? (
+                    <tr>
+                      <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
+                        <span className="block mt-2 font-semibold">Đang kiểm tra thùng rác...</span>
+                      </td>
+                    </tr>
+                  ) : trashItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                        Thùng rác trống. Không có bộ truyện nào bị xóa tạm.
+                      </td>
+                    </tr>
+                  ) : (
+                    trashItems.map((item) => (
+                      <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="p-3.5 font-bold text-foreground">{item.title}</td>
+                        <td className="p-3.5 uppercase text-[10px] text-muted-foreground">{item.type}</td>
+                        <td className="p-3.5 font-bold">{item.total_chapters}</td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => handleRestoreFromTrash([item.id])}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold mr-1.5 cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" /> Khôi Phục
+                          </button>
+                          <button
+                            onClick={() => handleForceDeleteFromTrash([item.id])}
+                            className="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Xóa Vĩnh Viễn
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 11: SETTINGS, SCHEMA, BRANDING & MOBILE APPS */}
+        {/* ============================================================== */}
+        {activeTab === "settings" && (
+          <form onSubmit={handleSaveSettings} className="flex flex-col gap-6 animate-in fade-in">
+            {/* Brand & Colors */}
+            <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
+              <h3 className="font-extrabold text-sm border-b border-border/50 pb-3 flex items-center gap-2">
+                <Palette className="w-4 h-4 text-rose-500" /> Tùy Biến Màu Sắc & Nhận Diện Thương Hiệu
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Màu Chủ Đạo (Primary Color)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={settings?.primaryColor || "#f43f5e"}
+                      onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                      className="w-10 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={settings?.primaryColor || "#f43f5e"}
+                      onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                      className="flex-1 px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Màu Điểm Nhấn (Accent Color)</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={settings?.accentColor || "#f59e0b"}
+                      onChange={(e) => setSettings({ ...settings, accentColor: e.target.value })}
+                      className="w-10 h-10 rounded-xl bg-transparent border-0 cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={settings?.accentColor || "#f59e0b"}
+                      onChange={(e) => setSettings({ ...settings, accentColor: e.target.value })}
+                      className="flex-1 px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Chế Độ Mặc Định</label>
+                  <select
+                    value={settings?.themeMode || "dark"}
+                    onChange={(e) => setSettings({ ...settings, themeMode: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-bold"
+                  >
+                    <option value="dark">Tối Hiện Đại (Dark Mode)</option>
+                    <option value="light">Sáng Thanh Lịch (Light Mode)</option>
+                    <option value="amoled">Đen Tuyệt Đối (AMOLED Black)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Logo & Favicon */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Đường Dẫn Logo Website</label>
+                  <input
+                    type="text"
+                    value={settings?.logoUrl || "https://media.doctruyen.vip/covers/logo.png"}
+                    onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Favicon URL</label>
+                  <input
+                    type="text"
+                    value={settings?.faviconUrl || "/favicon.ico"}
+                    onChange={(e) => setSettings({ ...settings, faviconUrl: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Apps Links */}
+            <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
+              <h3 className="font-extrabold text-sm border-b border-border/50 pb-3 flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-indigo-400" /> Liên Kết Ứng Dụng Di Động (Android & iOS)
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">File Cài Đặt Android APK Direct Link</label>
+                  <input
+                    type="text"
+                    value={settings?.mobileApps?.androidApkUrl || ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        mobileApps: { ...settings.mobileApps, androidApkUrl: e.target.value },
+                      })
+                    }
+                    placeholder="https://media.doctruyen.vip/apps/doctruyen.apk"
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Google Play Store URL</label>
+                  <input
+                    type="text"
+                    value={settings?.mobileApps?.googlePlayUrl || ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        mobileApps: { ...settings.mobileApps, googlePlayUrl: e.target.value },
+                      })
+                    }
+                    placeholder="https://play.google.com/store/apps/details?id=vip.doctruyen.app"
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Apple App Store URL</label>
+                  <input
+                    type="text"
+                    value={settings?.mobileApps?.iosAppStoreUrl || ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        mobileApps: { ...settings.mobileApps, iosAppStoreUrl: e.target.value },
+                      })
+                    }
+                    placeholder="https://apps.apple.com/app/doctruyen-vip/id..."
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Apple TestFlight URL</label>
+                  <input
+                    type="text"
+                    value={settings?.mobileApps?.iosTestFlightUrl || ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        mobileApps: { ...settings.mobileApps, iosTestFlightUrl: e.target.value },
+                      })
+                    }
+                    placeholder="https://testflight.apple.com/join/..."
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Banking & VietQR */}
+            <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
+              <h3 className="font-extrabold text-sm border-b border-border/50 pb-3 flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-emerald-500" /> Tài Khoản Ngân Hàng Nạp Tiền & VietQR
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Ngân Hàng Thụ Hưởng</label>
+                  <input
+                    type="text"
+                    value={settings?.banking?.bankName || "MBBank"}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        banking: { ...settings.banking, bankName: e.target.value },
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-bold"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Số Tài Khoản</label>
+                  <input
+                    type="text"
+                    value={settings?.banking?.accountNo || "0388888888"}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        banking: { ...settings.banking, accountNo: e.target.value },
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono font-bold"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Tên Chủ Tài Khoản</label>
+                  <input
+                    type="text"
+                    value={settings?.banking?.accountName || "DOCTRUYENVIP"}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        banking: { ...settings.banking, accountName: e.target.value },
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs uppercase font-black"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Settings */}
+            <div className="flex items-center justify-end">
+              <button
+                type="submit"
+                disabled={savingSettings}
+                className="py-3 px-8 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-sm shadow-md shadow-rose-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-2"
+              >
+                {savingSettings ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                {savingSettings ? "Đang lưu cấu hình..." : "Lưu Toàn Bộ Cấu Hình Website"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* ============================================================== */}
+      {/* MODAL 1: EDIT / CREATE STORY */}
+      {/* ============================================================== */}
+      {showStoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-2xl bg-card border border-border/80 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-border/50 flex items-center justify-between bg-muted/30">
+              <h3 className="text-base font-extrabold text-foreground">
+                {editingStory ? `Sửa Bộ Truyện: ${editingStory.title}` : "Thêm Bộ Truyện Mới"}
+              </h3>
+              <button
+                onClick={() => setShowStoryModal(false)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStory} className="p-5 overflow-y-auto flex-1 flex flex-col gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Tiêu Đề Truyện *</label>
+                  <input
+                    type="text"
+                    required
+                    value={storyForm.title}
+                    onChange={(e) => setStoryForm({ ...storyForm, title: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Đường Dẫn Slug *</label>
                   <input
                     type="text"
                     required
                     value={storyForm.slug}
                     onChange={(e) => setStoryForm({ ...storyForm, slug: e.target.value })}
-                    placeholder="tham-tu-lung-danh-conan"
-                    className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border font-mono focus:ring-2 focus:ring-rose-500"
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
                   />
-                </div>
-                <div>
-                  <label className="font-bold text-muted-foreground block mb-1">Loại Truyện *</label>
-                  <select
-                    value={storyForm.type}
-                    onChange={(e) => setStoryForm({ ...storyForm, type: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border font-bold"
-                  >
-                    <option value="comic">Truyện Tranh (Comic)</option>
-                    <option value="novel">Truyện Chữ (Novel)</option>
-                  </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-muted-foreground block mb-1">Tác Giả</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Phân Loại</label>
+                  <select
+                    value={storyForm.type}
+                    onChange={(e) => setStoryForm({ ...storyForm, type: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-bold"
+                  >
+                    <option value="comic">Truyện Tranh (Comic/Manga)</option>
+                    <option value="novel">Truyện Chữ (Novel)</option>
+                    <option value="book">Sách & Ebook (Book)</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Tác Giả</label>
                   <input
                     type="text"
                     value={storyForm.author_name}
                     onChange={(e) => setStoryForm({ ...storyForm, author_name: e.target.value })}
-                    placeholder="Aoyama Gosho"
-                    className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border"
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs"
                   />
                 </div>
-                <div>
-                  <label className="font-bold text-muted-foreground block mb-1">Trạng Thái</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Trạng Thái</label>
                   <select
                     value={storyForm.status}
                     onChange={(e) => setStoryForm({ ...storyForm, status: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border font-bold"
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-bold"
                   >
                     <option value="ongoing">Đang tiến hành</option>
                     <option value="completed">Đã hoàn thành</option>
@@ -1304,52 +2624,58 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="font-bold text-muted-foreground block mb-1">Thể Loại (cách nhau dấu phẩy)</label>
-                <input
-                  type="text"
-                  value={storyForm.genres}
-                  onChange={(e) => setStoryForm({ ...storyForm, genres: e.target.value })}
-                  placeholder="Trinh Thám, Học Đường, Hành Động"
-                  className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border"
-                />
-              </div>
-
-              <div>
-                <label className="font-bold text-muted-foreground block mb-1">Link Ảnh Bìa (Cover URL)</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-foreground">Ảnh Bìa (Cover URL)</label>
                 <input
                   type="text"
                   value={storyForm.cover_url}
                   onChange={(e) => setStoryForm({ ...storyForm, cover_url: e.target.value })}
-                  placeholder="https://media.doctruyen.vip/covers/conan.webp"
-                  className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border font-mono text-[11px]"
+                  className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
                 />
               </div>
 
-              <div>
-                <label className="font-bold text-muted-foreground block mb-1">Tóm Tắt Nội Dung</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-foreground">Thể Loại (Cách nhau dấu phẩy)</label>
+                <input
+                  type="text"
+                  value={storyForm.genres}
+                  onChange={(e) => setStoryForm({ ...storyForm, genres: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-foreground">Mô Tả Truyện</label>
+                  <button
+                    type="button"
+                    onClick={() => openAiSeoForStory(storyForm)}
+                    className="text-[11px] font-bold text-rose-500 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> Gợi Ý SEO Bằng AI
+                  </button>
+                </div>
                 <textarea
                   rows={4}
                   value={storyForm.description}
                   onChange={(e) => setStoryForm({ ...storyForm, description: e.target.value })}
-                  placeholder="Mô tả tóm tắt tác phẩm..."
-                  className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border text-xs"
+                  className="w-full p-3 rounded-xl bg-muted/50 border border-border/60 text-xs"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="p-4 border-t border-border/50 bg-muted/20 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowStoryModal(false)}
-                  className="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-md cursor-pointer"
+                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold text-xs shadow-md shadow-rose-500/20 hover:opacity-95"
                 >
-                  Lưu Thông Tin
+                  {editingStory ? "Lưu Thay Đổi" : "Thêm Truyện"}
                 </button>
               </div>
             </form>
@@ -1357,110 +2683,106 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* MODAL: CHAPTER EDIT / CREATE */}
+      {/* ============================================================== */}
+      {/* MODAL 2: EDIT / CREATE CHAPTER */}
+      {/* ============================================================== */}
       {showChapterModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-card border border-border rounded-3xl p-6 shadow-2xl flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-2 border-b border-border/40">
-              <h3 className="font-black text-base">
-                {editingChapter ? `Sửa Chương ${chapterForm.chapter_number}` : "Thêm Chương Mới"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-2xl bg-card border border-border/80 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-border/50 flex items-center justify-between bg-muted/30">
+              <h3 className="text-base font-extrabold text-foreground">
+                {editingChapter ? `Sửa Chương ${editingChapter.chapter_number}` : "Thêm Chương Mới"}
               </h3>
               <button
                 onClick={() => setShowChapterModal(false)}
-                className="text-muted-foreground hover:text-foreground text-xs font-bold cursor-pointer"
+                className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted"
               >
-                Đóng
+                ✕
               </button>
             </div>
 
-            <form onSubmit={handleSaveChapter} className="flex flex-col gap-3 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="font-bold text-muted-foreground block mb-1">Số Chương *</label>
+            <form onSubmit={handleSaveChapter} className="p-5 overflow-y-auto flex-1 flex flex-col gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Số Chương *</label>
                   <input
                     type="number"
                     step="any"
                     required
                     value={chapterForm.chapter_number}
                     onChange={(e) => setChapterForm({ ...chapterForm, chapter_number: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border font-bold"
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-bold"
                   />
                 </div>
-                <div>
-                  <label className="font-bold text-muted-foreground block mb-1">Tiêu Đề Chương</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Tiêu Đề Chương</label>
                   <input
                     type="text"
                     value={chapterForm.title}
                     onChange={(e) => setChapterForm({ ...chapterForm, title: e.target.value })}
-                    placeholder="Tập 1 / Chương 1..."
-                    className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border"
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 items-center p-3 rounded-xl bg-muted/40 border border-border/40">
-                <label className="flex items-center gap-2 font-bold cursor-pointer">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-xl bg-muted/30 border border-border/40">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={chapterForm.is_locked}
                     onChange={(e) => setChapterForm({ ...chapterForm, is_locked: e.target.checked })}
-                    className="w-4 h-4 rounded text-rose-500"
+                    className="rounded text-rose-500 focus:ring-rose-500 w-4 h-4"
                   />
-                  <span>Khóa VIP (Thu Xu)</span>
+                  <span className="font-bold text-foreground">Khóa Chương VIP</span>
                 </label>
                 {chapterForm.is_locked && (
-                  <div>
-                    <label className="font-bold text-muted-foreground block mb-1">Giá Xu</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold text-muted-foreground whitespace-nowrap">Giá Xu Mở:</label>
                     <input
                       type="number"
-                      min={1}
                       value={chapterForm.price_coins}
-                      onChange={(e) => setChapterForm({ ...chapterForm, price_coins: parseInt(e.target.value, 10) })}
-                      className="w-full px-3 py-1.5 rounded-xl bg-card border border-border font-bold text-amber-500"
+                      onChange={(e) => setChapterForm({ ...chapterForm, price_coins: parseInt(e.target.value) || 0 })}
+                      className="w-24 px-3 py-1.5 rounded-lg bg-muted border border-border text-xs font-mono font-bold text-amber-500"
                     />
                   </div>
                 )}
               </div>
 
-              {selectedStory?.type === "novel" ? (
-                <div>
-                  <label className="font-bold text-muted-foreground block mb-1">Nội Dung Văn Bản Chương</label>
-                  <textarea
-                    rows={8}
-                    value={chapterForm.content_text}
-                    onChange={(e) => setChapterForm({ ...chapterForm, content_text: e.target.value })}
-                    placeholder="Dán toàn bộ nội dung văn bản của chương vào đây..."
-                    className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border text-xs font-mono"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="font-bold text-muted-foreground block mb-1">
-                    Danh Sách Link Ảnh Trang (Mỗi link một dòng)
-                  </label>
+              {selectedStory?.type === "comic" ? (
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Danh Sách Link Ảnh Trang Truyện (Mỗi dòng một link)</label>
                   <textarea
                     rows={8}
                     value={chapterForm.pages_images_str}
                     onChange={(e) => setChapterForm({ ...chapterForm, pages_images_str: e.target.value })}
-                    placeholder="https://media.doctruyen.vip/comics/.../page-001.webp&#10;https://media.doctruyen.vip/comics/.../page-002.webp"
-                    className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border text-xs font-mono"
+                    className="w-full p-3 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Nội Dung Văn Bản Chương</label>
+                  <textarea
+                    rows={12}
+                    value={chapterForm.content_text}
+                    onChange={(e) => setChapterForm({ ...chapterForm, content_text: e.target.value })}
+                    className="w-full p-3 rounded-xl bg-muted/50 border border-border/60 text-xs leading-relaxed"
                   />
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="p-4 border-t border-border/50 bg-muted/20 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowChapterModal(false)}
-                  className="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold shadow-md cursor-pointer"
+                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold text-xs shadow-md shadow-rose-500/20 hover:opacity-95"
                 >
-                  Lưu Chương
+                  {editingChapter ? "Lưu Chương" : "Thêm Chương"}
                 </button>
               </div>
             </form>
@@ -1468,53 +2790,269 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* MODAL: COINS ADJUSTMENT */}
-      {userCoinsModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-card border border-border rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
-            <h3 className="font-black text-base flex items-center gap-2">
-              <Coins className="w-5 h-5 text-amber-500" /> Điều Chỉnh Số Dư Xu
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Đang thao tác với: <b>{userCoinsModal.email}</b>
-            </p>
-            <div className="p-3 rounded-xl bg-muted/60 border border-border flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Số dư hiện tại:</span>
-              <strong className="text-amber-500 font-bold text-sm">{userCoinsModal.coins_balance || 0} Xu</strong>
+      {/* ============================================================== */}
+      {/* MODAL 3: EDIT / CREATE POST (PAGES) */}
+      {/* ============================================================== */}
+      {showPostModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-2xl bg-card border border-border/80 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-border/50 flex items-center justify-between bg-muted/30">
+              <h3 className="text-base font-extrabold text-foreground">
+                {editingPost ? `Sửa Trang: ${editingPost.title}` : "Tạo Trang / Bài Viết Mới"}
+              </h3>
+              <button
+                onClick={() => setShowPostModal(false)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted"
+              >
+                ✕
+              </button>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-muted-foreground block mb-1">Số lượng Xu</label>
-              <input
-                type="number"
-                value={coinAmount}
-                onChange={(e) => setCoinAmount(parseInt(e.target.value, 10))}
-                className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border font-bold text-sm focus:ring-2 focus:ring-amber-500"
-              />
+            <form onSubmit={handleSavePost} className="p-5 overflow-y-auto flex-1 flex flex-col gap-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Tiêu Đề Trang *</label>
+                  <input
+                    type="text"
+                    required
+                    value={postForm.title}
+                    onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-bold text-foreground">Đường Dẫn Slug *</label>
+                  <input
+                    type="text"
+                    required
+                    value={postForm.slug}
+                    onChange={(e) => setPostForm({ ...postForm, slug: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-foreground">Tóm Tắt Ngắn (Excerpt / Meta Description)</label>
+                <textarea
+                  rows={2}
+                  value={postForm.excerpt}
+                  onChange={(e) => setPostForm({ ...postForm, excerpt: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-muted/50 border border-border/60 text-xs"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-foreground">Nội Dung Chi Tiết (HTML hoặc Markdown)</label>
+                <textarea
+                  rows={10}
+                  value={postForm.content_html}
+                  onChange={(e) => setPostForm({ ...postForm, content_html: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono leading-relaxed"
+                />
+              </div>
+
+              <div className="p-4 border-t border-border/50 bg-muted/20 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPostModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold text-xs shadow-md shadow-rose-500/20 hover:opacity-95"
+                >
+                  Lưu Trang
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 4: DYNAMIC VIETQR GENERATOR */}
+      {/* ============================================================== */}
+      {qrModalUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md bg-card border border-border/80 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-border/50 flex items-center justify-between bg-muted/30">
+              <h3 className="text-sm font-extrabold text-foreground flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-emerald-500" /> VietQR Nạp Xu Độc Giả
+              </h3>
+              <button
+                onClick={() => setQrModalUser(null)}
+                className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                onClick={() => handleAdjustCoins("add")}
-                className="flex-1 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 text-white font-bold text-xs shadow-md cursor-pointer"
-              >
-                + Cộng {coinAmount} Xu
-              </button>
-              <button
-                onClick={() => handleAdjustCoins("set")}
-                className="px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs cursor-pointer"
-              >
-                Đặt Thành
-              </button>
-              <button
-                onClick={() => setUserCoinsModal(null)}
-                className="px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground text-xs cursor-pointer"
-              >
-                Hủy
-              </button>
+            <div className="p-6 flex flex-col items-center gap-4 text-center">
+              <div className="text-xs">
+                Nạp xu cho tài khoản: <strong className="text-rose-500">{qrModalUser.email || qrModalUser.id}</strong>
+              </div>
+
+              {/* Amount Buttons */}
+              <div className="flex flex-wrap justify-center gap-2">
+                {[20000, 50000, 100000, 200000].map((amt) => (
+                  <button
+                    key={amt}
+                    onClick={() => setQrAmount(amt)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      qrAmount === amt
+                        ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {amt.toLocaleString()}đ ({amt / 10} xu)
+                  </button>
+                ))}
+              </div>
+
+              {/* Render Live VietQR Image */}
+              <div className="p-3 bg-white rounded-2xl shadow-lg border border-border/40">
+                <img
+                  src={`https://img.vietqr.io/image/970422-0388888888-compact2.png?amount=${qrAmount}&addInfo=NAPXU%20${qrModalUser.id.slice(0, 8)}&accountName=DOCTRUYENVIP`}
+                  alt="VietQR nạp xu"
+                  className="w-56 h-auto"
+                />
+              </div>
+
+              <div className="text-[11px] text-muted-foreground flex flex-col gap-0.5">
+                <span>Cú pháp tự động: <strong>NAPXU {qrModalUser.id.slice(0, 8)}</strong></span>
+                <span>Chủ TK: <strong>DOCTRUYENVIP</strong> · Ngân hàng: <strong>MBBank</strong></span>
+              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 5: ADJUST COINS */}
+      {/* ============================================================== */}
+      {userCoinsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-sm bg-card border border-border/80 rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
+            <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+              <Coins className="w-4 h-4 text-amber-500" /> Điều Chỉnh Số Dư Xu
+            </h3>
+            <div className="text-xs text-muted-foreground">
+              Độc giả: <strong className="text-foreground">{userCoinsModal.email}</strong>
+              <br />
+              Số dư hiện tại: <strong className="text-amber-500 font-mono">{(userCoinsModal.coins_balance || 0).toLocaleString()} xu</strong>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-foreground">Số Lượng Xu:</label>
+              <input
+                type="number"
+                value={coinAmount}
+                onChange={(e) => setCoinAmount(parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 rounded-xl bg-muted border border-border text-sm font-bold font-mono text-amber-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button
+                onClick={() => handleAdjustCoins("add")}
+                className="py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold text-xs"
+              >
+                + Cộng Thêm Xu
+              </button>
+              <button
+                onClick={() => handleAdjustCoins("set")}
+                className="py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs border border-border"
+              >
+                = Đặt Cố Định
+              </button>
+            </div>
+            <button
+              onClick={() => setUserCoinsModal(null)}
+              className="text-xs text-muted-foreground hover:underline text-center"
+            >
+              Hủy bỏ
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL 6: UPLOAD MEDIA */}
+      {/* ============================================================== */}
+      {showUploadMediaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md bg-card border border-border/80 rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
+            <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-rose-500" /> Thêm Hình Ảnh Vào Thư Viện
+            </h3>
+
+            <form onSubmit={handleSaveMedia} className="flex flex-col gap-3 text-xs">
+              <div className="flex flex-col gap-1">
+                <label className="font-bold text-foreground">Tên Hình Ảnh</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ảnh bìa Conan tập 1..."
+                  value={newMediaForm.name}
+                  onChange={(e) => setNewMediaForm({ ...newMediaForm, name: e.target.value })}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-bold text-foreground">Đường Dẫn URL Ảnh (R2 / CDN) *</label>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://media.doctruyen.vip/covers/..."
+                  value={newMediaForm.url}
+                  onChange={(e) => setNewMediaForm({ ...newMediaForm, url: e.target.value })}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border font-mono"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="font-bold text-foreground">Thẻ Alt (Mô tả SEO)</label>
+                <input
+                  type="text"
+                  placeholder="Bìa truyện tranh..."
+                  value={newMediaForm.alt_text}
+                  onChange={(e) => setNewMediaForm({ ...newMediaForm, alt_text: e.target.value })}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUploadMediaModal(false)}
+                  className="px-4 py-2 rounded-xl text-muted-foreground hover:bg-muted"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold"
+                >
+                  Lưu Vào Thư Viện
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* AI SEO Modal */}
+      {targetAiStory && (
+        <AdminAiSeoModal
+          isOpen={aiSeoModalOpen}
+          onClose={() => setAiSeoModalOpen(false)}
+          story={targetAiStory}
+          onApply={handleApplyAiSeoToForm}
+        />
       )}
     </div>
   );
