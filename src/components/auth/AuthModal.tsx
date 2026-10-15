@@ -258,7 +258,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mật khẩu (ít nhất 6 ký tự)"
+              placeholder={mode === "register" ? "Mật khẩu (tối thiểu 6 ký tự)" : "Mật khẩu"}
               className="w-full h-11 pl-10 pr-3 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs sm:text-sm text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-700 placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
             />
           </div>

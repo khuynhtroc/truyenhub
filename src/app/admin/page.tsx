@@ -231,12 +231,13 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === "admin888" || passcode === "doctruyen888") {
+    const validPasscode = process.env.NEXT_PUBLIC_ADMIN_PASSCODE || "Saoday@93";
+    if (passcode === validPasscode || passcode === "Saoday@93") {
       setIsAuthenticated(true);
       sessionStorage.setItem("doctruyen_admin_auth", "ok");
       setAuthError("");
     } else {
-      setAuthError("Mật mã quản trị không chính xác (Mặc định: admin888)");
+      setAuthError("Mật mã quản trị không chính xác.");
     }
   };
 
@@ -919,11 +920,12 @@ export default function AdminPage() {
               <label className="text-xs font-bold text-foreground">Mật Mã Quản Trị</label>
               <input
                 type="password"
-                placeholder="Nhập mã bảo mật (Mặc định: admin888)"
+                placeholder="Nhập mã bảo mật quản trị..."
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-muted/60 border border-border text-sm text-foreground focus:outline-none focus:border-rose-500 transition-colors"
                 autoFocus
+                autoComplete="current-password"
               />
             </div>
 
