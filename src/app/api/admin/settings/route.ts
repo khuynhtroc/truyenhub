@@ -68,6 +68,71 @@ const DEFAULT_SETTINGS = {
     coinRate: 1000, // 1,000 VND = 100 xu
     qrTemplate: "compact2",
   },
+
+  // Social Login OAuth Configuration (Google & Facebook)
+  oauth: {
+    googleEnabled: true,
+    googleClientId: "",
+    googleClientSecret: "",
+    facebookEnabled: true,
+    facebookAppId: "",
+    facebookAppSecret: "",
+    supabaseCallbackUrl: "https://bqvffeqjgjtzprouwshd.supabase.co/auth/v1/callback",
+    siteRedirectUrl: "https://doctruyen.vip/auth/callback",
+  },
+
+  // Social Media Connections & Auto-Share APIs
+  socialIntegrations: {
+    facebook: {
+      pageId: "",
+      pageAccessToken: "",
+      groupId: "",
+      autoShareStory: true,
+      autoShareChapter: false,
+      pageUrl: "https://facebook.com/doctruyenvip",
+      postTemplate: "🎉 [DocTruyen.vip] Ra mắt chương mới: {title} - {chapter}!\n👉 Đọc ngay tại: {url}\n#doctruyen #manga #truyenmoi",
+    },
+    telegram: {
+      botToken: "",
+      channelId: "@doctruyenvip",
+      autoBroadcastStory: true,
+      autoBroadcastChapter: true,
+      channelUrl: "https://t.me/doctruyenvip",
+      messageTemplate: "📢 *{title}* vừa cập nhật *{chapter}*!\n\n📖 Đọc miễn phí tại: {url}",
+    },
+    zalo: {
+      oaId: "",
+      appId: "",
+      secretKey: "",
+      autoNotify: false,
+    },
+    googleIndexing: {
+      enabled: true,
+      serviceAccountEmail: "",
+      serviceAccountKey: "",
+      autoPingNewChapter: true,
+    },
+    twitter: {
+      apiKey: "",
+      apiSecret: "",
+      accessToken: "",
+      accessSecret: "",
+      autoTweet: false,
+    },
+    pinterest: {
+      accessToken: "",
+      boardId: "",
+      autoPinCover: false,
+    },
+    shareButtons: {
+      enableFacebook: true,
+      enableTelegram: true,
+      enableTwitter: true,
+      enableZalo: true,
+      enablePinterest: true,
+      enableCopyLink: true,
+    },
+  },
 };
 
 export async function GET() {
@@ -83,7 +148,24 @@ export async function GET() {
       console.warn("Could not load settings from DB, using defaults:", error.message);
     }
 
-    const currentSettings = data?.value ? { ...DEFAULT_SETTINGS, ...data.value } : DEFAULT_SETTINGS;
+    const currentSettings = {
+      ...DEFAULT_SETTINGS,
+      ...(data?.value || {}),
+      mobileApps: { ...DEFAULT_SETTINGS.mobileApps, ...(data?.value?.mobileApps || {}) },
+      banking: { ...DEFAULT_SETTINGS.banking, ...(data?.value?.banking || {}) },
+      oauth: { ...DEFAULT_SETTINGS.oauth, ...(data?.value?.oauth || {}) },
+      socialIntegrations: {
+        ...DEFAULT_SETTINGS.socialIntegrations,
+        ...(data?.value?.socialIntegrations || {}),
+        facebook: { ...DEFAULT_SETTINGS.socialIntegrations.facebook, ...(data?.value?.socialIntegrations?.facebook || {}) },
+        telegram: { ...DEFAULT_SETTINGS.socialIntegrations.telegram, ...(data?.value?.socialIntegrations?.telegram || {}) },
+        zalo: { ...DEFAULT_SETTINGS.socialIntegrations.zalo, ...(data?.value?.socialIntegrations?.zalo || {}) },
+        googleIndexing: { ...DEFAULT_SETTINGS.socialIntegrations.googleIndexing, ...(data?.value?.socialIntegrations?.googleIndexing || {}) },
+        twitter: { ...DEFAULT_SETTINGS.socialIntegrations.twitter, ...(data?.value?.socialIntegrations?.twitter || {}) },
+        pinterest: { ...DEFAULT_SETTINGS.socialIntegrations.pinterest, ...(data?.value?.socialIntegrations?.pinterest || {}) },
+        shareButtons: { ...DEFAULT_SETTINGS.socialIntegrations.shareButtons, ...(data?.value?.socialIntegrations?.shareButtons || {}) },
+      },
+    };
 
     return NextResponse.json({
       success: true,

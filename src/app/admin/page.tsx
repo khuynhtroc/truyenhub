@@ -47,12 +47,14 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   Zap,
+  Share2,
 } from "lucide-react";
 import { AdminAiSeoModal } from "@/components/admin/AdminAiSeoModal";
 import { AdminBookImportModal } from "@/components/admin/AdminBookImportModal";
 import { AdminBuffModal } from "@/components/admin/AdminBuffModal";
 import { AdminBlogModal } from "@/components/admin/AdminBlogModal";
 import { AdminReportsSection } from "@/components/admin/AdminReportsSection";
+import { AdminSocialSection } from "@/components/admin/AdminSocialSection";
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -70,6 +72,7 @@ export default function AdminPage() {
     | "users"
     | "import"
     | "trash"
+    | "social"
     | "settings"
   >("overview");
 
@@ -255,7 +258,7 @@ export default function AdminPage() {
     if (activeTab === "comments") fetchComments();
     if (activeTab === "users") fetchUsers();
     if (activeTab === "trash") fetchTrash();
-    if (activeTab === "settings") fetchSettings();
+    if (activeTab === "settings" || activeTab === "social") fetchSettings();
   }, [isAuthenticated, activeTab]);
 
   // 1. Fetch Stats
@@ -457,8 +460,8 @@ export default function AdminPage() {
   };
 
   // Save Settings
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveSettings = async (e?: React.FormEvent) => {
+    if (e && e.preventDefault) e.preventDefault();
     setSavingSettings(true);
     try {
       const res = await fetch("/api/admin/settings", {
@@ -1008,6 +1011,7 @@ export default function AdminPage() {
             { id: "users", label: "Độc Giả & Nạp Xu", icon: Users },
             { id: "import", label: "Nhập Hàng Loạt", icon: Upload },
             { id: "trash", label: "Thùng Rác", icon: Trash2, badge: stats?.totalTrash },
+            { id: "social", label: "Mạng Xã Hội & Auto Share", icon: Share2 },
             { id: "settings", label: "Cấu Hình & SEO", icon: Settings },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -2651,10 +2655,48 @@ export default function AdminPage() {
         )}
 
         {/* ============================================================== */}
+        {/* TAB 12: SOCIAL MEDIA, OAUTH & AUTO-SHARE */}
+        {/* ============================================================== */}
+        {activeTab === "social" && (
+          <AdminSocialSection
+            settings={settings}
+            setSettings={setSettings}
+            onSave={handleSaveSettings}
+            saving={savingSettings}
+            showToast={showToast}
+          />
+        )}
+
+        {/* ============================================================== */}
         {/* TAB 11: SETTINGS, SCHEMA, BRANDING & MOBILE APPS */}
         {/* ============================================================== */}
         {activeTab === "settings" && (
           <form onSubmit={handleSaveSettings} className="flex flex-col gap-6 animate-in fade-in">
+            {/* Quick jump to Social & OAuth */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-rose-500/10 to-amber-500/10 border border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+                  <Share2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-foreground">
+                    Cấu Hình Kết Nối Mạng Xã Hội, Google/Facebook Login & Auto-Share
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Tùy chỉnh Client ID OAuth, Telegram Bot phát sóng, Fanpage Facebook, Google Indexing API.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("social")}
+                className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <span>Mở Cấu Hình Mạng Xã Hội</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             {/* Brand & Colors */}
             <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-4">
               <h3 className="font-extrabold text-sm border-b border-border/50 pb-3 flex items-center gap-2">
