@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const { count: totalBooks } = await supabase
       .from("stories")
       .select("*", { count: "exact", head: true })
-      .eq("type", "book");
+      .or('type.eq.book,genres.cs.{"Sách"}');
 
     const { count: totalTrash } = await supabase
       .from("stories")
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       .select("*", { count: "exact", head: true })
       .eq("is_locked", true);
 
-    // 3. Profiles, Posts, Media, Comments
+    // 3. Profiles, Posts, Media, Comments, Reports
     const { count: totalUsers } = await supabase
       .from("profiles")
       .select("*", { count: "exact", head: true });
@@ -51,9 +51,28 @@ export async function GET(request: Request) {
       .from("posts")
       .select("*", { count: "exact", head: true });
 
+    const { count: totalPages } = await supabase
+      .from("posts")
+      .select("*", { count: "exact", head: true })
+      .eq("type", "page");
+
+    const { count: totalBlogs } = await supabase
+      .from("posts")
+      .select("*", { count: "exact", head: true })
+      .eq("type", "blog");
+
     const { count: totalComments } = await supabase
       .from("comments")
       .select("*", { count: "exact", head: true });
+
+    // Reports count from settings
+    let totalReports = 0;
+    try {
+      const { data: repRow } = await supabase.from("settings").select("value").eq("key", "story_reports").single();
+      if (repRow && Array.isArray(repRow.value)) {
+        totalReports = repRow.value.length;
+      }
+    } catch (_) {}
 
     // 4. Recent stories
     const { data: recentStories } = await supabase
@@ -75,7 +94,10 @@ export async function GET(request: Request) {
         totalLockedChapters: totalLockedChapters || 0,
         totalUsers: totalUsers || 0,
         totalPosts: totalPosts || 0,
+        totalPages: totalPages || 0,
+        totalBlogs: totalBlogs || 0,
         totalComments: totalComments || 0,
+        totalReports: totalReports || 0,
         recentStories: recentStories || [],
         system: {
           domain: "https://doctruyen.vip",

@@ -35,7 +35,9 @@ export async function GET(request: Request) {
     }
 
     // Type filter (comic, novel, book)
-    if (type && (type === "comic" || type === "novel" || type === "book")) {
+    if (type === "book") {
+      query = query.or('type.eq.book,genres.cs.{"Sách"}');
+    } else if (type && (type === "comic" || type === "novel")) {
       query = query.eq("type", type);
     }
 
@@ -114,7 +116,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, title, slug, type, description, cover_url, author_name, status, genres } = body;
+    const { id, title, slug, type, description, cover_url, author_name, status, genres, total_views, total_likes } = body;
 
     if (!id) {
       return NextResponse.json({ success: false, error: "ID truyện là bắt buộc" }, { status: 400 });
@@ -132,6 +134,8 @@ export async function PUT(request: Request) {
     if (cover_url !== undefined) updatePayload.cover_url = cover_url;
     if (author_name !== undefined) updatePayload.author_name = author_name;
     if (status !== undefined) updatePayload.status = status;
+    if (total_views !== undefined) updatePayload.total_views = Math.max(0, parseInt(total_views, 10) || 0);
+    if (total_likes !== undefined) updatePayload.total_likes = Math.max(0, parseInt(total_likes, 10) || 0);
     if (genres !== undefined) {
       updatePayload.genres = Array.isArray(genres)
         ? genres

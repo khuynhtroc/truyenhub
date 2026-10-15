@@ -46,8 +46,13 @@ import {
   Eye,
   FileSpreadsheet,
   AlertTriangle,
+  Zap,
 } from "lucide-react";
 import { AdminAiSeoModal } from "@/components/admin/AdminAiSeoModal";
+import { AdminBookImportModal } from "@/components/admin/AdminBookImportModal";
+import { AdminBuffModal } from "@/components/admin/AdminBuffModal";
+import { AdminBlogModal } from "@/components/admin/AdminBlogModal";
+import { AdminReportsSection } from "@/components/admin/AdminReportsSection";
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -58,6 +63,7 @@ export default function AdminPage() {
     | "stories"
     | "books"
     | "chapters"
+    | "blogs"
     | "posts"
     | "media"
     | "comments"
@@ -91,6 +97,10 @@ export default function AdminPage() {
   const [aiSeoModalOpen, setAiSeoModalOpen] = useState(false);
   const [targetAiStory, setTargetAiStory] = useState<any>(null);
 
+  // Buff Views & Likes Modal State
+  const [buffModalOpen, setBuffModalOpen] = useState(false);
+  const [targetBuffStory, setTargetBuffStory] = useState<any>(null);
+
   // Story edit/create modal
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [editingStory, setEditingStory] = useState<any>(null);
@@ -113,6 +123,15 @@ export default function AdminPage() {
   const [loadingBooks, setLoadingBooks] = useState(false);
   const [booksPage, setBooksPage] = useState(1);
   const [totalBooksCount, setTotalBooksCount] = useState(0);
+  const [showBookImportModal, setShowBookImportModal] = useState(false);
+
+  // Blogs State (dedicated tab)
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [loadingBlogs, setLoadingBlogs] = useState(false);
+  const [blogCategoryFilter, setBlogCategoryFilter] = useState("all");
+  const [blogSearchQuery, setBlogSearchQuery] = useState("");
+  const [showBlogModal, setShowBlogModal] = useState(false);
+  const [editingBlog, setEditingBlog] = useState<any>(null);
 
   // Chapters state
   const [selectedStory, setSelectedStory] = useState<any>(null);
@@ -230,6 +249,7 @@ export default function AdminPage() {
     if (activeTab === "overview") fetchStats();
     if (activeTab === "stories") fetchStories(1);
     if (activeTab === "books") fetchBooks(1);
+    if (activeTab === "blogs") fetchBlogs();
     if (activeTab === "posts") fetchPosts();
     if (activeTab === "media") fetchMedia();
     if (activeTab === "comments") fetchComments();
@@ -337,6 +357,22 @@ export default function AdminPage() {
       console.error(e);
     } finally {
       setLoadingPosts(false);
+    }
+  };
+
+  // 5b. Fetch Blogs (Reviews, Spoil, Coming Soon, Notice)
+  const fetchBlogs = async () => {
+    setLoadingBlogs(true);
+    try {
+      const res = await fetch("/api/admin/posts?type=blog");
+      const data = await res.json();
+      if (data.success) {
+        setBlogs(data.posts || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingBlogs(false);
     }
   };
 
@@ -963,14 +999,15 @@ export default function AdminPage() {
           {[
             { id: "overview", label: "Tổng Quan", icon: BarChart3 },
             { id: "stories", label: "Quản Lý Truyện", icon: BookOpen },
-            { id: "books", label: "Quản Lý Sách", icon: Bookmark },
+            { id: "books", label: "Quản Lý Sách", icon: Bookmark, badge: stats?.totalBooks },
             { id: "chapters", label: "Quản Lý Chương", icon: Layers },
-            { id: "posts", label: "Trang & Bài Viết", icon: FileText },
+            { id: "blogs", label: "Quản Lý Blog", icon: Sparkles, badge: stats?.totalBlogs },
+            { id: "posts", label: "Quản Lý Trang", icon: FileText, badge: stats?.totalPages },
+            { id: "comments", label: "Bình Luận & Báo Cáo", icon: MessageSquare, badge: stats?.totalReports > 0 ? `${stats.totalReports} lỗi` : null },
             { id: "media", label: "Thư Viện Media", icon: ImageIcon },
-            { id: "comments", label: "Bình Luận", icon: MessageSquare },
             { id: "users", label: "Độc Giả & Nạp Xu", icon: Users },
             { id: "import", label: "Nhập Hàng Loạt", icon: Upload },
-            { id: "trash", label: "Thùng Rác", icon: Trash2 },
+            { id: "trash", label: "Thùng Rác", icon: Trash2, badge: stats?.totalTrash },
             { id: "settings", label: "Cấu Hình & SEO", icon: Settings },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -987,9 +1024,17 @@ export default function AdminPage() {
               >
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
-                {tab.id === "trash" && stats?.totalTrash > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-rose-700 text-white text-[10px] font-black">
-                    {stats.totalTrash}
+                {tab.badge && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : tab.id === "comments" && stats?.totalReports > 0
+                        ? "bg-rose-500/20 text-rose-500"
+                        : "bg-muted-foreground/15 text-muted-foreground"
+                    }`}
+                  >
+                    {tab.badge}
                   </span>
                 )}
               </button>
@@ -1270,6 +1315,15 @@ export default function AdminPage() {
                     Đánh dấu Đang ra
                   </button>
                   <button
+                    onClick={() => {
+                      setTargetBuffStory(null);
+                      setBuffModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold cursor-pointer flex items-center gap-1 shadow-sm"
+                  >
+                    <Zap className="w-3.5 h-3.5" /> Buff View/Like
+                  </button>
+                  <button
                     onClick={handleExportSelectedJson}
                     className="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 font-bold cursor-pointer flex items-center gap-1"
                   >
@@ -1415,6 +1469,16 @@ export default function AdminPage() {
                             <td className="p-3.5 text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <button
+                                  onClick={() => {
+                                    setTargetBuffStory(s);
+                                    setBuffModalOpen(true);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:scale-105 transition-all cursor-pointer"
+                                  title="Tạo lượt xem & thích ảo"
+                                >
+                                  <Zap className="w-3.5 h-3.5" />
+                                </button>
+                                <button
                                   onClick={() => openAiSeoForStory(s)}
                                   className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-rose-500/10 text-rose-500 hover:scale-105 transition-all cursor-pointer"
                                   title="Tối ưu SEO bằng AI"
@@ -1516,96 +1580,237 @@ export default function AdminPage() {
         {/* ============================================================== */}
         {activeTab === "books" && (
           <div className="flex flex-col gap-4 animate-in fade-in">
-            <div className="p-4 rounded-2xl bg-card border border-border/50 flex items-center justify-between shadow-sm">
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
               <div>
                 <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
                   <Bookmark className="w-4 h-4 text-emerald-500" /> Quản Lý Danh Mục Sách & Ebook
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-bold">
+                    {totalBooksCount || books.length} cuốn
+                  </span>
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Phân loại riêng cho sách điện tử, sách nói AudioBook và tài liệu nghiên cứu
+                  Tuyển tập các tác phẩm phát triển bản thân, kinh doanh, triết học & kỹ năng sống
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  setEditingStory(null);
-                  setStoryForm({
-                    title: "",
-                    slug: "",
-                    type: "book",
-                    author_name: "",
-                    description: "",
-                    cover_url: "",
-                    status: "completed",
-                    genres: "Sách Hay, Kinh Doanh, Phát Triển Bản Thân",
-                    seo_title: "",
-                    seo_description: "",
-                    focus_keyword: "",
-                  });
-                  setShowStoryModal(true);
-                }}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <Plus className="w-4 h-4" /> Thêm Sách Mới
-              </button>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setShowBookImportModal(true)}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Upload className="w-4 h-4" /> Nhập Sách Từ Tệp (Nhiều File)
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingStory(null);
+                    setStoryForm({
+                      title: "",
+                      slug: "",
+                      type: "book",
+                      author_name: "",
+                      description: "",
+                      cover_url: "",
+                      status: "completed",
+                      genres: "Sách, Phát Triển Bản Thân, Kỹ Năng Sống",
+                      seo_title: "",
+                      seo_description: "",
+                      focus_keyword: "",
+                    });
+                    setShowStoryModal(true);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Thêm Sách Mới
+                </button>
+              </div>
             </div>
 
             <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
-                  <tr>
-                    <th className="p-3.5">Tác Phẩm Sách</th>
-                    <th className="p-3.5">Tác Giả</th>
-                    <th className="p-3.5">Số Chương / Phần</th>
-                    <th className="p-3.5">Trạng Thái</th>
-                    <th className="p-3.5 text-right">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {loadingBooks ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-500" />
-                        <span className="block mt-2 font-semibold">Đang tải danh mục sách...</span>
-                      </td>
+                      <th className="p-3.5">Tác Phẩm Sách</th>
+                      <th className="p-3.5">Chủ Đề & Thể Loại</th>
+                      <th className="p-3.5">Số Chương / Phần</th>
+                      <th className="p-3.5">Lượt Xem / Thích</th>
+                      <th className="p-3.5">Trạng Thái</th>
+                      <th className="p-3.5 text-right">Thao Tác</th>
                     </tr>
-                  ) : books.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                        Chưa có cuốn sách nào trong hệ thống. Hãy bấm &quot;Thêm Sách Mới&quot; để tạo cuốn đầu tiên!
-                      </td>
-                    </tr>
-                  ) : (
-                    books.map((b) => (
-                      <tr key={b.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="p-3.5 font-bold text-foreground">
-                          <Link href={`/truyen/${b.slug}`} target="_blank" className="hover:text-emerald-500">
-                            {b.title}
-                          </Link>
-                        </td>
-                        <td className="p-3.5 text-muted-foreground">{b.author_name || "Nhiều Tác Giả"}</td>
-                        <td className="p-3.5 font-bold">{b.total_chapters || 0}</td>
-                        <td className="p-3.5">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
-                            Hoàn tất
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-right">
-                          <button
-                            onClick={() => {
-                              setSelectedStory(b);
-                              setActiveTab("chapters");
-                              fetchChapters(b.id);
-                            }}
-                            className="p-1.5 rounded-lg bg-muted hover:text-emerald-500 mr-1"
-                          >
-                            <Layers className="w-3.5 h-3.5" />
-                          </button>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {loadingBooks ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                          <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-500" />
+                          <span className="block mt-2 font-semibold">Đang tải danh mục sách...</span>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : books.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                          Chưa tìm thấy cuốn sách nào. Hãy bấm &quot;Nhập Sách Từ Tệp&quot; hoặc &quot;Thêm Sách Mới&quot;!
+                        </td>
+                      </tr>
+                    ) : (
+                      books.map((b) => (
+                        <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-14 rounded-lg bg-muted overflow-hidden shrink-0 border border-border/40">
+                                <img
+                                  src={b.cover_url || "https://media.doctruyen.vip/covers/doraemon-cover.webp"}
+                                  alt={b.title}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              </div>
+                              <div className="flex flex-col gap-0.5 max-w-xs sm:max-w-md">
+                                <Link
+                                  href={`/truyen/${b.slug}`}
+                                  target="_blank"
+                                  className="font-bold text-foreground hover:text-emerald-500 transition-colors truncate"
+                                >
+                                  {b.title}
+                                </Link>
+                                <span className="text-[11px] text-muted-foreground">
+                                  Tác giả: {b.author_name || "Nhiều Tác Giả"}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground/70 font-mono">
+                                  /{b.slug}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                              {(Array.isArray(b.genres) ? b.genres : []).slice(0, 3).map((g: string, i: number) => (
+                                <span
+                                  key={i}
+                                  className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-500"
+                                >
+                                  {g}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="p-3.5 font-bold text-foreground">
+                            {b.total_chapters || 0} phần
+                          </td>
+                          <td className="p-3.5 text-muted-foreground font-mono">
+                            <div className="flex flex-col gap-0.5 text-[11px]">
+                              <span>{(b.total_views || 0).toLocaleString()} views</span>
+                              <span className="text-rose-500 font-semibold">{(b.total_likes || 0).toLocaleString()} likes</span>
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
+                              {b.status === "completed" ? "Hoàn thành" : "Đang cập nhật"}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => {
+                                  setTargetBuffStory(b);
+                                  setBuffModalOpen(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:scale-105 transition-all cursor-pointer"
+                                title="Tạo lượt xem & thích ảo"
+                              >
+                                <Zap className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => openAiSeoForStory(b)}
+                                className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:scale-105 transition-all cursor-pointer"
+                                title="Tối ưu SEO & Tóm tắt sách bằng AI"
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedStory(b);
+                                  setActiveTab("chapters");
+                                  fetchChapters(b.id);
+                                }}
+                                className="p-1.5 rounded-lg bg-muted hover:text-emerald-500 transition-colors cursor-pointer"
+                                title="Quản lý các chương của sách"
+                              >
+                                <Layers className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingStory(b);
+                                  setStoryForm({
+                                    title: b.title,
+                                    slug: b.slug,
+                                    type: b.type || "book",
+                                    author_name: b.author_name || "",
+                                    description: b.description || "",
+                                    cover_url: b.cover_url || "",
+                                    status: b.status || "completed",
+                                    genres: Array.isArray(b.genres) ? b.genres.join(", ") : b.genres || "",
+                                    seo_title: "",
+                                    seo_description: "",
+                                    focus_keyword: "",
+                                  });
+                                  setShowStoryModal(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 transition-colors cursor-pointer"
+                                title="Sửa thông tin sách"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Chuyển sách "${b.title}" vào Thùng rác?`)) {
+                                    fetch("/api/admin/bulk", {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({ action: "trash", ids: [b.id] }),
+                                    }).then(() => {
+                                      showToast("Đã đưa vào thùng rác");
+                                      fetchBooks(booksPage);
+                                      fetchStats();
+                                    });
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg bg-muted hover:text-rose-500 transition-colors cursor-pointer"
+                                title="Xóa sách"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="p-4 border-t border-border/50 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <span className="text-muted-foreground">
+                  Trang <strong>{booksPage}</strong> · Hiển thị <strong>{books.length}</strong> / <strong>{totalBooksCount}</strong> cuốn sách
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => fetchBooks(booksPage - 1)}
+                    disabled={booksPage <= 1 || loadingBooks}
+                    className="p-2 rounded-lg bg-muted border border-border/60 hover:bg-muted/80 disabled:opacity-40 cursor-pointer"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => fetchBooks(booksPage + 1)}
+                    disabled={books.length < 15 || loadingBooks}
+                    className="p-2 rounded-lg bg-muted border border-border/60 hover:bg-muted/80 disabled:opacity-40 cursor-pointer"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1739,6 +1944,186 @@ export default function AdminPage() {
                         </td>
                       </tr>
                     ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 4.5: BLOGS & REVIEWS & SPOILERS */}
+        {/* ============================================================== */}
+        {activeTab === "blogs" && (
+          <div className="flex flex-col gap-4 animate-in fade-in">
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
+              <div>
+                <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-rose-500" /> Quản Lý Blog, Reviews & Spoil Truyện
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 font-bold">
+                    {blogs.length} bài
+                  </span>
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Bài viết đánh giá (Review), Spoil cốt truyện, Sắp ra mắt, Thông báo hệ thống & Tin tức
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => {
+                    setEditingBlog(null);
+                    setShowBlogModal(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" /> Viết Bài Mới (Có AI)
+                </button>
+              </div>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-sm">
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Tìm bài viết theo tiêu đề hoặc từ khóa..."
+                  value={blogSearchQuery}
+                  onChange={(e) => setBlogSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs font-semibold overflow-x-auto no-scrollbar">
+                {[
+                  { id: "all", label: "Tất Cả" },
+                  { id: "review", label: "Review" },
+                  { id: "spoil", label: "Spoil" },
+                  { id: "comingsoon", label: "Sắp Ra Mắt" },
+                  { id: "notice", label: "Thông Báo" },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setBlogCategoryFilter(cat.id)}
+                    className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-all cursor-pointer ${
+                      blogCategoryFilter === cat.id
+                        ? "bg-rose-500/10 text-rose-500 border border-rose-500/30 font-bold"
+                        : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Blogs Table */}
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
+                  <tr>
+                    <th className="p-3.5">Bài Viết</th>
+                    <th className="p-3.5">Đường Dẫn (Slug)</th>
+                    <th className="p-3.5">SEO & Từ Khóa</th>
+                    <th className="p-3.5">Trạng Thái</th>
+                    <th className="p-3.5">Ngày Đăng</th>
+                    <th className="p-3.5 text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {loadingBlogs ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
+                        <span className="block mt-2 font-semibold">Đang tải danh sách bài viết...</span>
+                      </td>
+                    </tr>
+                  ) : blogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                        Chưa có bài viết blog nào. Hãy bấm &quot;Viết Bài Mới&quot; để trợ lý AI tạo bài viết đầu tiên!
+                      </td>
+                    </tr>
+                  ) : (
+                    blogs
+                      .filter((b) => {
+                        if (blogSearchQuery && !b.title.toLowerCase().includes(blogSearchQuery.toLowerCase())) return false;
+                        if (blogCategoryFilter === "review") return b.title.includes("[Review]");
+                        if (blogCategoryFilter === "spoil") return b.title.includes("[Spoil]");
+                        if (blogCategoryFilter === "comingsoon") return b.title.includes("[Sắp Ra Mắt]");
+                        if (blogCategoryFilter === "notice") return b.title.includes("[Thông Báo]");
+                        return true;
+                      })
+                      .map((b) => (
+                        <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="p-3.5 font-bold text-foreground max-w-xs sm:max-w-md">
+                            <div className="flex flex-col gap-0.5">
+                              <span
+                                className="truncate hover:text-rose-500 cursor-pointer"
+                                onClick={() => {
+                                  setEditingBlog(b);
+                                  setShowBlogModal(true);
+                                }}
+                              >
+                                {b.title}
+                              </span>
+                              {b.excerpt && (
+                                <span className="text-[11px] text-muted-foreground line-clamp-1 font-normal">
+                                  {b.excerpt}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3.5 font-mono text-indigo-400">/{b.slug}</td>
+                          <td className="p-3.5">
+                            {b.focus_keyword ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-400">
+                                {b.focus_keyword}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/60 text-[10px]">Chưa đặt</span>
+                            )}
+                          </td>
+                          <td className="p-3.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
+                              {b.status || "published"}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-muted-foreground font-mono text-[11px]">
+                            {new Date(b.created_at || b.updated_at).toLocaleDateString("vi-VN")}
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Link
+                                href={`/blog/${b.slug}`}
+                                target="_blank"
+                                className="p-1.5 rounded-lg bg-muted hover:text-foreground inline-block"
+                                title="Xem bài viết trên web"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </Link>
+                              <button
+                                onClick={() => {
+                                  setEditingBlog(b);
+                                  setShowBlogModal(true);
+                                }}
+                                className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 cursor-pointer"
+                                title="Sửa bài viết"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeletePost(b.id, b.title)}
+                                className="p-1.5 rounded-lg bg-muted hover:text-rose-500 cursor-pointer"
+                                title="Xóa bài viết"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                   )}
                 </tbody>
               </table>
@@ -1963,80 +2348,17 @@ export default function AdminPage() {
         )}
 
         {/* ============================================================== */}
-        {/* TAB 7: COMMENTS MODERATION */}
+        {/* TAB 7: COMMENTS & ERROR REPORTS */}
         {/* ============================================================== */}
         {activeTab === "comments" && (
-          <div className="flex flex-col gap-4 animate-in fade-in">
-            <div className="p-4 rounded-2xl bg-card border border-border/50 flex items-center justify-between shadow-sm">
-              <div className="relative flex-1 max-w-md">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Lọc bình luận theo nội dung hoặc người gửi..."
-                  value={commentSearch}
-                  onChange={(e) => setCommentSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && fetchComments()}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs focus:outline-none focus:border-rose-500"
-                />
-              </div>
-              <button
-                onClick={fetchComments}
-                className="px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" /> Làm Mới
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
-                  <tr>
-                    <th className="p-3.5">Nội Dung Bình Luận</th>
-                    <th className="p-3.5">Bộ Truyện</th>
-                    <th className="p-3.5">Lượt Thích</th>
-                    <th className="p-3.5">Thời Gian</th>
-                    <th className="p-3.5 text-right">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {loadingComments ? (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
-                        <span className="block mt-2 font-semibold">Đang tải bình luận...</span>
-                      </td>
-                    </tr>
-                  ) : comments.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                        Chưa có bình luận nào cần kiểm duyệt.
-                      </td>
-                    </tr>
-                  ) : (
-                    comments.map((cm) => (
-                      <tr key={cm.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="p-3.5 font-medium text-foreground max-w-sm truncate">{cm.content}</td>
-                        <td className="p-3.5 text-rose-500 font-bold">{cm.stories?.title || "Chung"}</td>
-                        <td className="p-3.5 font-mono">{cm.likes_count || 0}</td>
-                        <td className="p-3.5 text-muted-foreground">
-                          {new Date(cm.created_at).toLocaleDateString("vi-VN")}
-                        </td>
-                        <td className="p-3.5 text-right">
-                          <button
-                            onClick={() => handleDeleteComment(cm.id)}
-                            className="p-1.5 rounded-lg bg-muted hover:text-rose-500"
-                            title="Xóa bình luận"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <AdminReportsSection
+            comments={comments}
+            loadingComments={loadingComments}
+            commentSearch={commentSearch}
+            setCommentSearch={setCommentSearch}
+            onRefreshComments={fetchComments}
+            onDeleteComment={handleDeleteComment}
+          />
         )}
 
         {/* ============================================================== */}
@@ -3054,6 +3376,43 @@ export default function AdminPage() {
           onApply={handleApplyAiSeoToForm}
         />
       )}
+
+      {/* Multi-file Book Import Modal */}
+      <AdminBookImportModal
+        isOpen={showBookImportModal}
+        onClose={() => setShowBookImportModal(false)}
+        onSuccess={() => {
+          showToast("Đã nhập sách thành công!");
+          fetchBooks(1);
+          fetchStats();
+        }}
+      />
+
+      {/* Buff Views & Likes Modal */}
+      <AdminBuffModal
+        isOpen={buffModalOpen}
+        onClose={() => setBuffModalOpen(false)}
+        targetStory={targetBuffStory}
+        selectedIds={selectedStoryIds}
+        onSuccess={(msg) => {
+          showToast(msg);
+          if (activeTab === "books") fetchBooks(booksPage);
+          else fetchStories(currentPage);
+          fetchStats();
+        }}
+      />
+
+      {/* Blog Editor & AI Modal */}
+      <AdminBlogModal
+        isOpen={showBlogModal}
+        onClose={() => setShowBlogModal(false)}
+        blogPost={editingBlog}
+        onSuccess={() => {
+          showToast("Đã lưu bài viết blog thành công!");
+          fetchBlogs();
+          fetchStats();
+        }}
+      />
     </div>
   );
 }

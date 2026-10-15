@@ -52,6 +52,16 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/kham-pha?genre=S%C3%A1ch" className="hover:text-foreground transition-colors font-semibold text-emerald-500">
+                  Danh Mục Sách & Ebook
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="hover:text-foreground transition-colors font-semibold text-rose-500">
+                  Blog & Tin Tức Truyện
+                </Link>
+              </li>
+              <li>
                 <Link href="/tu-truyen" className="hover:text-foreground transition-colors">
                   Tủ Truyện Cá Nhân
                 </Link>

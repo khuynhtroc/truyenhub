@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CapacitorAppHandler } from "@/components/common/CapacitorAppHandler";
 import "./globals.css";
 
-const inter = Inter({
+const beVietnamPro = Be_Vietnam_Pro({
+  weight: ["300", "400", "500", "600", "700", "800"],
   subsets: ["latin", "vietnamese"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-be-vietnam-pro",
 });
 
 export const viewport: Viewport = {
@@ -107,7 +108,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi" suppressHydrationWarning className={`${inter.variable} h-full antialiased`}>
+    <html lang="vi" suppressHydrationWarning className={`${beVietnamPro.variable} h-full antialiased`}>
       <head>
         {/* Anti-FOUC Dark Mode script: applies dark class before page renders to prevent white flash */}
         <script

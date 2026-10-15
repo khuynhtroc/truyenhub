@@ -51,7 +51,8 @@ const GENRE_MENU_ITEMS = [
 const QUICK_SUB_BAR = [
   { label: "Truyện Tranh", href: "/kham-pha?type=comic", icon: Sparkles, color: "text-amber-500" },
   { label: "Truyện Chữ", href: "/kham-pha?type=novel", icon: BookOpen, color: "text-indigo-500" },
-  { label: "Sách Kỹ Năng", href: "/kham-pha?genre=S%C3%A1ch", icon: BrainCircuit, color: "text-emerald-500" },
+  { label: "Sách Hay & Ebook", href: "/kham-pha?genre=S%C3%A1ch", icon: BrainCircuit, color: "text-emerald-500" },
+  { label: "Blog & Tin Tức", href: "/blog", icon: Sparkles, color: "text-rose-500" },
   { label: "Tiểu Thuyết", href: "/kham-pha?genre=Ti%E1%BB%83u+Thuy%E1%BA%BFt", icon: BookMarked, color: "text-rose-500" },
   { label: "Tiếng Anh", href: "/kham-pha?genre=Ti%E1%BA%BFng+Anh", icon: Globe2, color: "text-teal-500" },
   { label: "Tâm Lý Học", href: "/kham-pha?genre=T%C3%A2m+L%C3%BD+H%E1%BB%8Dc", icon: GraduationCap, color: "text-purple-500" },
