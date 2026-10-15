@@ -579,7 +579,10 @@ export default function AdminPage() {
                 <div className="text-2xl sm:text-3xl font-black text-amber-500">
                   {stats?.totalChapters ? stats.totalChapters.toLocaleString() : "..."}
                 </div>
-                <div className="text-[11px] text-muted-foreground">Đã bóc tách & lưu trữ trên R2/DB</div>
+                <div className="text-[11px] text-muted-foreground">
+                  <span className="text-amber-500 font-bold">{stats?.totalLockedChapters ? stats.totalLockedChapters.toLocaleString() : 0} VIP</span> ·{" "}
+                  <span className="text-emerald-500 font-bold">{stats?.totalChapters ? (stats.totalChapters - (stats.totalLockedChapters || 0)).toLocaleString() : 0} Miễn Phí</span>
+                </div>
               </div>
 
               <div className="p-5 rounded-2xl bg-card border border-border/50 shadow-sm flex flex-col gap-2">

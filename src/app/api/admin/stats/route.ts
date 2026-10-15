@@ -22,10 +22,15 @@ export async function GET(request: Request) {
       .select("*", { count: "exact", head: true })
       .eq("type", "novel");
 
-    // 2. Total chapters
+    // 2. Total chapters & locked
     const { count: totalChapters } = await supabase
       .from("chapters")
       .select("*", { count: "exact", head: true });
+
+    const { count: totalLockedChapters } = await supabase
+      .from("chapters")
+      .select("*", { count: "exact", head: true })
+      .eq("is_locked", true);
 
     // 3. Total profiles
     const { count: totalUsers } = await supabase
@@ -46,6 +51,7 @@ export async function GET(request: Request) {
         totalComics: totalComics || 0,
         totalNovels: totalNovels || 0,
         totalChapters: totalChapters || 0,
+        totalLockedChapters: totalLockedChapters || 0,
         totalUsers: totalUsers || 0,
         recentStories: recentStories || [],
         system: {
