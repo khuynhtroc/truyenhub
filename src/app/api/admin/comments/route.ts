@@ -36,6 +36,84 @@ export async function GET(request: Request) {
   }
 }
 
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { story_id, user_name, content, is_spoiler, likes_count, status } = body;
+
+    if (!story_id || !content?.trim()) {
+      return NextResponse.json(
+        { success: false, error: "Vui lòng chọn truyện và nhập nội dung" },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createAdminSupabaseClient();
+    const { data, error } = await supabase
+      .from("comments")
+      .insert({
+        story_id,
+        user_name: user_name?.trim() || "Độc giả ẩn danh",
+        content: content.trim(),
+        is_spoiler: Boolean(is_spoiler),
+        likes_count: parseInt(likes_count || "0", 10),
+        status: status || "approved",
+      })
+      .select("*, stories(id, title, slug)")
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      success: true,
+      comment: data,
+      message: "Đã thêm bình luận thành công!",
+    });
+  } catch (error: any) {
+    console.error("POST admin comment error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Lỗi tạo bình luận" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, status, content } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "Thiếu ID bình luận" }, { status: 400 });
+    }
+
+    const updates: any = {};
+    if (status) updates.status = status;
+    if (content) updates.content = content;
+
+    const supabase = createAdminSupabaseClient();
+    const { data, error } = await supabase
+      .from("comments")
+      .update(updates)
+      .eq("id", id)
+      .select("*, stories(id, title, slug)")
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      success: true,
+      comment: data,
+      message: "Đã cập nhật trạng thái bình luận!",
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message || "Lỗi cập nhật bình luận" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
