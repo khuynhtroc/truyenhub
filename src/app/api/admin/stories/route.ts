@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
     // Type filter (comic, novel, book)
     if (type === "book") {
-      query = query.or('type.eq.book,genres.cs.{"Sách"}');
+      query = query.or('type.eq.book,type.eq.novel,genres.cs.{"Sách"},genres.cs.{"Sách Nói"},genres.cs.{"Tiểu Thuyết"},genres.cs.{"Tiểu thuyết"}');
     } else if (type && (type === "comic" || type === "novel")) {
       query = query.eq("type", type);
     }

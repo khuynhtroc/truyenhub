@@ -1,8 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-// Project Supabase chứa toàn bộ 797 truyện và 41,500+ chương
-export const SUPABASE_URL = "https://tvgipyhvvtovgttnyivw.supabase.co";
-export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2Z2lweWh2dnRvdmd0dG55aXZ3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTI0Mzg2OCwiZXhwIjoyMTA2ODE5ODY4fQ.n03zTL69UhHEk524ItXwcOtqu1MtvL1iu9uOoXH-oi0";
+export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://bqvffeqjgjtzprouwshd.supabase.co";
+export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxdmZmZXFqZ2p0enByb3V3c2hkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MDU0MTcsImV4cCI6MjEwNzQ4MTQxN30.ZoidaHP5yKPboaMLaSaeGCw5YIrhtsrGCk5uw5cc3z8";
 
 export function createClient() {
   return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);

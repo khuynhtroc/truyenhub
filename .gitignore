@@ -45,6 +45,8 @@ next-env.d.ts
 __pycache__/
 *.pyc
 scripts/*.json
+scripts/*.mjs
+supabase/.temp/
 
 # Android & iOS build artifacts
 android/.gradle

@@ -28,8 +28,8 @@ def load_env(filepath=r"F:\Antigravity\truyenhub\.env.local"):
 ENV = load_env()
 R2_BUCKET = ENV.get("R2_BUCKET_NAME", "truyenhub-media")
 R2_DOMAIN = ENV.get("R2_PUBLIC_DOMAIN", "https://pub-96c72b024c5547b594279f6245a7a6a5.r2.dev").rstrip("/")
-SUPABASE_URL = "https://tvgipyhvvtovgttnyivw.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR2Z2lweWh2dnRvdmd0dG55aXZ3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTI0Mzg2OCwiZXhwIjoyMTA2ODE5ODY4fQ.n03zTL69UhHEk524ItXwcOtqu1MtvL1iu9uOoXH-oi0"
+SUPABASE_URL = ENV.get("NEXT_PUBLIC_SUPABASE_URL", "https://bqvffeqjgjtzprouwshd.supabase.co")
+SUPABASE_KEY = ENV.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 headers = {
     "apikey": SUPABASE_KEY,
