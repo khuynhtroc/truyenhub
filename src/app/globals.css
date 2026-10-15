@@ -1,6 +1,6 @@
-@import "tailwindcss";
-
-@variant dark (&:where(.dark, .dark *));
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #ffffff;
@@ -14,7 +14,7 @@
   color-scheme: light;
 }
 
-.dark, html.dark, :root.dark {
+.dark {
   --background: #09090b;
   --foreground: #fafafa;
   --card: #131316;
@@ -24,18 +24,6 @@
   --border: #27272a;
   --ring: #f43f5e;
   color-scheme: dark;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-ring: var(--ring);
-  --font-sans: var(--font-be-vietnam-pro), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
@@ -60,9 +48,17 @@ body {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
+/* Hide scrollbar utility */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Mobile App Native feel */
 html {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
-
