@@ -198,6 +198,89 @@ export async function POST(request: Request) {
       });
     }
 
+    // 7. Bulk Add Genre / Tag Book
+    if (action === "add_genre" || action === "tag_book") {
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Vui lòng chọn ít nhất 1 mục" },
+          { status: 400 }
+        );
+      }
+
+      const genresToAdd = Array.isArray(body.genres)
+        ? body.genres
+        : [body.genre || "Sách"];
+
+      const { data: currentStories } = await supabase
+        .from("stories")
+        .select("id, genres")
+        .in("id", ids);
+
+      if (currentStories) {
+        for (const cs of currentStories) {
+          const current = Array.isArray(cs.genres) ? [...cs.genres] : [];
+          let changed = false;
+          for (const g of genresToAdd) {
+            if (!current.includes(g)) {
+              current.push(g);
+              changed = true;
+            }
+          }
+          if (changed) {
+            await supabase
+              .from("stories")
+              .update({ genres: current, updated_at: new Date().toISOString() })
+              .eq("id", cs.id);
+          }
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Đã gán thể loại thành công cho ${ids.length} mục!`,
+      });
+    }
+
+    // 8. Bulk Delete Posts
+    if (action === "delete_posts") {
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Vui lòng chọn ít nhất 1 bài viết để xóa" },
+          { status: 400 }
+        );
+      }
+
+      const { error } = await supabase.from("posts").delete().in("id", ids);
+      if (error) throw error;
+
+      return NextResponse.json({
+        success: true,
+        message: `Đã xóa ${ids.length} bài viết thành công!`,
+      });
+    }
+
+    // 9. Bulk Status Update for Posts
+    if (action === "status_posts") {
+      if (!ids || !Array.isArray(ids) || ids.length === 0 || !new_status) {
+        return NextResponse.json(
+          { success: false, error: "Thiếu danh sách ID bài viết hoặc trạng thái mới" },
+          { status: 400 }
+        );
+      }
+
+      const { error } = await supabase
+        .from("posts")
+        .update({ status: new_status, updated_at: new Date().toISOString() })
+        .in("id", ids);
+
+      if (error) throw error;
+
+      return NextResponse.json({
+        success: true,
+        message: `Đã cập nhật trạng thái ${ids.length} bài viết thành "${new_status}"!`,
+      });
+    }
+
     return NextResponse.json({ success: false, error: "Thao tác bulk không hợp lệ" }, { status: 400 });
   } catch (error: any) {
     console.error("Bulk action error:", error);

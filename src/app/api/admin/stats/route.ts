@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const { count: totalBooks } = await supabase
       .from("stories")
       .select("*", { count: "exact", head: true })
-      .or('type.eq.book,genres.cs.{"Sách"}');
+      .or('type.eq.book,genres.cs.{"Sách"},genres.cs.{"Sách Nói"},genres.cs.{"Ebook"},genres.cs.{"Kỹ Năng Sống"}');
 
     const { count: totalTrash } = await supabase
       .from("stories")
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     const { count: totalBlogs } = await supabase
       .from("posts")
       .select("*", { count: "exact", head: true })
-      .eq("type", "blog");
+      .neq("type", "page");
 
     const { count: totalComments } = await supabase
       .from("comments")

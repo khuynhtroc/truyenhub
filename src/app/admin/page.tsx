@@ -127,6 +127,11 @@ export default function AdminPage() {
   const [booksPage, setBooksPage] = useState(1);
   const [totalBooksCount, setTotalBooksCount] = useState(0);
   const [showBookImportModal, setShowBookImportModal] = useState(false);
+  const [bookSearchQuery, setBookSearchQuery] = useState("");
+  const [bookGenreFilter, setBookGenreFilter] = useState("all");
+  const [bookStatusFilter, setBookStatusFilter] = useState("all");
+  const [bookSortOrder, setBookSortOrder] = useState("date_desc");
+  const [selectedBookIds, setSelectedBookIds] = useState<string[]>([]);
 
   // Blogs State (dedicated tab)
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -135,6 +140,10 @@ export default function AdminPage() {
   const [blogSearchQuery, setBlogSearchQuery] = useState("");
   const [showBlogModal, setShowBlogModal] = useState(false);
   const [editingBlog, setEditingBlog] = useState<any>(null);
+  const [selectedBlogIds, setSelectedBlogIds] = useState<string[]>([]);
+
+  // Pages Selection State
+  const [selectedPageIds, setSelectedPageIds] = useState<string[]>([]);
 
   // Chapters state
   const [selectedStory, setSelectedStory] = useState<any>(null);
@@ -309,21 +318,32 @@ export default function AdminPage() {
   };
 
   // 3. Fetch Books
-  const fetchBooks = async (page = 1) => {
+  const fetchBooks = async (
+    page = 1,
+    search = bookSearchQuery,
+    genre = bookGenreFilter,
+    status = bookStatusFilter,
+    sort = bookSortOrder
+  ) => {
     setLoadingBooks(true);
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: "15",
         type: "book",
-        q: searchQuery,
+        q: search,
+        sort: sort,
       });
+      if (genre && genre !== "all") params.set("genre", genre);
+      if (status && status !== "all") params.set("status", status);
+
       const res = await fetch(`/api/admin/stories?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setBooks(data.stories);
         setTotalBooksCount(data.total);
         setBooksPage(page);
+        setSelectedBookIds([]);
       }
     } catch (e) {
       console.error(e);
@@ -582,6 +602,257 @@ export default function AdminPage() {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+  };
+
+  const handleBulkTagAsBook = async () => {
+    if (selectedStoryIds.length === 0) return;
+    if (!confirm(`Gán tag "Sách" cho ${selectedStoryIds.length} bộ truyện đã chọn để chuyển thành Sách & Ebook?`)) return;
+
+    setBulkActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add_genre", ids: selectedStoryIds, genre: "Sách" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchStories(currentPage);
+        fetchStats();
+      } else {
+        alert(data.error || "Lỗi thực hiện");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Books Selection & Bulk Operations
+  const toggleSelectBook = (id: string) => {
+    if (selectedBookIds.includes(id)) {
+      setSelectedBookIds(selectedBookIds.filter((item) => item !== id));
+    } else {
+      setSelectedBookIds([...selectedBookIds, id]);
+    }
+  };
+
+  const toggleSelectAllBooksOnPage = () => {
+    if (selectedBookIds.length === books.length && books.length > 0) {
+      setSelectedBookIds([]);
+    } else {
+      setSelectedBookIds(books.map((b) => b.id));
+    }
+  };
+
+  const handleBulkMoveBooksToTrash = async () => {
+    if (selectedBookIds.length === 0) return;
+    if (!confirm(`Bạn có chắc muốn đưa ${selectedBookIds.length} cuốn sách đã chọn vào Thùng rác?`)) return;
+
+    setBulkActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "trash", ids: selectedBookIds }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchBooks(booksPage);
+        fetchStats();
+      } else {
+        alert(data.error || "Lỗi thực hiện");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDeleteBooks = async () => {
+    if (selectedBookIds.length === 0) return;
+    if (!confirm(`CẢNH BÁO: Xóa vĩnh viễn ${selectedBookIds.length} cuốn sách và toàn bộ nội dung? Thao tác này không thể hoàn tác!`)) return;
+
+    setBulkActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", ids: selectedBookIds }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchBooks(booksPage);
+        fetchStats();
+      } else {
+        alert(data.error || "Lỗi xóa vĩnh viễn");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkChangeBooksStatus = async (newStatus: "ongoing" | "completed") => {
+    if (selectedBookIds.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "status", ids: selectedBookIds, new_status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        fetchBooks(booksPage);
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleExportSelectedBooksJson = () => {
+    const selected = books.filter((b) => selectedBookIds.includes(b.id));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(selected, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `doctruyen_books_export_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  // Blogs Selection & Bulk Operations
+  const toggleSelectBlog = (id: string) => {
+    if (selectedBlogIds.includes(id)) {
+      setSelectedBlogIds(selectedBlogIds.filter((item) => item !== id));
+    } else {
+      setSelectedBlogIds([...selectedBlogIds, id]);
+    }
+  };
+
+  const toggleSelectAllBlogs = () => {
+    if (selectedBlogIds.length === blogs.length && blogs.length > 0) {
+      setSelectedBlogIds([]);
+    } else {
+      setSelectedBlogIds(blogs.map((b) => b.id));
+    }
+  };
+
+  const handleBulkDeleteBlogs = async () => {
+    if (selectedBlogIds.length === 0) return;
+    if (!confirm(`Xóa vĩnh viễn ${selectedBlogIds.length} bài viết blog đã chọn?`)) return;
+
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_posts", ids: selectedBlogIds }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        setSelectedBlogIds([]);
+        fetchBlogs();
+        fetchStats();
+      } else {
+        alert(data.error || "Lỗi thực hiện");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const handleBulkChangeBlogsStatus = async (newStatus: "published" | "draft") => {
+    if (selectedBlogIds.length === 0) return;
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "status_posts", ids: selectedBlogIds, new_status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        setSelectedBlogIds([]);
+        fetchBlogs();
+      } else {
+        alert(data.error || "Lỗi thực hiện");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  // Pages Selection & Bulk Operations
+  const toggleSelectPage = (id: string) => {
+    if (selectedPageIds.includes(id)) {
+      setSelectedPageIds(selectedPageIds.filter((item) => item !== id));
+    } else {
+      setSelectedPageIds([...selectedPageIds, id]);
+    }
+  };
+
+  const toggleSelectAllPages = () => {
+    if (selectedPageIds.length === posts.length && posts.length > 0) {
+      setSelectedPageIds([]);
+    } else {
+      setSelectedPageIds(posts.map((p) => p.id));
+    }
+  };
+
+  const handleBulkDeletePages = async () => {
+    if (selectedPageIds.length === 0) return;
+    if (!confirm(`Xóa vĩnh viễn ${selectedPageIds.length} trang đã chọn?`)) return;
+
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_posts", ids: selectedPageIds }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        setSelectedPageIds([]);
+        fetchPosts();
+        fetchStats();
+      } else {
+        alert(data.error || "Lỗi thực hiện");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
+  const handleBulkChangePagesStatus = async (newStatus: "published" | "draft") => {
+    if (selectedPageIds.length === 0) return;
+    try {
+      const res = await fetch("/api/admin/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "status_posts", ids: selectedPageIds, new_status: newStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message);
+        setSelectedPageIds([]);
+        fetchPosts();
+      } else {
+        alert(data.error || "Lỗi thực hiện");
+      }
+    } catch (e: any) {
+      alert(e.message);
+    }
   };
 
   // Trash Operations
@@ -1330,6 +1601,14 @@ export default function AdminPage() {
                     <Zap className="w-3.5 h-3.5" /> Buff View/Like
                   </button>
                   <button
+                    onClick={handleBulkTagAsBook}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 font-bold cursor-pointer flex items-center gap-1"
+                    title="Gán thể loại Sách để xuất hiện trong tab Quản lý Sách"
+                  >
+                    <Bookmark className="w-3.5 h-3.5" /> Gán Tag Sách
+                  </button>
+                  <button
                     onClick={handleExportSelectedJson}
                     className="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 font-bold cursor-pointer flex items-center gap-1"
                   >
@@ -1631,11 +1910,154 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Book Filters & Search Toolbar */}
+            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-2 flex-1 max-w-md">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên sách, tác giả hoặc slug..."
+                    value={bookSearchQuery}
+                    onChange={(e) => setBookSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && fetchBooks(1, bookSearchQuery, bookGenreFilter, bookStatusFilter, bookSortOrder)}
+                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <button
+                  onClick={() => fetchBooks(1, bookSearchQuery, bookGenreFilter, bookStatusFilter, bookSortOrder)}
+                  className="px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold cursor-pointer"
+                >
+                  Tìm
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
+                {/* Genre Filter */}
+                <select
+                  value={bookGenreFilter}
+                  onChange={(e) => {
+                    setBookGenreFilter(e.target.value);
+                    fetchBooks(1, bookSearchQuery, e.target.value, bookStatusFilter, bookSortOrder);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value="all">Tất cả thể loại sách</option>
+                  <option value="Kỹ Năng Sống">Kỹ Năng Sống</option>
+                  <option value="Phát Triển Bản Thân">Phát Triển Bản Thân</option>
+                  <option value="Kinh Tế">Kinh Tế - Quản Trị</option>
+                  <option value="Tâm Lý Học">Tâm Lý Học</option>
+                  <option value="Triết Học">Triết Học</option>
+                  <option value="Tiếng Anh">Sách Tiếng Anh</option>
+                  <option value="Sách Nói">Sách Nói / Audio</option>
+                  <option value="Ebook">Ebook Tuyển Chọn</option>
+                </select>
+
+                {/* Status Filter */}
+                <select
+                  value={bookStatusFilter}
+                  onChange={(e) => {
+                    setBookStatusFilter(e.target.value);
+                    fetchBooks(1, bookSearchQuery, bookGenreFilter, e.target.value, bookSortOrder);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="completed">Đã hoàn thành</option>
+                  <option value="ongoing">Đang cập nhật</option>
+                </select>
+
+                {/* Sort Order */}
+                <select
+                  value={bookSortOrder}
+                  onChange={(e) => {
+                    setBookSortOrder(e.target.value);
+                    fetchBooks(1, bookSearchQuery, bookGenreFilter, bookStatusFilter, e.target.value);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value="date_desc">Mới cập nhật</option>
+                  <option value="views_desc">Xem nhiều nhất</option>
+                  <option value="chapters_desc">Nhiều chương nhất</option>
+                  <option value="title_asc">Tên A-Z</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Bulk Actions Floating Bar for Books */}
+            {selectedBookIds.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-card to-muted border border-emerald-500/30 shadow-lg flex items-center justify-between gap-3 text-xs animate-in slide-in-from-top-2">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-emerald-500" />
+                  <span className="font-bold">
+                    Đã chọn <strong className="text-emerald-500">{selectedBookIds.length}</strong> cuốn sách
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBulkChangeBooksStatus("completed")}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold cursor-pointer"
+                  >
+                    Đánh dấu Hoàn thành
+                  </button>
+                  <button
+                    onClick={() => handleBulkChangeBooksStatus("ongoing")}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-bold cursor-pointer"
+                  >
+                    Đánh dấu Đang ra
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTargetBuffStory(null);
+                      setBuffModalOpen(true);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold cursor-pointer flex items-center gap-1 shadow-sm"
+                  >
+                    <Zap className="w-3.5 h-3.5" /> Buff View/Like
+                  </button>
+                  <button
+                    onClick={handleExportSelectedBooksJson}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 font-bold cursor-pointer flex items-center gap-1"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Xuất JSON
+                  </button>
+                  <button
+                    onClick={handleBulkMoveBooksToTrash}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold cursor-pointer flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Đưa vào Thùng Rác
+                  </button>
+                  <button
+                    onClick={handleBulkDeleteBooks}
+                    disabled={bulkActionLoading}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-bold cursor-pointer"
+                  >
+                    Xóa Vĩnh Viễn
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
                     <tr>
+                      <th className="p-3.5 w-10 text-center">
+                        <button
+                          onClick={toggleSelectAllBooksOnPage}
+                          className="text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                          {selectedBookIds.length === books.length && books.length > 0 ? (
+                            <CheckSquare className="w-4 h-4 text-emerald-500" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+                      </th>
                       <th className="p-3.5">Tác Phẩm Sách</th>
                       <th className="p-3.5">Chủ Đề & Thể Loại</th>
                       <th className="p-3.5">Số Chương / Phần</th>
@@ -1647,149 +2069,169 @@ export default function AdminPage() {
                   <tbody className="divide-y divide-border/40">
                     {loadingBooks ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
                           <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-500" />
                           <span className="block mt-2 font-semibold">Đang tải danh mục sách...</span>
                         </td>
                       </tr>
                     ) : books.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                          Chưa tìm thấy cuốn sách nào. Hãy bấm &quot;Nhập Sách Từ Tệp&quot; hoặc &quot;Thêm Sách Mới&quot;!
+                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                          Chưa tìm thấy cuốn sách nào phù hợp với bộ lọc. Hãy đổi từ khóa hoặc bấm &quot;Thêm Sách Mới&quot;!
                         </td>
                       </tr>
                     ) : (
-                      books.map((b) => (
-                        <tr key={b.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="p-3.5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-14 rounded-lg bg-muted overflow-hidden shrink-0 border border-border/40">
-                                <img
-                                  src={b.cover_url || "https://media.doctruyen.vip/covers/doraemon-cover.webp"}
-                                  alt={b.title}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                />
+                      books.map((b) => {
+                        const isSelected = selectedBookIds.includes(b.id);
+                        return (
+                          <tr
+                            key={b.id}
+                            className={`hover:bg-muted/30 transition-colors ${
+                              isSelected ? "bg-emerald-500/5" : ""
+                            }`}
+                          >
+                            <td className="p-3.5 text-center">
+                              <button
+                                onClick={() => toggleSelectBook(b.id)}
+                                className="cursor-pointer"
+                              >
+                                {isSelected ? (
+                                  <CheckSquare className="w-4 h-4 text-emerald-500" />
+                                ) : (
+                                  <Square className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                                )}
+                              </button>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-14 rounded-lg bg-muted overflow-hidden shrink-0 border border-border/40">
+                                  <img
+                                    src={b.cover_url || "https://media.doctruyen.vip/covers/doraemon-cover.webp"}
+                                    alt={b.title}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-0.5 max-w-xs sm:max-w-md">
+                                  <Link
+                                    href={`/truyen/${b.slug}`}
+                                    target="_blank"
+                                    className="font-bold text-foreground hover:text-emerald-500 transition-colors truncate"
+                                  >
+                                    {b.title}
+                                  </Link>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    Tác giả: {b.author_name || "Nhiều Tác Giả"}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground/70 font-mono">
+                                    /{b.slug}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex flex-col gap-0.5 max-w-xs sm:max-w-md">
-                                <Link
-                                  href={`/truyen/${b.slug}`}
-                                  target="_blank"
-                                  className="font-bold text-foreground hover:text-emerald-500 transition-colors truncate"
-                                >
-                                  {b.title}
-                                </Link>
-                                <span className="text-[11px] text-muted-foreground">
-                                  Tác giả: {b.author_name || "Nhiều Tác Giả"}
-                                </span>
-                                <span className="text-[10px] text-muted-foreground/70 font-mono">
-                                  /{b.slug}
-                                </span>
+                            </td>
+                            <td className="p-3.5">
+                              <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                {(Array.isArray(b.genres) ? b.genres : []).slice(0, 3).map((g: string, i: number) => (
+                                  <span
+                                    key={i}
+                                    className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-500"
+                                  >
+                                    {g}
+                                  </span>
+                                ))}
                               </div>
-                            </div>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="flex flex-wrap gap-1 max-w-[200px]">
-                              {(Array.isArray(b.genres) ? b.genres : []).slice(0, 3).map((g: string, i: number) => (
-                                <span
-                                  key={i}
-                                  className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-500"
+                            </td>
+                            <td className="p-3.5 font-bold text-foreground">
+                              {b.total_chapters || 0} phần
+                            </td>
+                            <td className="p-3.5 text-muted-foreground font-mono">
+                              <div className="flex flex-col gap-0.5 text-[11px]">
+                                <span>{(b.total_views || 0).toLocaleString()} views</span>
+                                <span className="text-rose-500 font-semibold">{(b.total_likes || 0).toLocaleString()} likes</span>
+                              </div>
+                            </td>
+                            <td className="p-3.5">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
+                                {b.status === "completed" ? "Hoàn thành" : "Đang cập nhật"}
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => {
+                                    setTargetBuffStory(b);
+                                    setBuffModalOpen(true);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:scale-105 transition-all cursor-pointer"
+                                  title="Tạo lượt xem & thích ảo"
                                 >
-                                  {g}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="p-3.5 font-bold text-foreground">
-                            {b.total_chapters || 0} phần
-                          </td>
-                          <td className="p-3.5 text-muted-foreground font-mono">
-                            <div className="flex flex-col gap-0.5 text-[11px]">
-                              <span>{(b.total_views || 0).toLocaleString()} views</span>
-                              <span className="text-rose-500 font-semibold">{(b.total_likes || 0).toLocaleString()} likes</span>
-                            </div>
-                          </td>
-                          <td className="p-3.5">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
-                              {b.status === "completed" ? "Hoàn thành" : "Đang cập nhật"}
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => {
-                                  setTargetBuffStory(b);
-                                  setBuffModalOpen(true);
-                                }}
-                                className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:scale-105 transition-all cursor-pointer"
-                                title="Tạo lượt xem & thích ảo"
-                              >
-                                <Zap className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => openAiSeoForStory(b)}
-                                className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:scale-105 transition-all cursor-pointer"
-                                title="Tối ưu SEO & Tóm tắt sách bằng AI"
-                              >
-                                <Sparkles className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSelectedStory(b);
-                                  setActiveTab("chapters");
-                                  fetchChapters(b.id);
-                                }}
-                                className="p-1.5 rounded-lg bg-muted hover:text-emerald-500 transition-colors cursor-pointer"
-                                title="Quản lý các chương của sách"
-                              >
-                                <Layers className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setEditingStory(b);
-                                  setStoryForm({
-                                    title: b.title,
-                                    slug: b.slug,
-                                    type: b.type || "book",
-                                    author_name: b.author_name || "",
-                                    description: b.description || "",
-                                    cover_url: b.cover_url || "",
-                                    status: b.status || "completed",
-                                    genres: Array.isArray(b.genres) ? b.genres.join(", ") : b.genres || "",
-                                    seo_title: "",
-                                    seo_description: "",
-                                    focus_keyword: "",
-                                  });
-                                  setShowStoryModal(true);
-                                }}
-                                className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 transition-colors cursor-pointer"
-                                title="Sửa thông tin sách"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (confirm(`Chuyển sách "${b.title}" vào Thùng rác?`)) {
-                                    fetch("/api/admin/bulk", {
-                                      method: "POST",
-                                      headers: { "Content-Type": "application/json" },
-                                      body: JSON.stringify({ action: "trash", ids: [b.id] }),
-                                    }).then(() => {
-                                      showToast("Đã đưa vào thùng rác");
-                                      fetchBooks(booksPage);
-                                      fetchStats();
+                                  <Zap className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => openAiSeoForStory(b)}
+                                  className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:scale-105 transition-all cursor-pointer"
+                                  title="Tối ưu SEO & Tóm tắt sách bằng AI"
+                                >
+                                  <Sparkles className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedStory(b);
+                                    setActiveTab("chapters");
+                                    fetchChapters(b.id);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-muted hover:text-emerald-500 transition-colors cursor-pointer"
+                                  title="Quản lý các chương của sách"
+                                >
+                                  <Layers className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingStory(b);
+                                    setStoryForm({
+                                      title: b.title,
+                                      slug: b.slug,
+                                      type: b.type || "book",
+                                      author_name: b.author_name || "",
+                                      description: b.description || "",
+                                      cover_url: b.cover_url || "",
+                                      status: b.status || "completed",
+                                      genres: Array.isArray(b.genres) ? b.genres.join(", ") : b.genres || "",
+                                      seo_title: "",
+                                      seo_description: "",
+                                      focus_keyword: "",
                                     });
-                                  }
-                                }}
-                                className="p-1.5 rounded-lg bg-muted hover:text-rose-500 transition-colors cursor-pointer"
-                                title="Xóa sách"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                                    setShowStoryModal(true);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 transition-colors cursor-pointer"
+                                  title="Sửa thông tin sách"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Chuyển sách "${b.title}" vào Thùng rác?`)) {
+                                      fetch("/api/admin/bulk", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ action: "trash", ids: [b.id] }),
+                                      }).then(() => {
+                                        showToast("Đã đưa vào thùng rác");
+                                        fetchBooks(booksPage, bookSearchQuery, bookGenreFilter, bookStatusFilter, bookSortOrder);
+                                        fetchStats();
+                                      });
+                                    }
+                                  }}
+                                  className="p-1.5 rounded-lg bg-muted hover:text-rose-500 transition-colors cursor-pointer"
+                                  title="Xóa sách"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -1802,14 +2244,14 @@ export default function AdminPage() {
                 </span>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => fetchBooks(booksPage - 1)}
+                    onClick={() => fetchBooks(booksPage - 1, bookSearchQuery, bookGenreFilter, bookStatusFilter, bookSortOrder)}
                     disabled={booksPage <= 1 || loadingBooks}
                     className="p-2 rounded-lg bg-muted border border-border/60 hover:bg-muted/80 disabled:opacity-40 cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => fetchBooks(booksPage + 1)}
+                    onClick={() => fetchBooks(booksPage + 1, bookSearchQuery, bookGenreFilter, bookStatusFilter, bookSortOrder)}
                     disabled={books.length < 15 || loadingBooks}
                     className="p-2 rounded-lg bg-muted border border-border/60 hover:bg-muted/80 disabled:opacity-40 cursor-pointer"
                   >
@@ -2024,11 +2466,55 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Bulk Actions Floating Bar for Blogs */}
+            {selectedBlogIds.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-card to-muted border border-rose-500/30 shadow-lg flex items-center justify-between gap-3 text-xs animate-in slide-in-from-top-2">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-rose-500" />
+                  <span className="font-bold">
+                    Đã chọn <strong className="text-rose-500">{selectedBlogIds.length}</strong> bài viết
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBulkChangeBlogsStatus("published")}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold cursor-pointer"
+                  >
+                    Đánh dấu Xuất bản
+                  </button>
+                  <button
+                    onClick={() => handleBulkChangeBlogsStatus("draft")}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-bold cursor-pointer"
+                  >
+                    Chuyển Bản nháp
+                  </button>
+                  <button
+                    onClick={handleBulkDeleteBlogs}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-bold cursor-pointer flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Xóa Hàng Loạt
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Blogs Table */}
             <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
               <table className="w-full text-left text-xs">
                 <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
                   <tr>
+                    <th className="p-3.5 w-10 text-center">
+                      <button
+                        onClick={toggleSelectAllBlogs}
+                        className="text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        {selectedBlogIds.length === blogs.length && blogs.length > 0 ? (
+                          <CheckSquare className="w-4 h-4 text-rose-500" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                      </button>
+                    </th>
                     <th className="p-3.5">Bài Viết</th>
                     <th className="p-3.5">Đường Dẫn (Slug)</th>
                     <th className="p-3.5">SEO & Từ Khóa</th>
@@ -2040,14 +2526,14 @@ export default function AdminPage() {
                 <tbody className="divide-y divide-border/40">
                   {loadingBlogs ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                      <td colSpan={7} className="p-8 text-center text-muted-foreground">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
                         <span className="block mt-2 font-semibold">Đang tải danh sách bài viết...</span>
                       </td>
                     </tr>
                   ) : blogs.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                      <td colSpan={7} className="p-8 text-center text-muted-foreground">
                         Chưa có bài viết blog nào. Hãy bấm &quot;Viết Bài Mới&quot; để trợ lý AI tạo bài viết đầu tiên!
                       </td>
                     </tr>
@@ -2061,75 +2547,95 @@ export default function AdminPage() {
                         if (blogCategoryFilter === "notice") return b.title.includes("[Thông Báo]");
                         return true;
                       })
-                      .map((b) => (
-                        <tr key={b.id} className="hover:bg-muted/30 transition-colors">
-                          <td className="p-3.5 font-bold text-foreground max-w-xs sm:max-w-md">
-                            <div className="flex flex-col gap-0.5">
-                              <span
-                                className="truncate hover:text-rose-500 cursor-pointer"
-                                onClick={() => {
-                                  setEditingBlog(b);
-                                  setShowBlogModal(true);
-                                }}
+                      .map((b) => {
+                        const isSelected = selectedBlogIds.includes(b.id);
+                        return (
+                          <tr
+                            key={b.id}
+                            className={`hover:bg-muted/30 transition-colors ${
+                              isSelected ? "bg-rose-500/5" : ""
+                            }`}
+                          >
+                            <td className="p-3.5 text-center">
+                              <button
+                                onClick={() => toggleSelectBlog(b.id)}
+                                className="cursor-pointer"
                               >
-                                {b.title}
-                              </span>
-                              {b.excerpt && (
-                                <span className="text-[11px] text-muted-foreground line-clamp-1 font-normal">
-                                  {b.excerpt}
+                                {isSelected ? (
+                                  <CheckSquare className="w-4 h-4 text-rose-500" />
+                                ) : (
+                                  <Square className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                                )}
+                              </button>
+                            </td>
+                            <td className="p-3.5 font-bold text-foreground max-w-xs sm:max-w-md">
+                              <div className="flex flex-col gap-0.5">
+                                <span
+                                  className="truncate hover:text-rose-500 cursor-pointer"
+                                  onClick={() => {
+                                    setEditingBlog(b);
+                                    setShowBlogModal(true);
+                                  }}
+                                >
+                                  {b.title}
                                 </span>
+                                {b.excerpt && (
+                                  <span className="text-[11px] text-muted-foreground line-clamp-1 font-normal">
+                                    {b.excerpt}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3.5 font-mono text-indigo-400">/{b.slug}</td>
+                            <td className="p-3.5">
+                              {b.focus_keyword ? (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-400">
+                                  {b.focus_keyword}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground/60 text-[10px]">Chưa đặt</span>
                               )}
-                            </div>
-                          </td>
-                          <td className="p-3.5 font-mono text-indigo-400">/{b.slug}</td>
-                          <td className="p-3.5">
-                            {b.focus_keyword ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/10 text-indigo-400">
-                                {b.focus_keyword}
+                            </td>
+                            <td className="p-3.5">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
+                                {b.status || "published"}
                               </span>
-                            ) : (
-                              <span className="text-muted-foreground/60 text-[10px]">Chưa đặt</span>
-                            )}
-                          </td>
-                          <td className="p-3.5">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
-                              {b.status || "published"}
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-muted-foreground font-mono text-[11px]">
-                            {new Date(b.created_at || b.updated_at).toLocaleDateString("vi-VN")}
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Link
-                                href={`/blog/${b.slug}`}
-                                target="_blank"
-                                className="p-1.5 rounded-lg bg-muted hover:text-foreground inline-block"
-                                title="Xem bài viết trên web"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </Link>
-                              <button
-                                onClick={() => {
-                                  setEditingBlog(b);
-                                  setShowBlogModal(true);
-                                }}
-                                className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 cursor-pointer"
-                                title="Sửa bài viết"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => handleDeletePost(b.id, b.title)}
-                                className="p-1.5 rounded-lg bg-muted hover:text-rose-500 cursor-pointer"
-                                title="Xóa bài viết"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                            <td className="p-3.5 text-muted-foreground font-mono text-[11px]">
+                              {new Date(b.created_at || b.updated_at).toLocaleDateString("vi-VN")}
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Link
+                                  href={`/blog/${b.slug}`}
+                                  target="_blank"
+                                  className="p-1.5 rounded-lg bg-muted hover:text-foreground inline-block"
+                                  title="Xem bài viết trên web"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </Link>
+                                <button
+                                  onClick={() => {
+                                    setEditingBlog(b);
+                                    setShowBlogModal(true);
+                                  }}
+                                  className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 cursor-pointer"
+                                  title="Sửa bài viết"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeletePost(b.id, b.title)}
+                                  className="p-1.5 rounded-lg bg-muted hover:text-rose-500 cursor-pointer"
+                                  title="Xóa bài viết"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                   )}
                 </tbody>
               </table>
@@ -2185,10 +2691,54 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* Bulk Actions Floating Bar for Pages */}
+            {selectedPageIds.length > 0 && (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-card to-muted border border-rose-500/30 shadow-lg flex items-center justify-between gap-3 text-xs animate-in slide-in-from-top-2">
+                <div className="flex items-center gap-2">
+                  <CheckSquare className="w-4 h-4 text-rose-500" />
+                  <span className="font-bold">
+                    Đã chọn <strong className="text-rose-500">{selectedPageIds.length}</strong> trang
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBulkChangePagesStatus("published")}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold cursor-pointer"
+                  >
+                    Đánh dấu Xuất bản
+                  </button>
+                  <button
+                    onClick={() => handleBulkChangePagesStatus("draft")}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-bold cursor-pointer"
+                  >
+                    Chuyển Bản nháp
+                  </button>
+                  <button
+                    onClick={handleBulkDeletePages}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-bold cursor-pointer flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Xóa Hàng Loạt
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
               <table className="w-full text-left text-xs">
                 <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
                   <tr>
+                    <th className="p-3.5 w-10 text-center">
+                      <button
+                        onClick={toggleSelectAllPages}
+                        className="text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        {selectedPageIds.length === posts.length && posts.length > 0 ? (
+                          <CheckSquare className="w-4 h-4 text-rose-500" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                      </button>
+                    </th>
                     <th className="p-3.5">Tiêu Đề Trang</th>
                     <th className="p-3.5">Đường Dẫn (Slug)</th>
                     <th className="p-3.5">Phân Loại</th>
@@ -2199,65 +2749,85 @@ export default function AdminPage() {
                 <tbody className="divide-y divide-border/40">
                   {loadingPosts ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto text-rose-500" />
                         <span className="block mt-2 font-semibold">Đang tải danh sách trang...</span>
                       </td>
                     </tr>
                   ) : posts.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
                         Chưa có trang nào trong cơ sở dữ liệu. Bấm &quot;Tạo Trang Mới&quot; để thiết lập.
                       </td>
                     </tr>
                   ) : (
-                    posts.map((p) => (
-                      <tr key={p.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="p-3.5 font-bold text-foreground">{p.title}</td>
-                        <td className="p-3.5 font-mono text-indigo-400">/{p.slug}</td>
-                        <td className="p-3.5 uppercase font-black text-[10px] text-muted-foreground">{p.type}</td>
-                        <td className="p-3.5">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
-                            {p.status || "published"}
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-right">
-                          <Link
-                            href={`/${p.slug}`}
-                            target="_blank"
-                            className="p-1.5 rounded-lg bg-muted hover:text-foreground inline-block mr-1"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </Link>
-                          <button
-                            onClick={() => {
-                              setEditingPost(p);
-                              setPostForm({
-                                title: p.title || "",
-                                slug: p.slug || "",
-                                type: p.type || "page",
-                                excerpt: p.excerpt || "",
-                                content_html: p.content_html || "",
-                                status: p.status || "published",
-                                seo_title: p.seo_title || "",
-                                seo_description: p.seo_description || "",
-                                focus_keyword: p.focus_keyword || "",
-                              });
-                              setShowPostModal(true);
-                            }}
-                            className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 mr-1"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeletePost(p.id, p.title)}
-                            className="p-1.5 rounded-lg bg-muted hover:text-rose-500"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    posts.map((p) => {
+                      const isSelected = selectedPageIds.includes(p.id);
+                      return (
+                        <tr
+                          key={p.id}
+                          className={`hover:bg-muted/30 transition-colors ${
+                            isSelected ? "bg-rose-500/5" : ""
+                          }`}
+                        >
+                          <td className="p-3.5 text-center">
+                            <button
+                              onClick={() => toggleSelectPage(p.id)}
+                              className="cursor-pointer"
+                            >
+                              {isSelected ? (
+                                <CheckSquare className="w-4 h-4 text-rose-500" />
+                              ) : (
+                                <Square className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                              )}
+                            </button>
+                          </td>
+                          <td className="p-3.5 font-bold text-foreground">{p.title}</td>
+                          <td className="p-3.5 font-mono text-indigo-400">/{p.slug}</td>
+                          <td className="p-3.5 uppercase font-black text-[10px] text-muted-foreground">{p.type}</td>
+                          <td className="p-3.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500">
+                              {p.status || "published"}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <Link
+                              href={`/${p.slug}`}
+                              target="_blank"
+                              className="p-1.5 rounded-lg bg-muted hover:text-foreground inline-block mr-1"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </Link>
+                            <button
+                              onClick={() => {
+                                setEditingPost(p);
+                                setPostForm({
+                                  title: p.title || "",
+                                  slug: p.slug || "",
+                                  type: p.type || "page",
+                                  excerpt: p.excerpt || "",
+                                  content_html: p.content_html || "",
+                                  status: p.status || "published",
+                                  seo_title: p.seo_title || "",
+                                  seo_description: p.seo_description || "",
+                                  focus_keyword: p.focus_keyword || "",
+                                });
+                                setShowPostModal(true);
+                              }}
+                              className="p-1.5 rounded-lg bg-muted hover:text-indigo-400 mr-1"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePost(p.id, p.title)}
+                              className="p-1.5 rounded-lg bg-muted hover:text-rose-500"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

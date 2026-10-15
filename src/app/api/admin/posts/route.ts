@@ -16,8 +16,12 @@ export async function GET(request: Request) {
       .select("*")
       .order("updated_at", { ascending: false });
 
-    if (type) {
-      query = query.eq("type", type);
+    if (type && type !== "all") {
+      if (type === "blog" || type === "article") {
+        query = query.neq("type", "page");
+      } else {
+        query = query.eq("type", type);
+      }
     }
     if (status) {
       query = query.eq("status", status);
