@@ -23,6 +23,7 @@ import { CommentSection } from "@/components/comment/CommentSection";
 import { normalizeMediaUrl, SITE_CONFIG } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { recordReadingProgress } from "@/lib/sync/syncService";
+import { AuthRequiredGate } from "@/components/auth/AuthRequiredGate";
 
 interface ComicReaderProps {
   story: Story;
@@ -31,6 +32,8 @@ interface ComicReaderProps {
 }
 
 export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(!chapter.is_locked);
   const [userCoins, setUserCoins] = useState(25);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -106,6 +109,30 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Kiểm tra đăng nhập
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user);
+      setAuthChecked(true);
+      if (user) {
+        supabase.from("profiles").select("coins").eq("id", user.id).single().then(({ data }) => {
+          if (data?.coins !== undefined) setUserCoins(data.coins);
+        });
+      }
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user || null;
+      setCurrentUser(u);
+      setAuthChecked(true);
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
 
   // Ghi nhận tiến độ đọc & đồng bộ đa thiết bị
@@ -291,7 +318,13 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
 
       {/* Comic Pages Container */}
       <main ref={containerRef} className={`w-full ${imageWidth} mx-auto flex flex-col items-center my-4`}>
-        {isUnlocked ? (
+        {authChecked && !currentUser ? (
+          <AuthRequiredGate
+            storyTitle={story.title}
+            chapterTitle={chapter.title}
+            storySlug={story.slug}
+          />
+        ) : isUnlocked ? (
           <div className="w-full flex flex-col items-center">
             {pages.map((rawUrl, idx) => {
               const imgUrl = normalizeMediaUrl(rawUrl);

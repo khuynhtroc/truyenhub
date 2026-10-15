@@ -55,17 +55,39 @@ export async function POST(request: Request) {
         );
       }
 
-      // Verify page access token
-      const fbRes = await fetch(
-        `https://graph.facebook.com/v19.0/${pageId}?fields=name,category,link&access_token=${pageAccessToken}`
+      const cleanToken = String(pageAccessToken).trim();
+      const cleanPageId = String(pageId).trim();
+
+      // 1. Try querying /me (standard for Page Access Tokens)
+      let fbRes = await fetch(
+        `https://graph.facebook.com/v19.0/me?fields=id,name,link&access_token=${encodeURIComponent(cleanToken)}`,
+        { headers: { "User-Agent": "DocTruyenVip/1.0" } }
       );
-      const fbData = await fbRes.json();
+      let fbData = await fbRes.json();
+
+      // 2. If /me failed, try querying with the specific page ID
+      if (fbData.error && cleanPageId) {
+        fbRes = await fetch(
+          `https://graph.facebook.com/v19.0/${cleanPageId}?fields=id,name,link&access_token=${encodeURIComponent(cleanToken)}`,
+          { headers: { "User-Agent": "DocTruyenVip/1.0" } }
+        );
+        fbData = await fbRes.json();
+      }
 
       if (fbData.error) {
+        const code = fbData.error.code;
+        const msg = fbData.error.message;
+
+        let guide = `Lỗi Facebook Graph API: ${msg} (Mã lỗi: ${code})`;
+        if (code === 1 || code === 190 || code === 100) {
+          guide += `\n\n📌 Nguyên nhân: Token bạn nhập không phải là "Page Access Token" hoặc chưa được cấp quyền quản trị Fanpage này.\n\n👉 Cách khắc phục:\n1. Vào Graph API Explorer: https://developers.facebook.com/tools/explorer/\n2. Chọn đúng App của bạn ở góc phải (App ID: 1591946348610071).\n3. Ở ô "User or Page", bấm chọn "Get Page Access Token" (KHÔNG chọn User Token).\n4. Tích chọn Fanpage của bạn và cấp quyền: pages_manage_posts, pages_read_engagement.\n5. Sao chép Page Token dán lại vào ô này.`;
+        }
+
         return NextResponse.json(
           {
             success: false,
-            error: `Lỗi Facebook Graph API: ${fbData.error.message} (Code: ${fbData.error.code})`,
+            error: guide,
+            rawError: fbData.error,
           },
           { status: 400 }
         );

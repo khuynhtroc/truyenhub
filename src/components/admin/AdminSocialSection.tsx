@@ -274,17 +274,54 @@ export function AdminSocialSection({
           </a>
         </div>
 
-        {/* Callback URLs helper box */}
-        <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/20 flex flex-col gap-2.5">
-          <span className="text-xs font-bold text-indigo-500 flex items-center gap-1.5">
-            <Key className="w-3.5 h-3.5" />
-            Đường Dẫn Callback Cần Thêm Vào Google Cloud Console & Meta for Developers:
-          </span>
+        {/* Setup guide warning & instructions */}
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col gap-3 text-xs">
+          <div className="flex items-start gap-2 text-amber-500 font-bold">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-extrabold text-sm text-foreground">
+                Lưu ý quan trọng: Bắt buộc BẬT Provider trong Supabase Dashboard
+              </p>
+              <p className="text-[11px] font-normal text-muted-foreground mt-0.5">
+                Nếu gặp lỗi <code>Unsupported provider: provider is not enabled</code>, đó là do bạn chưa bật Google / Facebook trong Supabase Dashboard. Hãy hoàn thành 3 bước sau:
+              </p>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div className="space-y-2 text-[11px] bg-background/80 p-3 rounded-lg border border-border/60">
+            <p>
+              <strong className="text-foreground">1. Kích hoạt trong Supabase:</strong> Truy cập{" "}
+              <a
+                href="https://supabase.com/dashboard/project/bqvffeqjgjtzprouwshd/auth/providers"
+                target="_blank"
+                rel="noreferrer"
+                className="text-indigo-500 underline font-bold"
+              >
+                Supabase Auth Providers ↗
+              </a>
+              , tìm <b>Google</b> & <b>Facebook</b>, chuyển sang trạng thái <b>ON (Enabled)</b>, dán Client ID & Secret tương ứng rồi bấm <b>Save</b>.
+            </p>
+            <p>
+              <strong className="text-foreground">2. Cấu hình Callback URL trên Google & Facebook:</strong> Copy đường dẫn (1) bên dưới và thêm vào ô <b>Authorized redirect URIs</b> của Google Cloud Console và ô <b>URI chuyển hướng OAuth hợp lệ</b> của Facebook Login.
+            </p>
+            <p>
+              <strong className="text-foreground">3. Cấu hình Redirect URLs trên Supabase:</strong> Vào{" "}
+              <a
+                href="https://supabase.com/dashboard/project/bqvffeqjgjtzprouwshd/auth/url-configuration"
+                target="_blank"
+                rel="noreferrer"
+                className="text-indigo-500 underline font-bold"
+              >
+                URL Configuration ↗
+              </a>
+              , đặt Site URL là <code>https://doctruyen.vip</code> và thêm vào Redirect URLs: <code>https://doctruyen.vip/**</code>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
             <div className="flex flex-col gap-1">
               <label className="text-[11px] font-bold text-muted-foreground">
-                1. Supabase Callback URL (Bắt buộc cho OAuth)
+                1. Supabase Callback URL (Bắt buộc thêm vào Google & Facebook)
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -306,7 +343,7 @@ export function AdminSocialSection({
 
             <div className="flex flex-col gap-1">
               <label className="text-[11px] font-bold text-muted-foreground">
-                2. Site Redirect URL (Trang nhận kết quả)
+                2. Site Redirect URL (Trang nhận kết quả về website)
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -630,6 +667,29 @@ export function AdminSocialSection({
           </label>
         </div>
 
+        {/* Helpful Guide for Page Access Token */}
+        <div className="p-3.5 rounded-xl bg-blue-500/5 border border-blue-500/20 text-xs flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+              <Key className="w-3.5 h-3.5" /> Hướng dẫn lấy Page Access Token chuẩn (Tránh lỗi Code 1)
+            </span>
+            <a
+              href="https://developers.facebook.com/tools/explorer/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] font-bold text-blue-500 hover:underline flex items-center gap-1"
+            >
+              Mở Graph API Explorer <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+          <ol className="list-decimal list-inside space-y-1 text-[11px] text-muted-foreground leading-relaxed">
+            <li>Truy cập Graph API Explorer, ở góc phải chọn đúng Facebook App của bạn (App ID: <code className="font-mono text-foreground font-bold">{oauth.facebookAppId || "1591946348610071"}</code>).</li>
+            <li>Ở mục <strong>User or Page</strong>, bấm chọn <strong>Get Page Access Token</strong> (Lưu ý: KHÔNG dùng User Token).</li>
+            <li>Thêm các quyền cần thiết: <code className="bg-muted px-1 rounded text-foreground font-mono">pages_manage_posts</code>, <code className="bg-muted px-1 rounded text-foreground font-mono">pages_read_engagement</code>, <code className="bg-muted px-1 rounded text-foreground font-mono">pages_show_list</code>.</li>
+            <li>Bấm cấp quyền và chọn Fanpage trong danh sách, sau đó copy Token dán vào ô bên trên.</li>
+          </ol>
+        </div>
+
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
           <button
             type="button"
@@ -644,14 +704,18 @@ export function AdminSocialSection({
 
         {fbResult && (
           <div
-            className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+            className={`p-4 rounded-xl text-xs font-semibold flex items-start gap-2.5 whitespace-pre-line leading-relaxed ${
               fbResult.startsWith("Lỗi")
                 ? "bg-rose-500/10 border border-rose-500/20 text-rose-500"
                 : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500"
             }`}
           >
-            {fbResult.startsWith("Lỗi") ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
-            <span>{fbResult}</span>
+            {fbResult.startsWith("Lỗi") ? (
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+            )}
+            <div className="flex-1">{fbResult}</div>
           </div>
         )}
       </div>

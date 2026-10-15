@@ -436,18 +436,6 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Nạp Xu Widget */}
-          <Link
-            href="/nap-xu"
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold transition-all shadow-sm shrink-0"
-          >
-            <Coins className="w-3.5 h-3.5 text-amber-500 animate-bounce" />
-            <span>{userCoins} Xu</span>
-            <span className="hidden sm:inline-block text-[10px] bg-amber-500 text-white rounded-full px-1.5 py-0.2 ml-0.5 font-bold">
-              + Nạp
-            </span>
-          </Link>
-
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}

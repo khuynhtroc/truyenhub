@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Bookmark, Coins, User } from "lucide-react";
+import { Home, Compass, Bookmark, Sparkles, User } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -11,7 +11,7 @@ export function BottomNav() {
     { label: "Trang chủ", href: "/", icon: Home },
     { label: "Khám phá", href: "/kham-pha", icon: Compass },
     { label: "Tủ truyện", href: "/tu-truyen", icon: Bookmark },
-    { label: "Nạp xu", href: "/nap-xu", icon: Coins, highlight: true },
+    { label: "Tin tức", href: "/blog", icon: Sparkles },
     { label: "Cá nhân", href: "/tai-khoan", icon: User },
   ];
 
@@ -26,19 +26,17 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center gap-1 text-[11px] font-medium transition-all ${
-                item.highlight
-                  ? "text-amber-500 font-bold"
-                  : isActive
+                isActive
                   ? "text-rose-500 font-bold"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <div
                 className={`p-1 rounded-xl transition-all ${
-                  isActive ? "bg-rose-500/10" : item.highlight ? "bg-amber-500/10" : ""
+                  isActive ? "bg-rose-500/10" : ""
                 }`}
               >
-                <Icon className={`w-5 h-5 ${item.highlight ? "text-amber-500" : ""}`} />
+                <Icon className="w-5 h-5" />
               </div>
               <span>{item.label}</span>
             </Link>

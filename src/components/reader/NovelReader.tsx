@@ -31,6 +31,7 @@ import {
 import { CommentSection } from "@/components/comment/CommentSection";
 import { createClient } from "@/lib/supabase/client";
 import { recordReadingProgress } from "@/lib/sync/syncService";
+import { AuthRequiredGate } from "@/components/auth/AuthRequiredGate";
 
 interface NovelReaderProps {
   story: Story;
@@ -144,8 +145,10 @@ function cleanVietnameseText(str: string): string {
 
 export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
   const pathname = usePathname();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(!chapter.is_locked);
-  const [userCoins] = useState(25);
+  const [userCoins, setUserCoins] = useState(25);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   // Reader Settings
@@ -352,8 +355,40 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
 
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user);
+      setAuthChecked(true);
+      if (user) {
+        supabase
+          .from("profiles")
+          .select("coins")
+          .eq("id", user.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.coins !== undefined) setUserCoins(data.coins);
+          });
+      }
       recordReadingProgress(story.id, chapter.id, 0, user?.id);
     });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user || null;
+      setCurrentUser(u);
+      setAuthChecked(true);
+      if (u) {
+        supabase
+          .from("profiles")
+          .select("coins")
+          .eq("id", u.id)
+          .single()
+          .then(({ data }) => {
+            if (data?.coins !== undefined) setUserCoins(data.coins);
+          });
+      }
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, [story.id, story.slug, chapter.id, chapter.chapter_number]);
 
   // Keyboard navigation & scroll
@@ -733,6 +768,9 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
             {/* Audio TTS Button */}
             <button
               onClick={() => {
+                if (authChecked && !currentUser) {
+                  return;
+                }
                 if (!isAudioOpen) {
                   setIsAudioOpen(true);
                   startAudio();
@@ -866,7 +904,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       </header>
 
       {/* Floating Audio Player Bar (Remains stable & open during settings adjustments!) */}
-      {isAudioOpen && (
+      {isAudioOpen && (!authChecked || currentUser) && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-xl p-3.5 rounded-2xl bg-neutral-900/95 text-white border border-neutral-800 shadow-2xl backdrop-blur-xl flex flex-col gap-2.5 animate-in fade-in slide-in-from-bottom-4">
           <div className="flex items-center justify-between gap-3">
             {/* Info */}
@@ -1115,7 +1153,13 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
           {chapter.title}
         </h2>
 
-        {isUnlocked ? (
+        {authChecked && !currentUser ? (
+          <AuthRequiredGate
+            storyTitle={story.title}
+            chapterTitle={chapter.title}
+            storySlug={story.slug}
+          />
+        ) : isUnlocked ? (
           <article
             className={`${fontFamily} space-y-6 leading-relaxed`}
             style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight }}
@@ -1139,7 +1183,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
         )}
 
         {/* Chapter Navigation Buttons (Clicking cleanly stops audio of this chapter!) */}
-        {isUnlocked && (
+        {isUnlocked && (!authChecked || currentUser) && (
           <div className="w-full my-12 flex items-center justify-between gap-4">
             {prevChapter ? (
               <Link
