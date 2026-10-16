@@ -241,7 +241,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md shadow-sm pt-[env(safe-area-inset-top,0px)]">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md shadow-sm pt-[max(env(safe-area-inset-top,0px),var(--app-safe-top,0px))]">
       {/* Main Top Header Bar */}
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-6 gap-3">
         {/* Brand Logo & Core Nav */}

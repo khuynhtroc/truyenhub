@@ -4,5 +4,13 @@ export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://bqv
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxdmZmZXFqZ2p0enByb3V3c2hkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MDU0MTcsImV4cCI6MjEwNzQ4MTQxN30.ZoidaHP5yKPboaMLaSaeGCw5YIrhtsrGCk5uw5cc3z8";
 
 export function createClient() {
-  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const isProduction = typeof window !== "undefined" && window.location.hostname.includes("doctruyen.vip");
+
+  return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookieOptions: {
+      path: "/",
+      sameSite: "lax",
+      ...(isProduction ? { domain: ".doctruyen.vip" } : {}),
+    },
+  });
 }

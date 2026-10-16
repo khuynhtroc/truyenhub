@@ -15,7 +15,10 @@ export async function createServerSupabaseClient() {
       setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
+            cookieStore.set(name, value, {
+              ...options,
+              ...(process.env.NODE_ENV === "production" ? { domain: ".doctruyen.vip" } : {}),
+            })
           );
         } catch {
           // Can happen in Server Components

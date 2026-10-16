@@ -174,20 +174,19 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
 
   return (
     <div className="relative min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center select-none">
-      {/* Top Reading Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-neutral-800 z-50">
-        <div
-          className="h-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all duration-150"
-          style={{ width: `${scrollProgress}%` }}
-        />
-      </div>
-
-      {/* Floating Header Toolbar */}
+      {/* Floating Header Toolbar with Safe Area Inset */}
       <header
-        className={`sticky top-0 z-40 w-full bg-neutral-900/90 backdrop-blur-md border-b border-neutral-800 px-4 py-2.5 transition-transform duration-300 ${
+        className={`sticky top-0 z-40 w-full bg-neutral-900/90 backdrop-blur-md border-b border-neutral-800 px-4 pt-[calc(max(env(safe-area-inset-top,0px),var(--app-safe-top,0px))+0.625rem)] pb-2.5 transition-transform duration-300 ${
           showControls ? "translate-y-0" : "-translate-y-full"
         }`}
       >
+        {/* Reading Progress Bar attached to bottom of header */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-neutral-800">
+          <div
+            className="h-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all duration-150"
+            style={{ width: `${scrollProgress}%` }}
+          />
+        </div>
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link

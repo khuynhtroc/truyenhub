@@ -738,7 +738,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       </div>
 
       {/* Header bar */}
-      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-opacity-90 border-b border-inherit px-4 py-3">
+      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-opacity-90 border-b border-inherit px-4 pt-[calc(max(env(safe-area-inset-top,0px),var(--app-safe-top,0px))+0.75rem)] pb-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link 
             href={`/truyen/${story.slug}`} 

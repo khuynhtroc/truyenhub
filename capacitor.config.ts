@@ -11,6 +11,17 @@ const config: CapacitorConfig = {
     url: "https://www.doctruyen.vip",
     cleartext: false,
     androidScheme: "https",
+    allowNavigation: [
+      "*.doctruyen.vip",
+      "doctruyen.vip",
+      "*.supabase.co",
+      "accounts.google.com",
+      "*.google.com",
+      "*.googleusercontent.com",
+      "*.facebook.com",
+      "*.m.facebook.com",
+      "m.facebook.com"
+    ],
   },
   plugins: {
     SplashScreen: {

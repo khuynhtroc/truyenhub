@@ -39,6 +39,28 @@ public class MainActivity extends BridgeActivity {
             android.webkit.WebSettings webSettings = bridge.getWebView().getSettings();
             String ua = webSettings.getUserAgentString();
             webSettings.setUserAgentString(ua.replace("; wv", "").replaceAll("Version/[0-9.]+", ""));
+            webSettings.setDomStorageEnabled(true);
+            webSettings.setDatabaseEnabled(true);
+            webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+
+            // Enable cookies and third-party cookies for OAuth flows
+            android.webkit.CookieManager cookieManager = android.webkit.CookieManager.getInstance();
+            cookieManager.setAcceptCookie(true);
+            cookieManager.setAcceptThirdPartyCookies(bridge.getWebView(), true);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(android.content.Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (bridge != null && intent != null && intent.getData() != null) {
+            android.net.Uri data = intent.getData();
+            if (data != null && "vip.doctruyen.app".equals(data.getScheme())) {
+                String path = data.getPath() != null ? data.getPath() : "";
+                String query = data.getQuery() != null ? "?" + data.getQuery() : "";
+                bridge.getWebView().loadUrl("https://www.doctruyen.vip" + path + query);
+            }
         }
     }
 
