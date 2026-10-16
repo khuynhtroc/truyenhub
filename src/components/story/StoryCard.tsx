@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Story } from "@/types";
-import { formatNumber, normalizeMediaUrl } from "@/lib/utils";
+import { formatNumber, normalizeMediaUrl, SITE_CONFIG } from "@/lib/utils";
 import { Eye, Heart, BookOpen, Image as ImageIcon, Sparkles, RefreshCw } from "lucide-react";
 
 interface StoryCardProps {
@@ -11,9 +11,26 @@ interface StoryCardProps {
 }
 
 export function StoryCard({ story }: StoryCardProps) {
+  const [currentCover, setCurrentCover] = useState(normalizeMediaUrl(story.cover_url));
   const [imgError, setImgError] = useState(!story.cover_url);
+  const [hasFallenBack, setHasFallenBack] = useState(false);
   const isComic = story.type === "comic";
-  const coverUrl = normalizeMediaUrl(story.cover_url);
+
+  useEffect(() => {
+    const norm = normalizeMediaUrl(story.cover_url);
+    setCurrentCover(norm);
+    setImgError(!norm);
+    setHasFallenBack(false);
+  }, [story.cover_url]);
+
+  const handleError = () => {
+    if (!hasFallenBack && currentCover && currentCover.includes("media.doctruyen.vip")) {
+      setHasFallenBack(true);
+      setCurrentCover(currentCover.replace("https://media.doctruyen.vip", SITE_CONFIG.fallbackR2Url));
+      return;
+    }
+    setImgError(true);
+  };
 
   return (
     <Link
@@ -25,11 +42,11 @@ export function StoryCard({ story }: StoryCardProps) {
         {/* Placeholder / Image */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent z-10 opacity-70 group-hover:opacity-50 transition-opacity pointer-events-none" />
 
-        {!imgError && coverUrl ? (
+        {!imgError && currentCover ? (
           <img
-            src={coverUrl}
+            src={currentCover}
             alt={story.title}
-            onError={() => setImgError(true)}
+            onError={handleError}
             decoding="async"
             loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

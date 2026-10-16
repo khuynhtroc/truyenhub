@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Story } from "@/types";
-import { normalizeMediaUrl, formatNumber } from "@/lib/utils";
+import { normalizeMediaUrl, formatNumber, SITE_CONFIG } from "@/lib/utils";
 import { Sparkles, BookOpen, Flame, Heart, Eye, ArrowRight } from "lucide-react";
 
 interface HeroCarouselProps {
@@ -12,6 +12,9 @@ interface HeroCarouselProps {
 
 export function HeroCarousel({ stories }: HeroCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [heroCover, setHeroCover] = useState<string>("");
+  const [heroImgError, setHeroImgError] = useState(false);
+  const [hasFallenBack, setHasFallenBack] = useState(false);
 
   // Auto-advance every 6 seconds
   useEffect(() => {
@@ -22,19 +25,35 @@ export function HeroCarousel({ stories }: HeroCarouselProps) {
     return () => clearInterval(interval);
   }, [stories]);
 
-  if (!stories || stories.length === 0) return null;
+  const current = stories[currentIndex] || stories[0];
+  const isComic = current?.type === "comic";
 
-  const current = stories[currentIndex];
-  const coverUrl = normalizeMediaUrl(current.cover_url);
-  const isComic = current.type === "comic";
+  useEffect(() => {
+    if (!current) return;
+    const normalized = normalizeMediaUrl(current.cover_url);
+    setHeroCover(normalized);
+    setHeroImgError(!normalized);
+    setHasFallenBack(false);
+  }, [currentIndex, current]);
+
+  const handleHeroImgError = () => {
+    if (!hasFallenBack && heroCover && heroCover.includes("media.doctruyen.vip")) {
+      setHasFallenBack(true);
+      setHeroCover(heroCover.replace("https://media.doctruyen.vip", SITE_CONFIG.fallbackR2Url));
+      return;
+    }
+    setHeroImgError(true);
+  };
+
+  if (!stories || stories.length === 0 || !current) return null;
 
   return (
     <div className="relative w-full overflow-hidden rounded-3xl bg-neutral-950 border border-neutral-800 shadow-2xl">
       {/* Background Ambience Backdrop */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
-        {coverUrl && (
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {heroCover && !heroImgError && (
           <img
-            src={coverUrl}
+            src={heroCover}
             alt=""
             aria-hidden="true"
             decoding="async"
@@ -104,16 +123,25 @@ export function HeroCarousel({ stories }: HeroCarouselProps) {
           href={`/truyen/${current.slug}`}
           className="relative w-36 sm:w-44 aspect-[3/4] shrink-0 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/10 group active:scale-95 transition-transform"
         >
-          {coverUrl ? (
+          {heroCover && !heroImgError ? (
             <img
-              src={coverUrl}
+              src={heroCover}
               alt={current.title}
               decoding="async"
+              onError={handleHeroImgError}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-tr from-neutral-900 to-indigo-950 flex items-center justify-center p-3 text-center">
-              <span className="font-bold text-xs text-white">{current.title}</span>
+            <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-indigo-950 to-rose-950 flex flex-col items-center justify-between p-4 text-center">
+              <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-rose-400 mt-2">
+                <Sparkles className="w-4 h-4" />
+              </span>
+              <span className="font-extrabold text-sm text-white line-clamp-3 leading-snug">
+                {current.title}
+              </span>
+              <span className="text-[10px] text-white/60 mb-2 truncate w-full">
+                {current.author_name}
+              </span>
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />

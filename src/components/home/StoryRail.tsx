@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { Story } from "@/types";
-import { formatNumber, normalizeMediaUrl } from "@/lib/utils";
+import { formatNumber, normalizeMediaUrl, SITE_CONFIG } from "@/lib/utils";
 import { ChevronRight, Heart, Eye, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface StoryRailProps {
   title: string;
@@ -46,9 +46,26 @@ export function StoryRail({ title, href, icon, stories }: StoryRailProps) {
 }
 
 function RailCard({ story }: { story: Story }) {
+  const [currentCover, setCurrentCover] = useState(normalizeMediaUrl(story.cover_url));
   const [imgError, setImgError] = useState(!story.cover_url);
+  const [hasFallenBack, setHasFallenBack] = useState(false);
   const isComic = story.type === "comic";
-  const coverUrl = normalizeMediaUrl(story.cover_url);
+
+  useEffect(() => {
+    const norm = normalizeMediaUrl(story.cover_url);
+    setCurrentCover(norm);
+    setImgError(!norm);
+    setHasFallenBack(false);
+  }, [story.cover_url]);
+
+  const handleError = () => {
+    if (!hasFallenBack && currentCover && currentCover.includes("media.doctruyen.vip")) {
+      setHasFallenBack(true);
+      setCurrentCover(currentCover.replace("https://media.doctruyen.vip", SITE_CONFIG.fallbackR2Url));
+      return;
+    }
+    setImgError(true);
+  };
 
   return (
     <Link
@@ -60,17 +77,17 @@ function RailCard({ story }: { story: Story }) {
         {/* Subtle shadow overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10 opacity-60 pointer-events-none" />
 
-        {!imgError && coverUrl ? (
+        {!imgError && currentCover ? (
           <img
-            src={coverUrl}
+            src={currentCover}
             alt={story.title}
-            onError={() => setImgError(true)}
+            onError={handleError}
             decoding="async"
             loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-tr from-neutral-950 via-neutral-900 to-indigo-950 p-2.5 flex flex-col justify-between items-center text-center">
+          <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-indigo-950 to-rose-950 p-2.5 flex flex-col justify-between items-center text-center">
             <span className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-rose-400 mt-2">
               <Sparkles className="w-3 h-3" />
             </span>
