@@ -241,7 +241,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md shadow-sm pt-[env(safe-area-inset-top,0px)]">
       {/* Main Top Header Bar */}
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-6 gap-3">
         {/* Brand Logo & Core Nav */}
@@ -524,7 +524,7 @@ export function Navbar() {
 
       {/* Mobile Dropdown Menu */}
       {showMobileMenu && (
-        <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl px-4 py-4 flex flex-col gap-3 animate-in fade-in slide-in-from-top-3">
+        <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl px-4 py-4 flex flex-col gap-3 animate-in fade-in slide-in-from-top-3 max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain pb-6">
           {/* Mobile Auth Banner with Google & Facebook */}
           {!currentUser ? (
             <div className="p-3.5 rounded-2xl bg-card border border-border/80 flex flex-col gap-2.5 shadow-sm">

@@ -16,7 +16,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/50 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] px-3 shadow-lg">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/50 pt-1.5 pb-[max(14px,calc(0.75rem+env(safe-area-inset-bottom,0px)))] px-2 shadow-lg">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -25,7 +25,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center gap-1 text-[11px] font-medium transition-all ${
+              className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] text-[10px] sm:text-[11px] font-semibold transition-all ${
                 isActive
                   ? "text-rose-500 font-bold"
                   : "text-muted-foreground hover:text-foreground"
@@ -33,12 +33,12 @@ export function BottomNav() {
             >
               <div
                 className={`p-1 rounded-xl transition-all ${
-                  isActive ? "bg-rose-500/10" : ""
+                  isActive ? "bg-rose-500/10 text-rose-500" : ""
                 }`}
               >
                 <Icon className="w-5 h-5" />
               </div>
-              <span>{item.label}</span>
+              <span className="leading-tight truncate">{item.label}</span>
             </Link>
           );
         })}

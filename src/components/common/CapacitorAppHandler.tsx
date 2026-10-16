@@ -22,6 +22,7 @@ export function CapacitorAppHandler() {
         try {
           await StatusBar.setStyle({ style: Style.Dark });
           await StatusBar.setBackgroundColor({ color: "#09090b" });
+          await StatusBar.setOverlaysWebView({ overlay: false });
         } catch (_) {}
 
         // Configure native Android Back Button
