@@ -4,8 +4,15 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
 import { MOCK_STORIES, MOCK_CHAPTERS } from "@/lib/mock-data";
 import { formatNumber, normalizeMediaUrl } from "@/lib/utils";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+
+const SLUG_REDIRECTS: Record<string, string> = {
+  "bac-si-quai-di": "bac-si-quai-di-ban-moi",
+  "doraemon": "doraemon-truyen-ngan",
+  "jindo-con-loc-san-co": "jindo-1-duong-dan-den-khung-thanh",
+  "o-long-vien": "o-long-vien-bo-kinh-dien",
+};
 import { 
   Eye, 
   Heart, 
@@ -115,6 +122,9 @@ export default async function StoryDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  if (SLUG_REDIRECTS[slug]) {
+    redirect(`/truyen/${SLUG_REDIRECTS[slug]}`);
+  }
 
   let story: Story | null = null;
   let chapters: Chapter[] = [];

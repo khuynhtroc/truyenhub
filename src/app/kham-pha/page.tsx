@@ -9,6 +9,7 @@ import { StoryCard } from "@/components/story/StoryCard";
 import { MOCK_STORIES } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/client";
 import { Story } from "@/types";
+import { removeVietnameseTones } from "@/lib/utils";
 import { 
   Compass, 
   Filter, 
@@ -116,17 +117,27 @@ function ExploreContent() {
     setKeyword(searchParams.get("q") || searchParams.get("search") || "");
   }, [searchParams]);
 
-  // Load live stories from Supabase
+  // Load live stories from Supabase (paginated to fetch all 1700+ stories)
   useEffect(() => {
     async function loadStories() {
       try {
         const supabase = createClient();
-        const { data } = await supabase
-          .from("stories")
-          .select("*")
-          .order("total_views", { ascending: false });
-        if (data && data.length > 0) {
-          setStories(data as unknown as Story[]);
+        let all: Story[] = [];
+        let page = 0;
+        const pageSize = 1000;
+        while (true) {
+          const { data, error } = await supabase
+            .from("stories")
+            .select("*")
+            .order("total_views", { ascending: false })
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+          if (error || !data || data.length === 0) break;
+          all = all.concat(data as unknown as Story[]);
+          if (data.length < pageSize) break;
+          page++;
+        }
+        if (all.length > 0) {
+          setStories(all);
         }
       } catch (err) {
         console.error("Failed to load stories from Supabase:", err);
@@ -199,15 +210,24 @@ function ExploreContent() {
       }
     }
 
-    // Filter by keyword (100% null-safe)
+    // Filter by keyword (accent-insensitive & 100% null-safe)
     if (keyword.trim()) {
       const q = keyword.toLowerCase().trim();
+      const qNorm = removeVietnameseTones(q);
       list = list.filter((s) => {
-        const titleMatch = (s.title || "").toLowerCase().includes(q);
-        const authorMatch = (s.author_name || "").toLowerCase().includes(q);
-        const slugMatch = (s.slug || "").toLowerCase().includes(q);
-        const genreMatch = Array.isArray(s.genres) && s.genres.some((g) => (g || "").toLowerCase().includes(q));
-        const descMatch = (s.description || "").toLowerCase().includes(q);
+        const titleLower = (s.title || "").toLowerCase();
+        const authorLower = (s.author_name || "").toLowerCase();
+        const slugLower = (s.slug || "").toLowerCase();
+        const descLower = (s.description || "").toLowerCase();
+
+        const titleMatch = titleLower.includes(q) || removeVietnameseTones(titleLower).includes(qNorm);
+        const authorMatch = authorLower.includes(q) || removeVietnameseTones(authorLower).includes(qNorm);
+        const slugMatch = slugLower.includes(q) || slugLower.includes(qNorm);
+        const genreMatch = Array.isArray(s.genres) && s.genres.some((g) => {
+          const gLow = (g || "").toLowerCase();
+          return gLow.includes(q) || removeVietnameseTones(gLow).includes(qNorm);
+        });
+        const descMatch = descLower.includes(q) || removeVietnameseTones(descLower).includes(qNorm);
         return titleMatch || authorMatch || slugMatch || genreMatch || descMatch;
       });
     }
