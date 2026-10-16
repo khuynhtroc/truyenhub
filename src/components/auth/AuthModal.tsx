@@ -90,19 +90,28 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
 
     try {
       if (mode === "register") {
-        const { error } = await supabase.auth.signUp({
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, fullName }),
+        });
+        const regData = await res.json();
+        if (!res.ok) {
+          throw new Error(regData.error || "Đăng ký thất bại");
+        }
+
+        // Auto sign in immediately after registration
+        const { error: loginErr } = await supabase.auth.signInWithPassword({
           email,
           password,
-          options: {
-            data: { full_name: fullName },
-          },
         });
-        if (error) throw error;
+        if (loginErr) throw loginErr;
+
         setSuccessMessage("Đăng ký thành công! Bạn nhận được 10 Xu chào mừng.");
         setTimeout(() => {
           onClose();
           window.location.reload();
-        }, 1200);
+        }, 1000);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,

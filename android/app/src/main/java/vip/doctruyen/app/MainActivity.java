@@ -34,6 +34,11 @@ public class MainActivity extends BridgeActivity {
                 v.setPadding(0, topInset, 0, bottomInset);
                 return insets;
             });
+
+            // Clean User-Agent so Google OAuth allows login directly in WebView
+            android.webkit.WebSettings webSettings = bridge.getWebView().getSettings();
+            String ua = webSettings.getUserAgentString();
+            webSettings.setUserAgentString(ua.replace("; wv", "").replaceAll("Version/[0-9.]+", ""));
         }
     }
 

@@ -6,4 +6,10 @@
   <allow-navigation href="https://*.supabase.co/*" />
   <allow-navigation href="https://*.r2.cloudflarestorage.com/*" />
   <allow-navigation href="https://media.doctruyen.vip/*" />
+  <allow-navigation href="https://accounts.google.com/*" />
+  <allow-navigation href="https://*.google.com/*" />
+  <allow-navigation href="https://*.googleusercontent.com/*" />
+  <allow-navigation href="https://*.facebook.com/*" />
+  <allow-navigation href="https://*.m.facebook.com/*" />
+  <allow-navigation href="https://m.facebook.com/*" />
 </widget>
