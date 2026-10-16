@@ -117,9 +117,10 @@ export function Navbar() {
 
     // Mouse wheel support for category sub-bar
     const el = subBarRef.current;
+    let onWheel: ((e: WheelEvent) => void) | null = null;
     if (el) {
       checkSubBarScroll();
-      const onWheel = (e: WheelEvent) => {
+      onWheel = (e: WheelEvent) => {
         if (e.deltaY !== 0) {
           e.preventDefault();
           el.scrollLeft += e.deltaY * 1.5;
@@ -129,13 +130,6 @@ export function Navbar() {
       el.addEventListener("wheel", onWheel, { passive: false });
       el.addEventListener("scroll", checkSubBarScroll);
       window.addEventListener("resize", checkSubBarScroll);
-
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-        el.removeEventListener("wheel", onWheel);
-        el.removeEventListener("scroll", checkSubBarScroll);
-        window.removeEventListener("resize", checkSubBarScroll);
-      };
     }
 
     // Supabase Auth listener
@@ -174,6 +168,11 @@ export function Navbar() {
     return () => {
       authListener?.subscription.unsubscribe();
       document.removeEventListener("mousedown", handleClickOutside);
+      if (el && onWheel) {
+        el.removeEventListener("wheel", onWheel);
+        el.removeEventListener("scroll", checkSubBarScroll);
+        window.removeEventListener("resize", checkSubBarScroll);
+      }
     };
   }, []);
 
