@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DocTruyen.vip</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-radius: 50%;
+      border-top-color: #f97316;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    p {
+      font-size: 15px;
+      color: #a1a1aa;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <p>Đang kết nối DocTruyen.vip...</p>
+  <script>
+    window.location.replace("https://www.doctruyen.vip");
+  </script>
+</body>
+</html>
