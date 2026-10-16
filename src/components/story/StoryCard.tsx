@@ -18,10 +18,10 @@ export function StoryCard({ story }: StoryCardProps) {
   return (
     <Link
       href={`/truyen/${story.slug}`}
-      className="group flex flex-col gap-2 rounded-xl overflow-hidden focus:outline-none transition-all"
+      className="group flex flex-col gap-1.5 rounded-xl overflow-hidden focus:outline-none active:scale-95 transition-transform"
     >
       {/* Cover image wrap */}
-      <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-muted/80 border border-border/40 shadow-sm group-hover:shadow-md group-hover:border-rose-500/40 transition-all">
+      <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow-sm group-hover:shadow-md group-hover:border-rose-500/40 transition-all">
         {/* Placeholder / Image */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent z-10 opacity-70 group-hover:opacity-50 transition-opacity pointer-events-none" />
 
@@ -30,30 +30,31 @@ export function StoryCard({ story }: StoryCardProps) {
             src={coverUrl}
             alt={story.title}
             onError={() => setImgError(true)}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            decoding="async"
             loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
           /* Graceful stylized fallback cover */
-          <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-indigo-950 to-rose-950 p-4 flex flex-col justify-between items-center text-center">
-            <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-rose-400 mt-4">
-              <Sparkles className="w-4 h-4" />
+          <div className="w-full h-full bg-gradient-to-tr from-slate-900 via-indigo-950 to-rose-950 p-3 flex flex-col justify-between items-center text-center">
+            <span className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-rose-400 mt-2">
+              <Sparkles className="w-3.5 h-3.5" />
             </span>
-            <span className="font-extrabold text-xs text-white/90 leading-tight line-clamp-3">
+            <span className="font-extrabold text-[11px] text-white/90 leading-snug line-clamp-3">
               {story.title}
             </span>
-            <span className="text-[10px] text-white/50">{story.author_name}</span>
+            <span className="text-[9px] text-white/50 truncate w-full">{story.author_name}</span>
           </div>
         )}
 
-        {/* Type Badge: Comic vs Novel */}
+        {/* Type Badge: Tranh vs Chữ */}
         <span
-          className={`absolute top-2.5 left-2.5 z-20 px-2 py-0.5 rounded-md text-[10px] font-extrabold tracking-wide uppercase shadow-sm flex items-center gap-1 ${
-            isComic ? "bg-amber-500 text-white" : "bg-indigo-600 text-white"
+          className={`absolute top-2 left-2 z-20 px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-black tracking-wider uppercase backdrop-blur-md shadow-sm flex items-center gap-0.5 ${
+            isComic ? "bg-amber-500/90 text-white" : "bg-indigo-600/90 text-white"
           }`}
         >
-          {isComic ? <ImageIcon className="w-3 h-3" /> : <BookOpen className="w-3 h-3" />}
-          {isComic ? "Truyện Tranh" : "Truyện Chữ"}
+          {isComic ? <ImageIcon className="w-2.5 h-2.5" /> : <BookOpen className="w-2.5 h-2.5" />}
+          <span>{isComic ? "Tranh" : "Chữ"}</span>
         </span>
 
         {/* Status Badge: Ongoing / Updating vs Completed */}

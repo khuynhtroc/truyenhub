@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Bookmark, Sparkles, User } from "lucide-react";
+import { Home, Compass, Bookmark, TrendingUp, User } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
     { label: "Trang chủ", href: "/", icon: Home },
-    { label: "Khám phá", href: "/kham-pha", icon: Compass },
+    { label: "Xếp hạng", href: "/kham-pha?sort=views", icon: TrendingUp },
     { label: "Tủ truyện", href: "/tu-truyen", icon: Bookmark },
-    { label: "Tin tức", href: "/blog", icon: Sparkles },
-    { label: "Cá nhân", href: "/tai-khoan", icon: User },
+    { label: "Phân loại", href: "/kham-pha", icon: Compass },
+    { label: "Tôi", href: "/tai-khoan", icon: User },
   ];
 
   return (
