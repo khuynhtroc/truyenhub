@@ -76,10 +76,10 @@ export default async function HomePage({
           {/* Quick highlight cards */}
           <div className="w-full sm:w-72 aspect-[3/4] max-w-[240px] rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 rotate-1 hover:rotate-0 transition-transform">
             <SafeImage
-              src="https://pub-996745da873f42adb3c8b53c9ed97e85.r2.dev/covers/678/1790384608184870996.webp"
-              alt="Highlight"
-              fallbackTitle="Vạn Cổ Kiếm Tôn"
-              fallbackAuthor="Chill"
+              src="https://media.doctruyen.vip/covers/doraemon.webp"
+              alt="Doraemon"
+              fallbackTitle="Doraemon Trọn Bộ"
+              fallbackAuthor="Fujiko F. Fujio"
               className="w-full h-full object-cover"
             />
           </div>

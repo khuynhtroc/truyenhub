@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Story } from "@/types";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, normalizeMediaUrl } from "@/lib/utils";
 import { Eye, Heart, BookOpen, Image as ImageIcon, Sparkles, RefreshCw } from "lucide-react";
 
 interface StoryCardProps {
@@ -11,8 +11,9 @@ interface StoryCardProps {
 }
 
 export function StoryCard({ story }: StoryCardProps) {
-  const [imgError, setImgError] = useState(false);
+  const [imgError, setImgError] = useState(!story.cover_url);
   const isComic = story.type === "comic";
+  const coverUrl = normalizeMediaUrl(story.cover_url);
 
   return (
     <Link
@@ -24,9 +25,9 @@ export function StoryCard({ story }: StoryCardProps) {
         {/* Placeholder / Image */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent z-10 opacity-70 group-hover:opacity-50 transition-opacity pointer-events-none" />
 
-        {!imgError ? (
+        {!imgError && coverUrl ? (
           <img
-            src={story.cover_url}
+            src={coverUrl}
             alt={story.title}
             onError={() => setImgError(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

@@ -37,12 +37,9 @@ export const SITE_CONFIG = {
  */
 export function normalizeMediaUrl(url?: string | null): string {
   if (!url) return "";
-  // Map old default R2 dev URLs to the new media custom domain
-  if (url.includes("pub-96c72b024c5547b594279f6245a7a6a5.r2.dev")) {
-    return url.replace("https://pub-96c72b024c5547b594279f6245a7a6a5.r2.dev", SITE_CONFIG.mediaUrl);
-  }
-  if (url.includes("pub-996745da873f42adb3c8b53c9ed97e85.r2.dev")) {
-    return url.replace("https://pub-996745da873f42adb3c8b53c9ed97e85.r2.dev", SITE_CONFIG.mediaUrl);
+  // Map any R2 dev URLs to the new media custom domain
+  if (url.includes(".r2.dev/")) {
+    return url.replace(/https:\/\/[^/]+\.r2\.dev/, SITE_CONFIG.mediaUrl);
   }
   if (url.startsWith("/comics/") || url.startsWith("/covers/")) {
     return `${SITE_CONFIG.mediaUrl}${url}`;
