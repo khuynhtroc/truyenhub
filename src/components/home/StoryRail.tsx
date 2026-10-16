@@ -17,7 +17,7 @@ export function StoryRail({ title, href, icon, stories }: StoryRailProps) {
   if (!stories || stories.length === 0) return null;
 
   return (
-    <section className="flex flex-col gap-3 w-full">
+    <section className="flex flex-col gap-3 w-full max-w-full overflow-hidden">
       {/* Section Header */}
       <div className="flex items-center justify-between px-1">
         <h2 className="text-base sm:text-lg font-black flex items-center gap-2 text-foreground tracking-tight">
@@ -36,7 +36,7 @@ export function StoryRail({ title, href, icon, stories }: StoryRailProps) {
       </div>
 
       {/* Horizontal Snap Rail */}
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory -mx-3 px-3 sm:mx-0 sm:px-0">
         {stories.map((story) => (
           <RailCard key={story.id} story={story} />
         ))}

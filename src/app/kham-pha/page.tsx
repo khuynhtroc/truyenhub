@@ -272,7 +272,7 @@ function ExploreContent() {
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 w-full py-6 flex flex-col gap-6">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 w-full py-6 flex flex-col gap-6 overflow-x-hidden">
       {/* Page Title & Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -307,7 +307,7 @@ function ExploreContent() {
           <button
             onClick={() => scrollPresets("left")}
             aria-label="Cuộn sang trái"
-            className="absolute left-1 sm:-left-3 z-20 p-1.5 rounded-full bg-background/95 hover:bg-background border border-border shadow-lg text-foreground transition-all flex items-center justify-center hover:scale-110"
+            className="hidden sm:flex absolute left-1 sm:-left-3 z-20 p-1.5 rounded-full bg-background/95 hover:bg-background border border-border shadow-lg text-foreground transition-all items-center justify-center hover:scale-110"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -346,7 +346,7 @@ function ExploreContent() {
           <button
             onClick={() => scrollPresets("right")}
             aria-label="Cuộn sang phải"
-            className="absolute right-1 sm:-right-3 z-20 p-1.5 rounded-full bg-background/95 hover:bg-background border border-border shadow-lg text-foreground transition-all flex items-center justify-center hover:scale-110"
+            className="hidden sm:flex absolute right-1 sm:-right-3 z-20 p-1.5 rounded-full bg-background/95 hover:bg-background border border-border shadow-lg text-foreground transition-all items-center justify-center hover:scale-110"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

@@ -241,29 +241,20 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md shadow-sm pt-[max(env(safe-area-inset-top,0px),var(--app-safe-top,0px))]">
+    <header className="sticky top-0 z-50 w-full max-w-[100vw] overflow-x-clip border-b border-border/40 bg-background/95 backdrop-blur-md shadow-sm pt-[max(env(safe-area-inset-top,0px),var(--app-safe-top,0px))]">
       {/* Main Top Header Bar */}
-      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-3 sm:px-6 gap-3">
+      <div className="max-w-7xl mx-auto flex h-14 sm:h-16 items-center justify-between px-2.5 sm:px-6 gap-2 sm:gap-3">
         {/* Brand Logo & Core Nav */}
-        <div className="flex items-center gap-3 md:gap-5 shrink-0">
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="md:hidden p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground"
-            aria-label="Menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          <Link href="/" className="flex items-center gap-2 group shrink-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20 group-hover:scale-105 transition-transform">
-              <BookOpen className="w-5 h-5" />
+        <div className="flex items-center gap-2 md:gap-5 shrink-0 min-w-0">
+          <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group shrink-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20 group-hover:scale-105 transition-transform shrink-0">
+              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="flex items-center">
-              <span className="font-extrabold text-lg sm:text-xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
+              <span className="font-extrabold text-base sm:text-xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
                 DocTruyen
               </span>
-              <span className="ml-1 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-sm">
+              <span className="ml-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-sm">
                 VIP
               </span>
             </div>
@@ -439,7 +430,7 @@ export function Navbar() {
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="p-1.5 sm:p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
             title="Đổi giao diện Sáng / Tối"
             aria-label="Đổi giao diện Sáng / Tối"
           >
@@ -466,9 +457,9 @@ export function Navbar() {
           ) : (
             <button
               onClick={() => setIsAuthModalOpen(true)}
-              className="py-1.5 px-3 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer"
+              className="py-1.5 px-2.5 sm:px-3.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all shrink-0 cursor-pointer active:scale-95 whitespace-nowrap"
             >
-              <LogIn className="w-3.5 h-3.5" />
+              <LogIn className="w-3.5 h-3.5 shrink-0" />
               <span>Đăng Nhập</span>
             </button>
           )}
@@ -476,14 +467,14 @@ export function Navbar() {
       </div>
 
       {/* Horizontal Sub-Navbar Category Strip with smooth mouse-wheel & button navigation */}
-      <div className="border-t border-border/40 bg-muted/30 relative">
+      <div className="border-t border-border/40 bg-muted/30 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-2 sm:px-6 relative flex items-center">
           {/* Scroll Left Button */}
           {canScrollLeft && (
             <button
               onClick={() => scrollSubBar("left")}
               aria-label="Cuộn sang trái"
-              className="absolute left-1 z-10 p-1 rounded-full bg-background/95 hover:bg-background border border-border/60 shadow-md text-foreground transition-all flex items-center justify-center hover:scale-110"
+              className="hidden sm:flex absolute left-1 z-10 p-1 rounded-full bg-background/95 hover:bg-background border border-border/60 shadow-md text-foreground transition-all items-center justify-center hover:scale-110"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -514,7 +505,7 @@ export function Navbar() {
             <button
               onClick={() => scrollSubBar("right")}
               aria-label="Cuộn sang phải"
-              className="absolute right-1 z-10 p-1 rounded-full bg-background/95 hover:bg-background border border-border/60 shadow-md text-foreground transition-all flex items-center justify-center hover:scale-110"
+              className="hidden sm:flex absolute right-1 z-10 p-1 rounded-full bg-background/95 hover:bg-background border border-border/60 shadow-md text-foreground transition-all items-center justify-center hover:scale-110"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
