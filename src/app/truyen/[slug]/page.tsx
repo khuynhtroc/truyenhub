@@ -339,7 +339,12 @@ export default async function StoryDetailPage({
           </h2>
           <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line space-y-4">
             {story.description ? (
-              <p>{story.description.replace(/<\/?[^>]+(>|$)/g, "")}</p>
+              <p>
+                {story.description
+                  .replace(/<\/?[^>]+(>|$)/g, "")
+                  .replace(/(\n\s*)?(👉\s*)?Hãy cùng đọc[\s\S]*?DocTruyen\.VIP.*$/gi, "")
+                  .trim()}
+              </p>
             ) : (
               <p>Đang cập nhật nội dung tóm tắt cho tác phẩm {story.title}...</p>
             )}
