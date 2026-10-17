@@ -81,6 +81,54 @@ export function Navbar() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Mobile dynamic search states
+  const [isMobileSearchExpanded, setIsMobileSearchExpanded] = useState(false);
+  const [isScrolledDown, setIsScrolledDown] = useState(false);
+  const [hasDismissedScrollSearch, setHasDismissedScrollSearch] = useState(false);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
+
+  const isReadingPage = pathname.includes("/truyen/") && pathname.split("/").filter(Boolean).length >= 3;
+
+  const handleCloseSearch = () => {
+    setIsMobileSearchExpanded(false);
+    setShowSearchDropdown(false);
+    setHasDismissedScrollSearch(true);
+  };
+
+  const handleMobileSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      handleCloseSearch();
+      router.push(`/kham-pha?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  // Close search on route change
+  useEffect(() => {
+    setIsMobileSearchExpanded(false);
+    setShowSearchDropdown(false);
+    setHasDismissedScrollSearch(false);
+  }, [pathname]);
+
+  // Scroll listener for expanding search on scroll down
+  useEffect(() => {
+    let lastScrollY = typeof window !== "undefined" ? window.scrollY : 0;
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > 120 && currentScrollY > lastScrollY) {
+        setIsScrolledDown(true);
+      } else if (currentScrollY < 60) {
+        setIsScrolledDown(false);
+        setHasDismissedScrollSearch(false);
+      }
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const searchRef = useRef<HTMLDivElement>(null);
   const genreDropdownRef = useRef<HTMLDivElement>(null);
   const subBarRef = useRef<HTMLDivElement>(null);
@@ -110,7 +158,11 @@ export function Navbar() {
     }
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node) &&
+        (!mobileSearchRef.current || !mobileSearchRef.current.contains(event.target as Node))
+      ) {
         setShowSearchDropdown(false);
       }
       if (genreDropdownRef.current && !genreDropdownRef.current.contains(event.target as Node)) {
@@ -118,6 +170,7 @@ export function Navbar() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
+
 
     // Mouse wheel support for category sub-bar
     const el = subBarRef.current;
@@ -441,6 +494,30 @@ export function Navbar() {
             )}
           </div>
 
+          {/* Mobile Search Button */}
+          <button
+            type="button"
+            onClick={() => {
+              const nextState = !isMobileSearchExpanded;
+              setIsMobileSearchExpanded(nextState);
+              if (nextState) {
+                setHasDismissedScrollSearch(false);
+                setTimeout(() => mobileSearchInputRef.current?.focus(), 120);
+              } else {
+                handleCloseSearch();
+              }
+            }}
+            className={`sm:hidden p-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
+              isMobileSearchExpanded || (isScrolledDown && !hasDismissedScrollSearch && !isReadingPage)
+                ? "bg-rose-500 text-white shadow-sm ring-2 ring-rose-500/30"
+                : "hover:bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+            title="Tìm kiếm truyện"
+            aria-label="Tìm kiếm truyện"
+          >
+            {isMobileSearchExpanded ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
+          </button>
+
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
@@ -479,6 +556,120 @@ export function Navbar() {
           )}
         </div>
       </div>
+
+      {/* Dynamic Expanding Mobile Search Bar (Opens on search button click or scroll down, auto-hides when done/reading) */}
+      {!isReadingPage && (
+        <div
+          ref={mobileSearchRef}
+          className={`sm:hidden border-t border-border/50 bg-background/98 backdrop-blur-md px-3 transition-all duration-300 ease-out overflow-hidden ${
+            isMobileSearchExpanded || (isScrolledDown && !hasDismissedScrollSearch)
+              ? "max-h-96 py-2.5 opacity-100 shadow-md border-b"
+              : "max-h-0 py-0 opacity-0 pointer-events-none"
+          }`}
+        >
+          <form onSubmit={handleMobileSearchSubmit} className="relative w-full flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <input
+                ref={mobileSearchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                onFocus={() => searchQuery.trim() && setShowSearchDropdown(true)}
+                placeholder="Tìm truyện tranh, truyện chữ, tác giả..."
+                className="w-full h-9 pl-9 pr-8 rounded-full bg-muted/80 text-foreground text-xs border border-border/60 focus:outline-none focus:ring-2 focus:ring-rose-500/50 transition-all font-medium placeholder:text-muted-foreground/70"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchResults([]);
+                    setShowSearchDropdown(false);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="px-3 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-black shrink-0 transition-colors cursor-pointer shadow-xs"
+            >
+              Tìm
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCloseSearch}
+              className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted text-xs font-bold shrink-0 transition-colors cursor-pointer"
+              title="Đóng tìm kiếm"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </form>
+
+          {/* Live Mobile Search Results Dropdown */}
+          {showSearchDropdown && (
+            <div className="mt-2 rounded-2xl bg-card border border-border/80 shadow-2xl p-2 max-h-72 overflow-y-auto flex flex-col gap-1 animate-in fade-in z-50">
+              {isSearching ? (
+                <div className="p-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                  <Clock className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                  <span>Đang tìm truyện...</span>
+                </div>
+              ) : searchResults.length > 0 ? (
+                <>
+                  <div className="px-2 py-1 text-[10px] font-black uppercase text-muted-foreground flex justify-between items-center border-b pb-1">
+                    <span>Kết quả ({searchResults.length})</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleCloseSearch();
+                        router.push(`/kham-pha?q=${encodeURIComponent(searchQuery)}`);
+                      }}
+                      className="text-rose-500 font-bold hover:underline"
+                    >
+                      Xem tất cả &rarr;
+                    </button>
+                  </div>
+                  {searchResults.slice(0, 6).map((s) => (
+                    <Link
+                      key={s.id}
+                      href={`/truyen/${s.slug}`}
+                      onClick={handleCloseSearch}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-muted/70 transition-colors group"
+                    >
+                      <SafeImage
+                        src={s.cover_url}
+                        alt={s.title}
+                        fallbackTitle={s.title}
+                        fallbackAuthor={s.author_name}
+                        className="w-10 h-14 object-cover rounded-md shrink-0 text-[8px]"
+                      />
+                      <div className="flex flex-col truncate min-w-0">
+                        <span className="text-xs font-bold truncate text-foreground group-hover:text-rose-500 transition-colors">
+                          {s.title}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground truncate">{s.author_name}</span>
+                        <span className="text-[10px] font-extrabold text-rose-500">
+                          {s.type === "comic" ? "Truyện Tranh" : "Truyện Chữ"} · {s.total_chapters} Chương
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </>
+              ) : searchQuery.trim().length > 1 ? (
+                <div className="p-3 text-center text-xs text-muted-foreground">
+                  Không tìm thấy truyện phù hợp với &quot;{searchQuery}&quot;
+                </div>
+              ) : null}
+            </div>
+          )}
+        </div>
+      )}
+
 
       {/* Horizontal Sub-Navbar Category Strip with smooth mouse-wheel & button navigation */}
       <div className="border-t border-border/40 bg-muted/30 relative overflow-hidden">
