@@ -4,8 +4,10 @@ import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
+import Link from "next/link";
 import { formatVND } from "@/lib/utils";
-import { Coins, QrCode, Sparkles, CheckCircle2, Copy, ShieldCheck, Zap } from "lucide-react";
+import { Coins, QrCode, Sparkles, CheckCircle2, Copy, ShieldCheck, Zap, Ticket } from "lucide-react";
+
 
 const PACKAGES = [
   { amount: 10000, coins: 100, bonus: "" },
@@ -91,7 +93,26 @@ export default function NapXuPage() {
               </div>
               <p>Mỗi giao dịch đều có mã chuyển khoản riêng biệt được ngân hàng ghi nhận tức thì.</p>
             </div>
+
+            <div className="mt-3 p-4 rounded-2xl bg-gradient-to-r from-rose-500/10 via-amber-500/10 to-rose-500/5 border border-rose-500/20 text-xs flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
+                  <Ticket className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="font-bold text-foreground block">Bạn có Giftcode hoặc muốn Tích Xu?</span>
+                  <span className="text-[11px] text-muted-foreground">Điểm danh 7 ngày & Nhập mã voucher nhận Xu miễn phí</span>
+                </div>
+              </div>
+              <Link
+                href="/tai-khoan#diem-danh"
+                className="px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-[11px] whitespace-nowrap shadow-sm transition-all"
+              >
+                Nhận Ngay
+              </Link>
+            </div>
           </div>
+
 
           {/* VietQR Display */}
           <div className="flex flex-col gap-3">

@@ -48,6 +48,7 @@ import {
   AlertTriangle,
   Zap,
   Share2,
+  Ticket,
 } from "lucide-react";
 import { AdminAiSeoModal } from "@/components/admin/AdminAiSeoModal";
 import { AdminBookImportModal } from "@/components/admin/AdminBookImportModal";
@@ -56,6 +57,7 @@ import { AdminBlogModal } from "@/components/admin/AdminBlogModal";
 import { AdminReportsSection } from "@/components/admin/AdminReportsSection";
 import { AdminSocialSection } from "@/components/admin/AdminSocialSection";
 import { AdminBulkPricingModal } from "@/components/admin/AdminBulkPricingModal";
+import { AdminVouchersSection } from "@/components/admin/AdminVouchersSection";
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -71,11 +73,13 @@ export default function AdminPage() {
     | "media"
     | "comments"
     | "users"
+    | "vouchers"
     | "import"
     | "trash"
     | "social"
     | "settings"
   >("overview");
+
 
   // Stats state
   const [stats, setStats] = useState<any>(null);
@@ -1338,8 +1342,10 @@ export default function AdminPage() {
             { id: "comments", label: "Bình Luận & Báo Cáo", icon: MessageSquare, badge: stats?.totalReports > 0 ? `${stats.totalReports} lỗi` : null },
             { id: "media", label: "Thư Viện Media", icon: ImageIcon },
             { id: "users", label: "Độc Giả & Nạp Xu", icon: Users },
+            { id: "vouchers", label: "Voucher & Tích Điểm", icon: Ticket },
             { id: "import", label: "Nhập Hàng Loạt", icon: Upload },
             { id: "trash", label: "Thùng Rác", icon: Trash2, badge: stats?.totalTrash },
+
             { id: "social", label: "Mạng Xã Hội & Auto Share", icon: Share2 },
             { id: "settings", label: "Cấu Hình & SEO", icon: Settings },
           ].map((tab) => {
@@ -3266,8 +3272,14 @@ export default function AdminPage() {
         )}
 
         {/* ============================================================== */}
+        {/* TAB: VOUCHERS & MEMBER REWARDS */}
+        {/* ============================================================== */}
+        {activeTab === "vouchers" && <AdminVouchersSection />}
+
+        {/* ============================================================== */}
         {/* TAB 9: BULK IMPORT */}
         {/* ============================================================== */}
+
         {activeTab === "import" && (
           <div className="flex flex-col gap-6 animate-in fade-in">
             <div className="p-5 rounded-2xl bg-card border border-border/50 flex flex-col gap-4 shadow-sm">

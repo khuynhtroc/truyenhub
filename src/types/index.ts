@@ -56,3 +56,34 @@ export interface ReadingProgress {
   progress_percent: number;
   updated_at: string;
 }
+
+export interface Voucher {
+  id: string;
+  code: string;
+  title: string;
+  reward_coins: number;
+  max_uses: number;
+  used_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface VoucherRedemption {
+  id: string;
+  voucher_code: string;
+  user_id: string;
+  user_email?: string;
+  reward_coins: number;
+  created_at: string;
+}
+
+export interface DailyCheckin {
+  id: string;
+  user_id: string;
+  date: string; // YYYY-MM-DD (Vietnam time)
+  streak_days: number;
+  reward_coins: number;
+  created_at: string;
+}
+

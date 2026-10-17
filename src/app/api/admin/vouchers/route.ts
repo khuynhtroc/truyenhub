@@ -1,0 +1,281 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { Voucher, VoucherRedemption } from "@/types";
+
+export const dynamic = "force-dynamic";
+
+const VOUCHERS_KEY = "vouchers_system";
+const REDEMPTIONS_KEY = "voucher_redemptions";
+const CHECKIN_KEY = "daily_checkins";
+
+const DEFAULT_VOUCHERS: Voucher[] = [
+  {
+    id: "voucher-tan-thu",
+    code: "TANTHU2026",
+    title: "Quà Tặng Tân Thủ - Khởi Đầu Đọc Truyện",
+    reward_coins: 50,
+    max_uses: 10000,
+    used_count: 0,
+    expires_at: null,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "voucher-truyenhub-vip",
+    code: "TRUYENHUBVIP",
+    title: "Tri Ân Độc Giả Thân Thiết DocTruyen.vip",
+    reward_coins: 100,
+    max_uses: 5000,
+    used_count: 0,
+    expires_at: null,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "voucher-tich-diem",
+    code: "TICHDIEM2026",
+    title: "Mừng Ra Mắt Tính Năng Điểm Danh & Tích Xu",
+    reward_coins: 30,
+    max_uses: 10000,
+    used_count: 0,
+    expires_at: null,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+];
+
+export async function GET() {
+  try {
+    const supabase = createAdminSupabaseClient();
+
+    // 1. Get vouchers
+    const { data: vData } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", VOUCHERS_KEY)
+      .single();
+
+    let vouchers: Voucher[] = (vData?.value as Voucher[]) || DEFAULT_VOUCHERS;
+    if (!vData?.value) {
+      await supabase.from("settings").upsert({
+        key: VOUCHERS_KEY,
+        value: DEFAULT_VOUCHERS,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    // 2. Get redemptions
+    const { data: rData } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", REDEMPTIONS_KEY)
+      .single();
+
+    const redemptions: VoucherRedemption[] = (rData?.value as VoucherRedemption[]) || [];
+
+    // 3. Get checkins
+    const { data: cData } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", CHECKIN_KEY)
+      .single();
+
+    const checkins: any[] = (cData?.value as any[]) || [];
+
+    // Calculate stats
+    const totalCoinsVouchers = redemptions.reduce((acc, r) => acc + (r.reward_coins || 0), 0);
+    const totalCoinsCheckins = checkins.reduce((acc, c) => acc + (c.reward_coins || 0), 0);
+
+    const stats = {
+      totalVouchers: vouchers.length,
+      activeVouchers: vouchers.filter((v) => v.is_active).length,
+      totalRedemptions: redemptions.length,
+      totalCheckins: checkins.length,
+      totalCoinsAwarded: totalCoinsVouchers + totalCoinsCheckins,
+      totalCoinsFromVouchers: totalCoinsVouchers,
+      totalCoinsFromCheckins: totalCoinsCheckins,
+    };
+
+    return NextResponse.json({
+      success: true,
+      vouchers,
+      redemptions: redemptions.slice(-50).reverse(), // Last 50 redemptions
+      stats,
+    });
+  } catch (error: any) {
+    console.error("Admin vouchers GET error:", error);
+    return NextResponse.json(
+      { error: error.message || "Lỗi tải danh sách voucher" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const supabase = createAdminSupabaseClient();
+    const body = await req.json();
+
+    const code = (body.code || "").toString().trim().toUpperCase();
+    const title = (body.title || "").toString().trim();
+    const rewardCoins = Number(body.reward_coins || 0);
+    const maxUses = Number(body.max_uses ?? 100);
+    const expiresAt = body.expires_at ? new Date(body.expires_at).toISOString() : null;
+    const isActive = body.is_active !== undefined ? Boolean(body.is_active) : true;
+
+    if (!code) {
+      return NextResponse.json({ error: "Mã code không được để trống" }, { status: 400 });
+    }
+    if (!title) {
+      return NextResponse.json({ error: "Tiêu đề không được để trống" }, { status: 400 });
+    }
+    if (rewardCoins <= 0) {
+      return NextResponse.json({ error: "Số xu thưởng phải lớn hơn 0" }, { status: 400 });
+    }
+
+    // Load existing
+    const { data: vData } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", VOUCHERS_KEY)
+      .single();
+
+    let vouchers: Voucher[] = (vData?.value as Voucher[]) || DEFAULT_VOUCHERS;
+
+    // Check duplicate code
+    if (vouchers.some((v) => v.code.toUpperCase() === code)) {
+      return NextResponse.json(
+        { error: `Mã code "${code}" đã tồn tại. Vui lòng chọn mã khác.` },
+        { status: 400 }
+      );
+    }
+
+    const newVoucher: Voucher = {
+      id: `v_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      code,
+      title,
+      reward_coins: rewardCoins,
+      max_uses: maxUses,
+      used_count: 0,
+      expires_at: expiresAt,
+      is_active: isActive,
+      created_at: new Date().toISOString(),
+    };
+
+    vouchers.unshift(newVoucher);
+
+    const { error: saveErr } = await supabase.from("settings").upsert({
+      key: VOUCHERS_KEY,
+      value: vouchers,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (saveErr) throw saveErr;
+
+    return NextResponse.json({
+      success: true,
+      message: `Đã tạo mã voucher "${code}" thành công!`,
+      voucher: newVoucher,
+    });
+  } catch (error: any) {
+    console.error("Admin vouchers POST error:", error);
+    return NextResponse.json(
+      { error: error.message || "Lỗi tạo voucher" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    const supabase = createAdminSupabaseClient();
+    const body = await req.json();
+
+    const id = body.id;
+    if (!id) {
+      return NextResponse.json({ error: "Thiếu ID voucher cần cập nhật" }, { status: 400 });
+    }
+
+    const { data: vData } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", VOUCHERS_KEY)
+      .single();
+
+    let vouchers: Voucher[] = (vData?.value as Voucher[]) || [];
+    const index = vouchers.findIndex((v) => v.id === id);
+
+    if (index === -1) {
+      return NextResponse.json({ error: "Không tìm thấy voucher" }, { status: 404 });
+    }
+
+    // Update fields if provided
+    if (body.title !== undefined) vouchers[index].title = body.title.toString().trim();
+    if (body.reward_coins !== undefined) vouchers[index].reward_coins = Number(body.reward_coins);
+    if (body.max_uses !== undefined) vouchers[index].max_uses = Number(body.max_uses);
+    if (body.expires_at !== undefined) {
+      vouchers[index].expires_at = body.expires_at ? new Date(body.expires_at).toISOString() : null;
+    }
+    if (body.is_active !== undefined) vouchers[index].is_active = Boolean(body.is_active);
+
+    const { error: saveErr } = await supabase.from("settings").upsert({
+      key: VOUCHERS_KEY,
+      value: vouchers,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (saveErr) throw saveErr;
+
+    return NextResponse.json({
+      success: true,
+      message: "Đã cập nhật voucher thành công!",
+      voucher: vouchers[index],
+    });
+  } catch (error: any) {
+    console.error("Admin vouchers PUT error:", error);
+    return NextResponse.json(
+      { error: error.message || "Lỗi cập nhật voucher" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = createAdminSupabaseClient();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Thiếu ID voucher cần xóa" }, { status: 400 });
+    }
+
+    const { data: vData } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", VOUCHERS_KEY)
+      .single();
+
+    let vouchers: Voucher[] = (vData?.value as Voucher[]) || [];
+    vouchers = vouchers.filter((v) => v.id !== id);
+
+    const { error: saveErr } = await supabase.from("settings").upsert({
+      key: VOUCHERS_KEY,
+      value: vouchers,
+      updated_at: new Date().toISOString(),
+    });
+
+    if (saveErr) throw saveErr;
+
+    return NextResponse.json({
+      success: true,
+      message: "Đã xóa voucher thành công!",
+    });
+  } catch (error: any) {
+    console.error("Admin vouchers DELETE error:", error);
+    return NextResponse.json(
+      { error: error.message || "Lỗi xóa voucher" },
+      { status: 500 }
+    );
+  }
+}

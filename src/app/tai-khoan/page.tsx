@@ -21,12 +21,18 @@ import {
   CheckCircle2,
   RefreshCw,
   BookOpen,
+  Ticket,
+  Gift,
 } from "lucide-react";
+import { DailyCheckinCard } from "@/components/profile/DailyCheckinCard";
+import { VoucherRedeemCard } from "@/components/profile/VoucherRedeemCard";
+import { MemberMissionsCard } from "@/components/profile/MemberMissionsCard";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
 
   // Auth form states when not logged in
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
@@ -83,6 +89,7 @@ export default function ProfilePage() {
           id: userId,
           full_name: user?.user_metadata?.full_name || "Độc Giả",
           email: user?.email,
+          coins_balance: 20,
           coins: 20,
           vip_level: 1,
         };
@@ -95,6 +102,15 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
+  const handleBalanceUpdate = (newBalance: number) => {
+    setProfile((prev: any) => ({
+      ...prev,
+      coins_balance: newBalance,
+      coins: newBalance,
+    }));
+  };
+
 
   // Google OAuth Login
   const handleGoogleLogin = async () => {
@@ -444,7 +460,8 @@ export default function ProfilePage() {
                 <div>
                   <span className="text-xs text-muted-foreground font-semibold">Số dư khả dụng</span>
                   <div className="text-2xl font-black text-amber-500 flex items-center gap-1.5">
-                    {profile?.coins ?? 20} <span className="text-xs font-bold text-foreground">Xu</span>
+                    {Number(profile?.coins_balance ?? profile?.coins ?? 0).toLocaleString("vi-VN")}{" "}
+                    <span className="text-xs font-bold text-foreground">Xu</span>
                   </div>
                 </div>
               </div>
@@ -456,6 +473,18 @@ export default function ProfilePage() {
                 + Nạp Xu Ngay
               </Link>
             </div>
+
+            {/* Daily 7-Day Check-in Streak Card */}
+            <div id="diem-danh">
+              <DailyCheckinCard user={user} onRewardClaimed={handleBalanceUpdate} />
+            </div>
+
+            {/* Voucher & Giftcode Redeem Card */}
+            <VoucherRedeemCard user={user} onVoucherRedeemed={handleBalanceUpdate} />
+
+            {/* Member Activity Missions */}
+            <MemberMissionsCard />
+
 
             {/* Quick Menu */}
             <div className="rounded-2xl border border-border/50 bg-card p-2 flex flex-col divide-y divide-border/40 shadow-sm text-sm font-semibold">
