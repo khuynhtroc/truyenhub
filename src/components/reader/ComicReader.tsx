@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/client";
 import { recordReadingProgress } from "@/lib/sync/syncService";
 import { canUserReadChapter } from "@/lib/vip";
 import { AuthRequiredGate } from "@/components/auth/AuthRequiredGate";
+import { recordMissionActivity } from "@/lib/missions";
 
 interface ComicReaderProps {
   story: Story;
@@ -202,6 +203,9 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       recordReadingProgress(story.id, chapter.id, scrollProgress, user?.id);
+      if (user?.id) {
+        recordMissionActivity("read_chapter", { story_id: story.id, chapter_id: chapter.id });
+      }
     });
   }, [story.id, chapter.id, scrollProgress > 80]);
 

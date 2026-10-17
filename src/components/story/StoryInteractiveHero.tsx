@@ -18,6 +18,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { toggleStoryBookmark, getLocalBookmarks } from "@/lib/sync/syncService";
+import { recordMissionActivity } from "@/lib/missions";
 
 interface StoryInteractiveHeroProps {
   story: Story;
@@ -67,7 +68,6 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
         if (!savedLikes.includes(story.slug)) {
           savedLikes.push(story.slug);
         }
-        showToast("Cảm ơn bạn đã thả tim cho truyện! ❤️");
       } else {
         const idx = savedLikes.indexOf(story.slug);
         if (idx >= 0) savedLikes.splice(idx, 1);
@@ -91,6 +91,16 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
           setTotalLikes(data.total_likes);
         }
       }
+
+      // Check mission reward on like
+      if (nextLiked) {
+        const missionRes = await recordMissionActivity("like_story", { story_id: story.id, story_title: story.title });
+        if (missionRes?.success && missionRes.coins_reward) {
+          showToast(`❤️ Đã thả tim! Nhận được +${missionRes.coins_reward} Xu thưởng nhiệm vụ! 🎉`);
+        } else {
+          showToast("Cảm ơn bạn đã thả tim cho truyện! ❤️");
+        }
+      }
     } catch (err) {
       console.error("Error liking story:", err);
     }
@@ -103,13 +113,24 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
       const { data: { user } } = await supabase.auth.getUser();
       const newState = await toggleStoryBookmark(story, user?.id);
       setIsBookmarked(newState);
-      showToast(newState ? "Đã lưu vào Tủ truyện (Đồng bộ đa thiết bị)! 📚" : "Đã xóa khỏi Tủ truyện");
+
+      if (newState) {
+        const missionRes = await recordMissionActivity("bookmark", { story_id: story.id, story_title: story.title });
+        if (missionRes?.success && missionRes.coins_reward) {
+          showToast(`📚 Đã lưu vào Tủ truyện! Nhận được +${missionRes.coins_reward} Xu thưởng! 🎉`);
+        } else {
+          showToast("Đã lưu vào Tủ truyện (Đồng bộ đa thiết bị)! 📚");
+        }
+      } else {
+        showToast("Đã xóa khỏi Tủ truyện");
+      }
     } catch (_) {}
   };
 
   // Handle Share
   const handleShare = async () => {
     const url = window.location.href;
+    let shared = false;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -117,14 +138,25 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
           text: `Đọc truyện ${story.title} chuẩn HD trên DocTruyen.vip!`,
           url: url,
         });
-        return;
+        shared = true;
       } catch (_) {}
     }
-    try {
-      await navigator.clipboard.writeText(url);
-      showToast("Đã sao chép liên kết truyện vào bộ nhớ tạm! 📋");
-    } catch (_) {
-      showToast("Không thể sao chép liên kết");
+    if (!shared) {
+      try {
+        await navigator.clipboard.writeText(url);
+        shared = true;
+      } catch (_) {
+        showToast("Không thể sao chép liên kết");
+      }
+    }
+
+    if (shared) {
+      const missionRes = await recordMissionActivity("share", { story_id: story.id, story_title: story.title });
+      if (missionRes?.success && missionRes.coins_reward) {
+        showToast(`🎉 Chia sẻ thành công! Bạn nhận được +${missionRes.coins_reward} Xu!`);
+      } else {
+        showToast("Đã sao chép liên kết truyện vào bộ nhớ tạm! 📋");
+      }
     }
   };
 

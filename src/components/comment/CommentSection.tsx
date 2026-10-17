@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare, Send, Heart, Reply, ShieldAlert, Sparkles, User, Crown, RefreshCw } from "lucide-react";
+import { MessageSquare, Send, Heart, Reply, ShieldAlert, Sparkles, User, Crown, RefreshCw, Coins, CheckCircle2 } from "lucide-react";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { recordMissionActivity } from "@/lib/missions";
 
 interface CommentItem {
   id: string;
@@ -33,6 +34,14 @@ export function CommentSection({ storyId, storyTitle, chapterNumber }: CommentSe
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentUrl, setCurrentUrl] = useState("");
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((prev) => (prev === msg ? null : prev));
+    }, 3500);
+  };
 
   const fetchStoryComments = async () => {
     if (!storyId) return;
@@ -94,6 +103,17 @@ export function CommentSection({ storyId, storyTitle, chapterNumber }: CommentSe
         setComments([data.comment, ...comments]);
         setNewComment("");
         setIsSpoiler(false);
+
+        // Trigger mission reward for commenting
+        const missionRes = await recordMissionActivity("comment", {
+          story_id: storyId,
+          chapter_number: chapterNumber,
+        });
+        if (missionRes?.success && missionRes.coins_reward) {
+          showToast(`💬 Bình luận thành công! Bạn nhận được +${missionRes.coins_reward} Xu thưởng nhiệm vụ! 🎉`);
+        } else {
+          showToast("Bình luận của bạn đã được đăng thành công! ✨");
+        }
       }
     } catch (err) {
       console.error("Lỗi gửi bình luận:", err);
@@ -115,6 +135,12 @@ export function CommentSection({ storyId, storyTitle, chapterNumber }: CommentSe
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: commentId }),
       });
+
+      // Trigger mission reward for liking comment
+      const missionRes = await recordMissionActivity("like_comment", { comment_id: commentId });
+      if (missionRes?.success && missionRes.coins_reward) {
+        showToast(`👍 Thích bình luận! Bạn nhận được +${missionRes.coins_reward} Xu thưởng! 🎉`);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -138,7 +164,15 @@ export function CommentSection({ storyId, storyTitle, chapterNumber }: CommentSe
   };
 
   return (
-    <section className="w-full rounded-3xl bg-card border border-border/50 p-6 sm:p-8 flex flex-col gap-6 shadow-sm">
+    <section className="w-full rounded-3xl bg-card border border-border/50 p-6 sm:p-8 flex flex-col gap-6 shadow-sm relative">
+      {/* Toast Alert for Mission Rewards */}
+      {toastMessage && (
+        <div className="p-3.5 rounded-2xl text-xs font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center gap-2.5 animate-in fade-in duration-200">
+          <Sparkles className="w-4 h-4 shrink-0 text-emerald-500" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Header with Dual Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/50">
         <div>

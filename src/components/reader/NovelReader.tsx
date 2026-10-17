@@ -34,6 +34,7 @@ import { createClient } from "@/lib/supabase/client";
 import { recordReadingProgress } from "@/lib/sync/syncService";
 import { AuthRequiredGate } from "@/components/auth/AuthRequiredGate";
 import { canUserReadChapter } from "@/lib/vip";
+import { recordMissionActivity } from "@/lib/missions";
 
 interface NovelReaderProps {
   story: Story;
@@ -399,6 +400,9 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
         }
       }
       recordReadingProgress(story.id, chapter.id, 0, user?.id);
+      if (user?.id) {
+        recordMissionActivity("read_chapter", { story_id: story.id, chapter_id: chapter.id });
+      }
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {

@@ -531,7 +531,7 @@ export default function ProfilePage() {
             <VoucherRedeemCard user={user} onVoucherRedeemed={handleBalanceUpdate} />
 
             {/* Member Activity Missions */}
-            <MemberMissionsCard />
+            <MemberMissionsCard user={user} onBalanceUpdate={handleBalanceUpdate} />
 
 
             {/* Quick Menu */}

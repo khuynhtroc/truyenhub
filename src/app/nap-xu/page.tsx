@@ -100,15 +100,15 @@ export default function NapXuPage() {
                   <Ticket className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="font-bold text-foreground block">Bạn có Giftcode hoặc muốn Tích Xu?</span>
-                  <span className="text-[11px] text-muted-foreground">Điểm danh 7 ngày & Nhập mã voucher nhận Xu miễn phí</span>
+                  <span className="font-bold text-foreground block">Nhiệm Vụ Tích Xu & Chia Sẻ Nhận 100 Xu</span>
+                  <span className="text-[11px] text-muted-foreground">Thả tim, bình luận, đọc truyện & Chia sẻ nhận ngay 100 Xu miễn phí</span>
                 </div>
               </div>
               <Link
                 href="/tai-khoan#diem-danh"
-                className="px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-[11px] whitespace-nowrap shadow-sm transition-all"
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 text-white font-black text-[11px] whitespace-nowrap shadow-sm transition-all"
               >
-                Nhận Ngay
+                Nhận Xu Ngay
               </Link>
             </div>
 
