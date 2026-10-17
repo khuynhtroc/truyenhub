@@ -27,6 +27,7 @@ import {
 import { DailyCheckinCard } from "@/components/profile/DailyCheckinCard";
 import { VoucherRedeemCard } from "@/components/profile/VoucherRedeemCard";
 import { MemberMissionsCard } from "@/components/profile/MemberMissionsCard";
+import { isUserVipActive, VIP_TIERS, getRemainingVipDays } from "@/lib/vip";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -471,6 +472,53 @@ export default function ProfilePage() {
                 className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 transition-all hover:opacity-90"
               >
                 + Nạp Xu Ngay
+              </Link>
+            </div>
+
+            {/* VIP Membership Status Card */}
+            <div className="rounded-2xl border border-border/50 bg-gradient-to-r from-amber-500/10 via-card to-rose-500/5 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+              <div className="flex items-center gap-3.5">
+                <div
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black shadow-md ${
+                    isUserVipActive(profile?.vip_until)
+                      ? "bg-gradient-to-tr from-amber-500 to-rose-500 ring-2 ring-amber-500/40"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <Crown className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground font-semibold">Cấp bậc hội viên:</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                      {isUserVipActive(profile?.vip_until)
+                        ? VIP_TIERS[profile?.vip_level || 1]?.name || `VIP ${profile?.vip_level}`
+                        : "Độc Giả Thường"}
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold text-foreground mt-0.5">
+                    {isUserVipActive(profile?.vip_until) ? (
+                      <span className="text-emerald-500">
+                        Đang hoạt động · Còn {getRemainingVipDays(profile.vip_until)} ngày (Hết hạn:{" "}
+                        {new Date(profile.vip_until).toLocaleDateString("vi-VN")})
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Chưa kích hoạt gói VIP đọc truyện & sách không giới hạn
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                href="/vip"
+                className="py-2.5 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 transition-all hover:opacity-95 whitespace-nowrap flex items-center gap-1.5"
+              >
+                <Crown className="w-3.5 h-3.5" />
+                <span>
+                  {isUserVipActive(profile?.vip_until) ? "Gia Hạn & Quyền Hạn VIP" : "Nâng Cấp VIP Ngay"}
+                </span>
               </Link>
             </div>
 

@@ -26,12 +26,14 @@ import {
   Globe2,
   Check,
   User,
-  Gauge
+  Gauge,
+  Crown,
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { createClient } from "@/lib/supabase/client";
 import { recordReadingProgress } from "@/lib/sync/syncService";
 import { AuthRequiredGate } from "@/components/auth/AuthRequiredGate";
+import { canUserReadChapter } from "@/lib/vip";
 
 interface NovelReaderProps {
   story: Story;
@@ -148,6 +150,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(!chapter.is_locked);
+  const [vipUnlockedReason, setVipUnlockedReason] = useState<string | null>(null);
   const [userCoins, setUserCoins] = useState(25);
   const [scrollProgress, setScrollProgress] = useState(0);
 
@@ -360,12 +363,40 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       if (user) {
         supabase
           .from("profiles")
-          .select("coins")
+          .select("coins, coins_balance, vip_level, vip_until")
           .eq("id", user.id)
           .single()
           .then(({ data }) => {
-            if (data?.coins !== undefined) setUserCoins(data.coins);
+            if (data) {
+              const currentCoins = Number(data.coins_balance ?? data.coins ?? 0);
+              setUserCoins(currentCoins);
+
+              if (chapter.is_locked) {
+                const check = canUserReadChapter(
+                  Number(data.vip_level || 0),
+                  data.vip_until,
+                  chapter.price_coins,
+                  chapter.is_locked
+                );
+                if (check.allowed) {
+                  setIsUnlocked(true);
+                  setVipUnlockedReason(check.reason || null);
+                }
+              }
+            }
           });
+
+        if (chapter.is_locked) {
+          supabase
+            .from("unlocked_chapters")
+            .select("chapter_id")
+            .eq("user_id", user.id)
+            .eq("chapter_id", chapter.id)
+            .maybeSingle()
+            .then(({ data }) => {
+              if (data) setIsUnlocked(true);
+            });
+        }
       }
       recordReadingProgress(story.id, chapter.id, 0, user?.id);
     });
@@ -377,11 +408,27 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       if (u) {
         supabase
           .from("profiles")
-          .select("coins")
+          .select("coins, coins_balance, vip_level, vip_until")
           .eq("id", u.id)
           .single()
           .then(({ data }) => {
-            if (data?.coins !== undefined) setUserCoins(data.coins);
+            if (data) {
+              const currentCoins = Number(data.coins_balance ?? data.coins ?? 0);
+              setUserCoins(currentCoins);
+
+              if (chapter.is_locked) {
+                const check = canUserReadChapter(
+                  Number(data.vip_level || 0),
+                  data.vip_until,
+                  chapter.price_coins,
+                  chapter.is_locked
+                );
+                if (check.allowed) {
+                  setIsUnlocked(true);
+                  setVipUnlockedReason(check.reason || null);
+                }
+              }
+            }
           });
       }
     });
@@ -1160,16 +1207,29 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
             storySlug={story.slug}
           />
         ) : isUnlocked ? (
-          <article
-            className={`${fontFamily} space-y-6 leading-relaxed`}
-            style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight }}
-          >
+          <>
+            {vipUnlockedReason && (
+              <div className="mb-6 p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border border-amber-500/30 text-xs font-bold text-amber-500 flex items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <Crown className="w-4 h-4 shrink-0" />
+                  <span>{vipUnlockedReason}</span>
+                </div>
+                <Link href="/vip" className="text-[11px] hover:underline font-extrabold whitespace-nowrap">
+                  Xem quyền hạn VIP &rarr;
+                </Link>
+              </div>
+            )}
+            <article
+              className={`${fontFamily} space-y-6 leading-relaxed`}
+              style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight }}
+            >
             {paragraphs.map((p, idx) => (
               <p key={idx} className="whitespace-pre-line text-justify">
                 {p}
               </p>
             ))}
           </article>
+          </>
         ) : (
           <div className="my-8">
             <PaywallModal

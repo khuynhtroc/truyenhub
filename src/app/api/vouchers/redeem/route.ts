@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
     // 5. Fetch user profile
     const { data: profile, error: profileErr } = await adminSupabase
       .from("profiles")
-      .select("id, coins_balance")
+      .select("id, coins_balance, vip_level, vip_until")
       .eq("id", user.id)
       .single();
 
@@ -163,21 +163,40 @@ export async function POST(req: NextRequest) {
     }
 
     const currentCoins = Number(profile?.coins_balance || 0);
-    const newCoins = currentCoins + Number(voucher.reward_coins);
+    const rewardCoins = Number(voucher.reward_coins || 0);
+    const newCoins = currentCoins + rewardCoins;
 
-    // 6. Update user coins
+    // Handle VIP rewards
+    const rewardVipDays = Number(voucher.reward_vip_days || 0);
+    const rewardVipLevel = Number(voucher.reward_vip_level || (rewardVipDays > 0 ? 1 : 0));
+    let newVipUntil = profile?.vip_until || null;
+    let newVipLevel = Number(profile?.vip_level || 0);
+
+    if (rewardVipDays > 0) {
+      const currentExp = profile?.vip_until ? new Date(profile.vip_until).getTime() : 0;
+      const baseTime = currentExp > Date.now() ? currentExp : Date.now();
+      newVipUntil = new Date(baseTime + rewardVipDays * 86400000).toISOString();
+      newVipLevel = Math.max(newVipLevel, rewardVipLevel || 1);
+    }
+
+    // 6. Update user profile (coins + VIP)
     if (profile) {
-      await adminSupabase
-        .from("profiles")
-        .update({
-          coins_balance: newCoins,
-        })
-        .eq("id", user.id);
+      const updatePayload: Record<string, any> = {
+        coins_balance: newCoins,
+        updated_at: new Date().toISOString(),
+      };
+      if (rewardVipDays > 0) {
+        updatePayload.vip_level = newVipLevel;
+        updatePayload.vip_until = newVipUntil;
+      }
+      await adminSupabase.from("profiles").update(updatePayload).eq("id", user.id);
     } else {
       await adminSupabase.from("profiles").insert({
         id: user.id,
         email: user.email,
         coins_balance: newCoins,
+        vip_level: newVipLevel > 0 ? newVipLevel : 0,
+        vip_until: newVipUntil,
       });
     }
 
@@ -195,7 +214,9 @@ export async function POST(req: NextRequest) {
       voucher_code: code,
       user_id: user.id,
       user_email: user.email || "",
-      reward_coins: voucher.reward_coins,
+      reward_coins: rewardCoins,
+      reward_vip_days: rewardVipDays > 0 ? rewardVipDays : undefined,
+      reward_vip_level: rewardVipDays > 0 ? newVipLevel : undefined,
       created_at: new Date().toISOString(),
     };
     redemptions.push(newRedemption);
@@ -205,24 +226,42 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     });
 
-    // 9. Record transaction in coin_transactions
-    try {
-      await adminSupabase.from("coin_transactions").insert({
-        user_id: user.id,
-        amount_vnd: 0,
-        coins_added: voucher.reward_coins,
-        order_code: `VOUCHER_${code}_${Date.now()}`,
-        status: "completed",
-      });
-    } catch (e) {
-      // Non-blocking if table constraints vary
-      console.warn("Could not log coin_transactions:", e);
+    // 9. Record transaction in coin_transactions if coins were added
+    if (rewardCoins > 0) {
+      try {
+        await adminSupabase.from("coin_transactions").insert({
+          user_id: user.id,
+          amount_vnd: 0,
+          coins_added: rewardCoins,
+          order_code: `VOUCHER_${code}_${Date.now()}`,
+          status: "completed",
+        });
+      } catch (e) {
+        console.warn("Could not log coin_transactions:", e);
+      }
+    }
+
+    // Build success message
+    let successMessage = `Đổi mã thành công!`;
+    const parts: string[] = [];
+    if (rewardCoins > 0) {
+      parts.push(`+${rewardCoins} Xu`);
+    }
+    if (rewardVipDays > 0 && newVipUntil) {
+      const expDateStr = new Date(newVipUntil).toLocaleDateString("vi-VN");
+      parts.push(`Kích hoạt VIP ${newVipLevel} trong ${rewardVipDays} ngày (hạn đến ${expDateStr})`);
+    }
+    if (parts.length > 0) {
+      successMessage += ` Bạn nhận được ${parts.join(" & ")}.`;
     }
 
     return NextResponse.json({
       success: true,
-      message: `Đổi mã thành công! Bạn nhận được +${voucher.reward_coins} Xu vào tài khoản.`,
-      reward_coins: voucher.reward_coins,
+      message: successMessage,
+      reward_coins: rewardCoins,
+      reward_vip_days: rewardVipDays,
+      reward_vip_level: newVipLevel,
+      vip_until: newVipUntil,
       voucher_title: voucher.title,
       new_balance: newCoins,
     });

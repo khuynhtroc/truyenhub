@@ -1,7 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Lock, Coins, Sparkles, QrCode, CheckCircle2, Copy, AlertCircle, X } from "lucide-react";
+import Link from "next/link";
+import {
+  Lock,
+  Coins,
+  Sparkles,
+  QrCode,
+  CheckCircle2,
+  Copy,
+  AlertCircle,
+  X,
+  Crown,
+  Gift,
+  RefreshCw,
+  ArrowRight,
+} from "lucide-react";
+import { getRequiredVipTierForChapter } from "@/lib/vip";
 import { formatVND } from "@/lib/utils";
 
 interface PaywallModalProps {
@@ -23,6 +38,15 @@ export function PaywallModal({
   const [selectedPlan, setSelectedPlan] = useState<"single" | "combo10" | "full">("single");
   const [isProcessing, setIsProcessing] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // VIP code redeem inline state
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [inputCode, setInputCode] = useState("");
+  const [isRedeemingCode, setIsRedeemingCode] = useState(false);
+  const [codeSuccess, setCodeSuccess] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+
+  const requiredTier = getRequiredVipTierForChapter(priceCoins, true);
 
   // Tính giá theo gói
   const plans = {
@@ -53,8 +77,45 @@ export function PaywallModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleRedeemVipCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputCode.trim()) {
+      setCodeError("Vui lòng nhập mã voucher hoặc giveaway");
+      return;
+    }
+
+    setIsRedeemingCode(true);
+    setCodeError(null);
+    setCodeSuccess(null);
+
+    try {
+      const res = await fetch("/api/vouchers/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: inputCode.trim() }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Mã code không hợp lệ");
+      }
+
+      setCodeSuccess(data.message);
+      setInputCode("");
+
+      // If code granted VIP tier or enough coins, unlock chapter after brief delay!
+      setTimeout(() => {
+        onUnlockSuccess();
+      }, 1500);
+    } catch (err: any) {
+      setCodeError(err.message || "Lỗi xử lý đổi mã");
+    } finally {
+      setIsRedeemingCode(false);
+    }
+  };
+
   return (
-    <div className="relative my-8 rounded-2xl border-2 border-amber-500/30 bg-gradient-to-b from-card to-amber-500/5 p-6 sm:p-8 text-center shadow-xl backdrop-blur-md overflow-hidden">
+    <div className="relative my-8 rounded-3xl border-2 border-amber-500/30 bg-gradient-to-b from-card via-card to-amber-500/5 p-6 sm:p-8 text-center shadow-xl backdrop-blur-md overflow-hidden">
       {/* Decorative background glow */}
       <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -68,19 +129,43 @@ export function PaywallModal({
           <h2 className="text-xl sm:text-2xl font-black text-foreground mb-1">
             Chương Trả Phí
           </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground mb-6">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-4">
             Ủng hộ tác giả & dịch giả để mở khóa <b className="text-foreground">{chapterTitle}</b>
           </p>
 
+          {/* VIP Perk Highlight Pill */}
+          <div className="w-full p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/10 border border-amber-500/30 text-xs mb-5 text-left flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                <Crown className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-extrabold text-foreground block">
+                  Đặc quyền hội viên {requiredTier.name}
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  Miễn phí chương này từ cấp {requiredTier.badge} trở lên
+                </span>
+              </div>
+            </div>
+            <Link
+              href="/vip"
+              className="px-2.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[11px] shrink-0 transition-colors flex items-center gap-1"
+            >
+              <span>Xem VIP</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
           {/* Balance badge */}
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/80 border border-border/50 text-xs font-semibold mb-6">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/80 border border-border/50 text-xs font-semibold mb-5">
             <Coins className="w-4 h-4 text-amber-500" />
             <span>Số dư của bạn:</span>
             <b className="text-amber-500">{userCoins} Xu</b>
           </div>
 
           {/* Options */}
-          <div className="w-full flex flex-col gap-2.5 mb-6 text-left">
+          <div className="w-full flex flex-col gap-2.5 mb-5 text-left">
             {(Object.keys(plans) as Array<keyof typeof plans>).map((key) => {
               const p = plans[key];
               const isSelected = selectedPlan === key;
@@ -115,7 +200,7 @@ export function PaywallModal({
             <button
               onClick={handleUnlock}
               disabled={isProcessing}
-              className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-extrabold text-sm shadow-md shadow-rose-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-extrabold text-sm shadow-md shadow-rose-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
               <span>{isProcessing ? "Đang mở khóa..." : `Xác Nhận Mở (${currentCost} Xu)`}</span>
@@ -124,7 +209,7 @@ export function PaywallModal({
             <div className="w-full flex flex-col gap-2">
               <button
                 onClick={() => setShowQR(true)}
-                className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-extrabold text-sm shadow-md shadow-rose-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-extrabold text-sm shadow-md shadow-rose-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <QrCode className="w-4 h-4" />
                 <span>Nạp Thêm Xu Qua VietQR (Từ 10.000đ)</span>
@@ -135,6 +220,62 @@ export function PaywallModal({
               </p>
             </div>
           )}
+
+          {/* Toggle Code / Giveaway input */}
+          <div className="w-full mt-4 pt-4 border-t border-border/50 flex flex-col gap-2">
+            {!showCodeInput ? (
+              <button
+                type="button"
+                onClick={() => setShowCodeInput(true)}
+                className="text-xs text-rose-500 hover:underline font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Gift className="w-3.5 h-3.5" />
+                <span>Bạn có mã Give Away hoặc Giftcode VIP? Nhập tại đây</span>
+              </button>
+            ) : (
+              <form onSubmit={handleRedeemVipCode} className="flex flex-col gap-2 animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={inputCode}
+                    onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+                    placeholder="Nhập mã VIP / Giveaway..."
+                    className="flex-1 h-9 px-3 rounded-xl bg-background border border-border/80 text-xs font-mono font-bold uppercase focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isRedeemingCode}
+                    className="h-9 px-3.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shrink-0 flex items-center gap-1 cursor-pointer"
+                  >
+                    {isRedeemingCode ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                    <span>Mở</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCodeInput(false);
+                      setCodeError(null);
+                      setCodeSuccess(null);
+                    }}
+                    className="p-2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {codeSuccess && (
+                  <p className="text-[11px] text-emerald-500 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {codeSuccess}
+                  </p>
+                )}
+                {codeError && (
+                  <p className="text-[11px] text-rose-500 font-bold flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {codeError}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>
         </div>
       ) : (
         /* VietQR Instant Deposit View */

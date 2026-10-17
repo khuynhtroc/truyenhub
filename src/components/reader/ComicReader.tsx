@@ -17,12 +17,14 @@ import {
   BookOpen,
   Search,
   X,
-  Lock
+  Lock,
+  Crown,
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { normalizeMediaUrl, SITE_CONFIG } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { recordReadingProgress } from "@/lib/sync/syncService";
+import { canUserReadChapter } from "@/lib/vip";
 import { AuthRequiredGate } from "@/components/auth/AuthRequiredGate";
 
 interface ComicReaderProps {
@@ -35,6 +37,7 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(!chapter.is_locked);
+  const [vipUnlockedReason, setVipUnlockedReason] = useState<string | null>(null);
   const [userCoins, setUserCoins] = useState(25);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [imageWidth, setImageWidth] = useState<"max-w-xl" | "max-w-3xl" | "max-w-full">("max-w-3xl");
@@ -111,16 +114,49 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Kiểm tra đăng nhập
+  // Kiểm tra đăng nhập & quyền hạn VIP
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCurrentUser(user);
       setAuthChecked(true);
       if (user) {
-        supabase.from("profiles").select("coins").eq("id", user.id).single().then(({ data }) => {
-          if (data?.coins !== undefined) setUserCoins(data.coins);
-        });
+        supabase
+          .from("profiles")
+          .select("coins, coins_balance, vip_level, vip_until")
+          .eq("id", user.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              const currentCoins = Number(data.coins_balance ?? data.coins ?? 0);
+              setUserCoins(currentCoins);
+
+              if (chapter.is_locked) {
+                const check = canUserReadChapter(
+                  Number(data.vip_level || 0),
+                  data.vip_until,
+                  chapter.price_coins,
+                  chapter.is_locked
+                );
+                if (check.allowed) {
+                  setIsUnlocked(true);
+                  setVipUnlockedReason(check.reason || null);
+                }
+              }
+            }
+          });
+
+        if (chapter.is_locked) {
+          supabase
+            .from("unlocked_chapters")
+            .select("chapter_id")
+            .eq("user_id", user.id)
+            .eq("chapter_id", chapter.id)
+            .maybeSingle()
+            .then(({ data }) => {
+              if (data) setIsUnlocked(true);
+            });
+        }
       }
     });
 
@@ -128,12 +164,38 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
       const u = session?.user || null;
       setCurrentUser(u);
       setAuthChecked(true);
+      if (u) {
+        supabase
+          .from("profiles")
+          .select("coins, coins_balance, vip_level, vip_until")
+          .eq("id", u.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              const currentCoins = Number(data.coins_balance ?? data.coins ?? 0);
+              setUserCoins(currentCoins);
+
+              if (chapter.is_locked) {
+                const check = canUserReadChapter(
+                  Number(data.vip_level || 0),
+                  data.vip_until,
+                  chapter.price_coins,
+                  chapter.is_locked
+                );
+                if (check.allowed) {
+                  setIsUnlocked(true);
+                  setVipUnlockedReason(check.reason || null);
+                }
+              }
+            }
+          });
+      }
     });
 
     return () => {
       authListener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [chapter.id, chapter.is_locked, chapter.price_coins]);
 
   // Ghi nhận tiến độ đọc & đồng bộ đa thiết bị
   useEffect(() => {
@@ -325,6 +387,19 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
           />
         ) : isUnlocked ? (
           <div className="w-full flex flex-col items-center">
+            {vipUnlockedReason && (
+              <div className="w-full mb-4 px-4">
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border border-amber-500/30 text-xs font-bold text-amber-500 flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-4 h-4 shrink-0" />
+                    <span>{vipUnlockedReason}</span>
+                  </div>
+                  <Link href="/vip" className="text-[11px] hover:underline font-extrabold whitespace-nowrap">
+                    Hội viên VIP &rarr;
+                  </Link>
+                </div>
+              </div>
+            )}
             {pages.map((rawUrl, idx) => {
               const imgUrl = normalizeMediaUrl(rawUrl);
               return (

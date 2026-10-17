@@ -49,6 +49,7 @@ import {
   Zap,
   Share2,
   Ticket,
+  Crown,
 } from "lucide-react";
 import { AdminAiSeoModal } from "@/components/admin/AdminAiSeoModal";
 import { AdminBookImportModal } from "@/components/admin/AdminBookImportModal";
@@ -214,6 +215,9 @@ export default function AdminPage() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userCoinsModal, setUserCoinsModal] = useState<any>(null);
   const [coinAmount, setCoinAmount] = useState(100);
+  const [userVipModal, setUserVipModal] = useState<any>(null);
+  const [selectedVipLevel, setSelectedVipLevel] = useState<number>(1);
+  const [selectedVipDays, setSelectedVipDays] = useState<number>(30);
   const [userVipFilter, setUserVipFilter] = useState<string>("");
   const [userSourceFilter, setUserSourceFilter] = useState<string>("");
 
@@ -1171,6 +1175,33 @@ export default function AdminPage() {
       }
     } catch (err: any) {
       alert(err.message);
+    }
+  };
+
+  // Direct Upgrade VIP for User
+  const handleUpgradeUserVip = async () => {
+    if (!userVipModal) return;
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: userVipModal.id,
+          action: "upgrade_vip",
+          vip_level: selectedVipLevel,
+          vip_days: selectedVipDays,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || "Đã nâng cấp VIP thành công!");
+        setUserVipModal(null);
+        fetchUsers();
+      } else {
+        alert(data.error || "Lỗi nâng cấp VIP");
+      }
+    } catch (e: any) {
+      alert(e.message || "Lỗi kết nối nâng cấp VIP");
     }
   };
 
@@ -3234,15 +3265,33 @@ export default function AdminPage() {
                           </div>
                         </td>
                         <td className="p-3.5">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500">
-                            {u.vip_level || "Thành viên"}
-                          </span>
+                          <div className="flex flex-col items-start gap-0.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                              {u.vip_level ? `VIP ${u.vip_level}` : "Độc giả thường"}
+                            </span>
+                            {u.vip_until && (
+                              <span className="text-[10px] text-muted-foreground">
+                                Hạn: {new Date(u.vip_until).toLocaleDateString("vi-VN")}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3.5 text-muted-foreground">Google / Direct</td>
                         <td className="p-3.5 font-bold text-amber-500 font-mono text-sm">
                           {(u.coins_balance || 0).toLocaleString()} xu
                         </td>
                         <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => {
+                              setUserVipModal(u);
+                              setSelectedVipLevel(u.vip_level || 1);
+                              setSelectedVipDays(30);
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-bold mr-1.5 cursor-pointer inline-flex items-center gap-1"
+                            title="Nâng cấp VIP trực tiếp"
+                          >
+                            <Crown className="w-3.5 h-3.5" /> Nâng Cấp VIP
+                          </button>
                           <button
                             onClick={() => {
                               setQrModalUser(u);
@@ -3259,7 +3308,7 @@ export default function AdminPage() {
                             }}
                             className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold cursor-pointer inline-flex items-center gap-1"
                           >
-                            <Coins className="w-3.5 h-3.5" /> Điều Chỉnh Xu
+                            <Coins className="w-3.5 h-3.5" /> Chỉnh Xu
                           </button>
                         </td>
                       </tr>
@@ -4125,6 +4174,81 @@ export default function AdminPage() {
             >
               Hủy bỏ
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: DIRECT VIP UPGRADE */}
+      {/* ============================================================== */}
+      {userVipModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-sm bg-card border border-border/80 rounded-2xl shadow-2xl p-6 flex flex-col gap-4">
+            <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
+              <Crown className="w-4 h-4 text-amber-500" /> Nâng Cấp VIP Cho Độc Giả
+            </h3>
+            <div className="text-xs text-muted-foreground">
+              Độc giả: <strong className="text-foreground">{userVipModal.display_name || userVipModal.email}</strong>
+              <br />
+              Cấp hiện tại: <strong className="text-amber-500">{userVipModal.vip_level ? `VIP ${userVipModal.vip_level}` : "Độc giả thường"}</strong>
+              {userVipModal.vip_until && (
+                <> · Hết hạn: {new Date(userVipModal.vip_until).toLocaleDateString("vi-VN")}</>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                  Chọn Cấp Bậc VIP:
+                </label>
+                <select
+                  value={selectedVipLevel}
+                  onChange={(e) => setSelectedVipLevel(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value={1}>VIP 1 - VIP Đồng (Đọc free VIP 1)</option>
+                  <option value={2}>VIP 2 - VIP Bạc (Đọc free VIP 1&2, Audio AI)</option>
+                  <option value={3}>VIP 3 - VIP Vàng (Full kho VIP & Sách eBook)</option>
+                  <option value={4}>VIP 4 - VIP Kim Cương (Mọi đặc quyền tối thượng)</option>
+                  <option value={0}>0 - Hủy VIP (Đưa về thường)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                  Thời Gian Hiệu Lực:
+                </label>
+                <select
+                  value={selectedVipDays}
+                  onChange={(e) => setSelectedVipDays(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-xl bg-muted/60 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value={7}>7 Ngày (1 Tuần)</option>
+                  <option value={14}>14 Ngày (2 Tuần)</option>
+                  <option value={30}>30 Ngày (1 Tháng)</option>
+                  <option value={90}>90 Ngày (3 Tháng)</option>
+                  <option value={365}>365 Ngày (1 Năm)</option>
+                  <option value={-1}>Vĩnh Viễn (Trọn Đời)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={handleUpgradeUserVip}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-95 text-white font-black text-xs transition-colors cursor-pointer shadow-md shadow-rose-500/20"
+              >
+                Xác Nhận Nâng Cấp
+              </button>
+              <button
+                type="button"
+                onClick={() => setUserVipModal(null)}
+                className="px-4 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs cursor-pointer"
+              >
+                Hủy
+              </button>
+            </div>
           </div>
         </div>
       )}

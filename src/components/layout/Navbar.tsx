@@ -29,7 +29,8 @@ import {
   TrendingUp,
   BrainCircuit,
   Briefcase,
-  Trophy
+  Trophy,
+  Crown
 } from "lucide-react";
 import { Story } from "@/types";
 
@@ -38,6 +39,7 @@ import { SafeImage } from "@/components/common/SafeImage";
 import { createClient } from "@/lib/supabase/client";
 
 const GENRE_MENU_ITEMS = [
+  { label: "👑 Hội Viên VIP", href: "/vip", icon: Crown, desc: "Đặc quyền đọc truyện, sách & 15 giọng AI", color: "text-amber-500" },
   { label: "Tất Cả Kho Truyện", href: "/kham-pha", icon: Compass, desc: "Khám phá 880+ tác phẩm phong phú", color: "text-rose-500" },
   { label: "Truyện Tranh (Manga)", href: "/kham-pha?type=comic", icon: Sparkles, desc: "Đội Quân Nhí Nhố, Doraemon, Jindo...", color: "text-amber-500" },
   { label: "Truyện Chữ (Tiểu Thuyết)", href: "/kham-pha?type=novel", icon: BookOpen, desc: "Tiên hiệp, kiếm hiệp, kỳ ảo...", color: "text-indigo-500" },
@@ -52,6 +54,7 @@ const GENRE_MENU_ITEMS = [
 ];
 
 const QUICK_SUB_BAR = [
+  { label: "Gói VIP", href: "/vip", icon: Crown, color: "text-amber-500 font-black" },
   { label: "Bảng Xếp Hạng", href: "/bang-xep-hang", icon: Trophy, color: "text-amber-500" },
   { label: "Truyện Tranh", href: "/kham-pha?type=comic", icon: Sparkles, color: "text-amber-500" },
   { label: "Truyện Chữ", href: "/kham-pha?type=novel", icon: BookOpen, color: "text-indigo-500" },
@@ -405,6 +408,14 @@ export function Navbar() {
             >
               <Bookmark className="w-3.5 h-3.5 text-rose-500" />
               <span>Tủ Truyện</span>
+            </Link>
+
+            <Link 
+              href="/vip" 
+              className="px-2.5 py-1.5 rounded-lg text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 transition-colors flex items-center gap-1.5 font-black text-xs"
+            >
+              <Crown className="w-3.5 h-3.5" />
+              <span>Gói VIP</span>
             </Link>
           </nav>
         </div>

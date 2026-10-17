@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
 import Link from "next/link";
 import { formatVND } from "@/lib/utils";
-import { Coins, QrCode, Sparkles, CheckCircle2, Copy, ShieldCheck, Zap, Ticket } from "lucide-react";
+import { Coins, QrCode, Sparkles, CheckCircle2, Copy, ShieldCheck, Zap, Ticket, Crown } from "lucide-react";
 
 
 const PACKAGES = [
@@ -109,6 +109,24 @@ export default function NapXuPage() {
                 className="px-3.5 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-[11px] whitespace-nowrap shadow-sm transition-all"
               >
                 Nhận Ngay
+              </Link>
+            </div>
+
+            <div className="mt-2 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-purple-500/10 border border-amber-500/30 text-xs flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                  <Crown className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="font-bold text-foreground block">Đọc không giới hạn với Gói Hội Viên VIP</span>
+                  <span className="text-[11px] text-muted-foreground">Mở toàn bộ truyện VIP, sách eBook & 15 giọng đọc AI từ 29.000đ</span>
+                </div>
+              </div>
+              <Link
+                href="/vip"
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 text-white font-black text-[11px] whitespace-nowrap shadow-sm transition-all"
+              >
+                Xem Gói VIP
               </Link>
             </div>
           </div>

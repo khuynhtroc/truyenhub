@@ -57,11 +57,16 @@ export interface ReadingProgress {
   updated_at: string;
 }
 
+export type VoucherRewardType = "coins" | "vip" | "both";
+
 export interface Voucher {
   id: string;
   code: string;
   title: string;
+  reward_type?: VoucherRewardType;
   reward_coins: number;
+  reward_vip_days?: number; // e.g. 7, 30, 90, 365
+  reward_vip_level?: number; // 1: Đồng, 2: Bạc, 3: Vàng, 4: Kim Cương
   max_uses: number;
   used_count: number;
   expires_at: string | null;
@@ -75,6 +80,8 @@ export interface VoucherRedemption {
   user_id: string;
   user_email?: string;
   reward_coins: number;
+  reward_vip_days?: number;
+  reward_vip_level?: number;
   created_at: string;
 }
 
