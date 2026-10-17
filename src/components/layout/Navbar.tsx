@@ -116,19 +116,18 @@ export function Navbar() {
 
   // Scroll listener for expanding search on scroll down
   useEffect(() => {
-    let lastScrollY = typeof window !== "undefined" ? window.scrollY : 0;
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > 120 && currentScrollY > lastScrollY) {
+      const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      if (currentScrollY > 50) {
         setIsScrolledDown(true);
-      } else if (currentScrollY < 60) {
+      } else if (currentScrollY < 20) {
         setIsScrolledDown(false);
         setHasDismissedScrollSearch(false);
       }
-      lastScrollY = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -300,7 +299,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full max-w-[100vw] overflow-x-clip border-b border-border/40 bg-background/95 backdrop-blur-md shadow-sm pt-[max(env(safe-area-inset-top,0px),var(--app-safe-top,0px))]">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md shadow-sm pt-[max(env(safe-area-inset-top,0px),var(--app-safe-top,0px))]">
       {/* Main Top Header Bar */}
       <div className="max-w-7xl mx-auto flex h-14 sm:h-16 items-center justify-between px-2.5 sm:px-6 gap-2 sm:gap-3">
         {/* Brand Logo & Core Nav */}
@@ -509,13 +508,14 @@ export function Navbar() {
           <button
             type="button"
             onClick={() => {
-              const nextState = !isMobileSearchExpanded;
-              setIsMobileSearchExpanded(nextState);
-              if (nextState) {
+              const isCurrentlyOpen =
+                isMobileSearchExpanded || (isScrolledDown && !hasDismissedScrollSearch && !isReadingPage);
+              if (isCurrentlyOpen) {
+                handleCloseSearch();
+              } else {
+                setIsMobileSearchExpanded(true);
                 setHasDismissedScrollSearch(false);
                 setTimeout(() => mobileSearchInputRef.current?.focus(), 120);
-              } else {
-                handleCloseSearch();
               }
             }}
             className={`sm:hidden p-1.5 rounded-full transition-all shrink-0 cursor-pointer ${
@@ -526,7 +526,11 @@ export function Navbar() {
             title="Tìm kiếm truyện"
             aria-label="Tìm kiếm truyện"
           >
-            {isMobileSearchExpanded ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
+            {isMobileSearchExpanded || (isScrolledDown && !hasDismissedScrollSearch && !isReadingPage) ? (
+              <X className="w-4 h-4" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
           </button>
 
           {/* Theme toggle */}

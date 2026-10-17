@@ -88,10 +88,10 @@ export default async function HomePage({
   const topNovels = novels.slice(0, 12);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12 w-full max-w-[100vw] overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 w-full py-3 sm:py-6 flex flex-col gap-6 sm:gap-8 overflow-x-hidden">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 w-full py-3 sm:py-6 flex flex-col gap-6 sm:gap-8 overflow-x-clip">
         {/* Quick Horizontal Filter Chips (App-Style) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none snap-x -mx-3 px-3 sm:mx-0 sm:px-0">
           {QUICK_FILTERS.map((f) => {

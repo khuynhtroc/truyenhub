@@ -272,7 +272,7 @@ function ExploreContent() {
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 w-full py-6 flex flex-col gap-6 overflow-x-hidden">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 w-full py-6 flex flex-col gap-6 overflow-x-clip">
       {/* Page Title & Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
