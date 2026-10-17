@@ -12,6 +12,7 @@ const SLUG_REDIRECTS: Record<string, string> = {
   "doraemon": "doraemon-truyen-ngan",
   "jindo-con-loc-san-co": "jindo-1-duong-dan-den-khung-thanh",
   "o-long-vien": "o-long-vien-bo-kinh-dien",
+  "co-be-tinh-nghich-asari": "co-be-tinh-nghich",
 };
 import { 
   Eye, 

@@ -4,7 +4,15 @@ import { ComicReader } from "@/components/reader/ComicReader";
 import { NovelReader } from "@/components/reader/NovelReader";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { Story, Chapter } from "@/types";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+
+const SLUG_REDIRECTS: Record<string, string> = {
+  "bac-si-quai-di": "bac-si-quai-di-ban-moi",
+  "doraemon": "doraemon-truyen-ngan",
+  "jindo-con-loc-san-co": "jindo-1-duong-dan-den-khung-thanh",
+  "o-long-vien": "o-long-vien-bo-kinh-dien",
+  "co-be-tinh-nghich-asari": "co-be-tinh-nghich",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +74,9 @@ export default async function ChapterPage({
   params: Promise<{ slug: string; chapterNumber: string }>;
 }) {
   const { slug, chapterNumber } = await params;
+  if (SLUG_REDIRECTS[slug]) {
+    redirect(`/truyen/${SLUG_REDIRECTS[slug]}/${chapterNumber}`);
+  }
   const num = parseFloat(chapterNumber);
 
   let story: Story | null = null;
