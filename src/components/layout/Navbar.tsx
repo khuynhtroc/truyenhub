@@ -28,9 +28,11 @@ import {
   CheckCircle2,
   TrendingUp,
   BrainCircuit,
-  Briefcase
+  Briefcase,
+  Trophy
 } from "lucide-react";
 import { Story } from "@/types";
+
 import { AuthModal } from "@/components/auth/AuthModal";
 import { SafeImage } from "@/components/common/SafeImage";
 import { createClient } from "@/lib/supabase/client";
@@ -50,9 +52,11 @@ const GENRE_MENU_ITEMS = [
 ];
 
 const QUICK_SUB_BAR = [
+  { label: "Bảng Xếp Hạng", href: "/bang-xep-hang", icon: Trophy, color: "text-amber-500" },
   { label: "Truyện Tranh", href: "/kham-pha?type=comic", icon: Sparkles, color: "text-amber-500" },
   { label: "Truyện Chữ", href: "/kham-pha?type=novel", icon: BookOpen, color: "text-indigo-500" },
   { label: "Sách Hay & Ebook", href: "/kham-pha?genre=S%C3%A1ch", icon: BrainCircuit, color: "text-emerald-500" },
+
   { label: "Blog & Tin Tức", href: "/blog", icon: Sparkles, color: "text-rose-500" },
   { label: "Tiểu Thuyết", href: "/kham-pha?genre=Ti%E1%BB%83u+Thuy%E1%BA%BFt", icon: BookMarked, color: "text-rose-500" },
   { label: "Tiếng Anh", href: "/kham-pha?genre=Ti%E1%BA%BFng+Anh", icon: Globe2, color: "text-teal-500" },
@@ -286,7 +290,18 @@ export function Navbar() {
               <span>Truyện Chữ</span>
             </Link>
 
+            <Link 
+              href="/bang-xep-hang" 
+              className={`px-2.5 py-1.5 rounded-lg hover:text-foreground hover:bg-muted/60 transition-colors flex items-center gap-1.5 ${
+                pathname === "/bang-xep-hang" ? "text-rose-500 font-black bg-rose-500/10" : ""
+              }`}
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-500" />
+              <span>Bảng Xếp Hạng</span>
+            </Link>
+
             {/* Dropdown Thể loại (All Genres Popover) */}
+
             <div ref={genreDropdownRef} className="relative">
               <button
                 onClick={() => setShowGenreDropdown(!showGenreDropdown)}
@@ -673,15 +688,20 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t text-xs font-bold text-muted-foreground">
+              <Link href="/bang-xep-hang" onClick={() => setShowMobileMenu(false)} className="text-amber-500 flex items-center gap-1">
+                <Trophy className="w-4 h-4" />
+                <span>Bảng Xếp Hạng</span>
+              </Link>
               <Link href="/kham-pha" onClick={() => setShowMobileMenu(false)} className="text-rose-500 flex items-center gap-1">
                 <Compass className="w-4 h-4" />
-                <span>Xem Tất Cả Truyện</span>
+                <span>Tất Cả</span>
               </Link>
               <Link href="/tu-truyen" onClick={() => setShowMobileMenu(false)} className="flex items-center gap-1">
-                <Bookmark className="w-4 h-4 text-rose-500" />
+                <Bookmark className="w-4 h-4 text-indigo-500" />
                 <span>Tủ Truyện</span>
               </Link>
             </div>
+
           </div>
         </div>
       )}

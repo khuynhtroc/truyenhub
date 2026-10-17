@@ -18,7 +18,8 @@ import {
   Compass, 
   Layers, 
   CheckCircle2, 
-  Clock 
+  Clock,
+  Trophy
 } from "lucide-react";
 import Link from "next/link";
 
@@ -26,13 +27,14 @@ export const dynamic = "force-dynamic";
 
 const QUICK_FILTERS = [
   { label: "Tất cả", href: "/", type: undefined, icon: Sparkles },
+  { label: "Bảng Xếp Hạng", href: "/bang-xep-hang", type: "rankings", icon: Trophy },
   { label: "Truyện Tranh", href: "/?type=comic", type: "comic", icon: Zap },
   { label: "Truyện Chữ", href: "/?type=novel", type: "novel", icon: BookOpen },
   { label: "Sách & Tư Duy", href: "/kham-pha?genre=S%C3%A1ch", type: "sach", icon: Compass },
-  { label: "Hot Nhất", href: "/kham-pha?sort=views", type: "hot", icon: Flame },
   { label: "Đã Hoàn Thành", href: "/kham-pha?status=completed", type: "completed", icon: CheckCircle2 },
   { label: "Đang Cập Nhật", href: "/kham-pha?status=ongoing", type: "ongoing", icon: Clock },
 ];
+
 
 export default async function HomePage({
   searchParams,
@@ -195,8 +197,15 @@ export default async function HomePage({
               <Crown className="w-5 h-5 text-amber-400" />
               Bảng Xếp Hạng Phú Hào Tháng
             </h3>
-            <span className="text-[11px] font-bold text-muted-foreground">Thời gian thực</span>
+            <Link
+              href="/bang-xep-hang?tab=vip"
+              className="text-xs font-black text-rose-500 hover:text-rose-600 transition-colors flex items-center gap-1"
+            >
+              <span>Xem Toàn Bộ Bảng Xếp Hạng</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">

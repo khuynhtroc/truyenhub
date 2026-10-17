@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Bookmark, TrendingUp, User } from "lucide-react";
+import { Home, Compass, Bookmark, TrendingUp, User, Trophy } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
     { label: "Trang chủ", href: "/", icon: Home },
-    { label: "Xếp hạng", href: "/kham-pha?sort=views", icon: TrendingUp },
+    { label: "Xếp hạng", href: "/bang-xep-hang", icon: Trophy },
     { label: "Tủ truyện", href: "/tu-truyen", icon: Bookmark },
     { label: "Phân loại", href: "/kham-pha", icon: Compass },
     { label: "Tôi", href: "/tai-khoan", icon: User },
   ];
+
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/50 pt-1.5 pb-[max(14px,calc(0.75rem+env(safe-area-inset-bottom,0px)))] px-2 shadow-lg">
