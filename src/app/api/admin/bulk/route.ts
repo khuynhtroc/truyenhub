@@ -281,6 +281,132 @@ export async function POST(request: Request) {
       });
     }
 
+    // 10. Bulk Pricing & VIP Lock Management for Stories
+    if (action === "pricing" || action === "bulk_pricing") {
+      const {
+        story_ids,
+        target_type, // "selected" | "all" | "comic" | "novel" | "book"
+        mode, // "free_all" | "lock_after_n" | "lock_all" | "update_price"
+        free_threshold = 3,
+        price_coins = 10,
+      } = body;
+
+      let targetStoryIds: string[] = Array.isArray(story_ids) ? story_ids : (Array.isArray(ids) ? ids : []);
+
+      // If targeting by type or all
+      if (target_type && target_type !== "selected") {
+        let query = supabase.from("stories").select("id");
+        if (target_type === "comic") {
+          query = query.eq("type", "comic");
+        } else if (target_type === "novel") {
+          query = query.eq("type", "novel");
+        } else if (target_type === "book") {
+          query = query.contains("genres", ["Sách"]);
+        }
+        const { data: matchedStories, error: matchError } = await query;
+        if (matchError) throw matchError;
+        targetStoryIds = (matchedStories || []).map((s) => s.id);
+      }
+
+      if (!targetStoryIds || targetStoryIds.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Không tìm thấy bộ truyện nào phù hợp để áp dụng" },
+          { status: 400 }
+        );
+      }
+
+      // Process in batches of 50 to avoid query size limits
+      const BATCH_SIZE = 50;
+      let totalUpdatedStories = 0;
+
+      for (let i = 0; i < targetStoryIds.length; i += BATCH_SIZE) {
+        const batchIds = targetStoryIds.slice(i, i + BATCH_SIZE);
+
+        if (mode === "free_all") {
+          const { error } = await supabase
+            .from("chapters")
+            .update({ is_locked: false, price_coins: 0 })
+            .in("story_id", batchIds);
+          if (error) throw error;
+        } else if (mode === "lock_all") {
+          const { error } = await supabase
+            .from("chapters")
+            .update({ is_locked: true, price_coins: Math.max(1, Number(price_coins) || 10) })
+            .in("story_id", batchIds);
+          if (error) throw error;
+        } else if (mode === "lock_after_n") {
+          const threshold = Math.max(0, Number(free_threshold) || 0);
+          const price = Math.max(1, Number(price_coins) || 10);
+
+          // 1. Chapters <= threshold -> free
+          const { error: errFree } = await supabase
+            .from("chapters")
+            .update({ is_locked: false, price_coins: 0 })
+            .in("story_id", batchIds)
+            .lte("chapter_number", threshold);
+          if (errFree) throw errFree;
+
+          // 2. Chapters > threshold -> locked
+          const { error: errLock } = await supabase
+            .from("chapters")
+            .update({ is_locked: true, price_coins: price })
+            .in("story_id", batchIds)
+            .gt("chapter_number", threshold);
+          if (errLock) throw errLock;
+        } else if (mode === "update_price") {
+          const price = Math.max(0, Number(price_coins) || 0);
+          const { error } = await supabase
+            .from("chapters")
+            .update({ price_coins: price })
+            .in("story_id", batchIds)
+            .eq("is_locked", true);
+          if (error) throw error;
+        }
+
+        totalUpdatedStories += batchIds.length;
+      }
+
+      let modeDesc = "";
+      if (mode === "free_all") modeDesc = "Miễn phí 100% tất cả các chương";
+      else if (mode === "lock_all") modeDesc = `Khóa VIP toàn bộ (${price_coins} Xu/chương)`;
+      else if (mode === "lock_after_n") modeDesc = `Miễn phí ${free_threshold} chương đầu, khóa từ chương ${Number(free_threshold) + 1} (${price_coins} Xu/chương)`;
+      else if (mode === "update_price") modeDesc = `Cập nhật giá ${price_coins} Xu cho các chương VIP`;
+
+      return NextResponse.json({
+        success: true,
+        message: `Đã áp dụng "${modeDesc}" cho ${totalUpdatedStories} bộ truyện thành công!`,
+        total_stories: totalUpdatedStories,
+      });
+    }
+
+    // 11. Bulk Chapters Pricing (Inside a Story)
+    if (action === "chapter_pricing" || action === "bulk_chapter_pricing") {
+      const { chapter_ids, is_locked, price_coins } = body;
+      if (!chapter_ids || !Array.isArray(chapter_ids) || chapter_ids.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Vui lòng chọn ít nhất 1 chương để điều chỉnh" },
+          { status: 400 }
+        );
+      }
+
+      const payload: any = {
+        is_locked: !!is_locked,
+        price_coins: is_locked ? Math.max(1, Number(price_coins) || 10) : 0,
+      };
+
+      const { error } = await supabase
+        .from("chapters")
+        .update(payload)
+        .in("id", chapter_ids);
+
+      if (error) throw error;
+
+      return NextResponse.json({
+        success: true,
+        message: `Đã cập nhật ${chapter_ids.length} chương thành công (${is_locked ? `VIP - ${payload.price_coins} Xu` : "Miễn phí"})!`,
+      });
+    }
+
     return NextResponse.json({ success: false, error: "Thao tác bulk không hợp lệ" }, { status: 400 });
   } catch (error: any) {
     console.error("Bulk action error:", error);
