@@ -69,9 +69,10 @@ export async function generateMetadata({
 
   const typeLabel = story.type === "comic" ? "Truyện Tranh" : "Truyện Chữ";
   const title = `Đọc truyện ${story.title} Full HD | DocTruyen.vip`;
-  const description = story.description
-    ? story.description.slice(0, 160)
-    : `Đọc ${typeLabel.toLowerCase()} ${story.title} online miễn phí chất lượng cao tại DocTruyen.vip. Tác giả: ${story.author_name || "Đang cập nhật"}.`;
+  const cleanDesc = (story.description || "").replace(/<[^>]*>/g, "").trim();
+  const description = cleanDesc
+    ? `${cleanDesc.slice(0, 150)}... Hãy cùng đọc truyện ${story.title} với DocTruyen.VIP nhé!`
+    : `Đọc ${typeLabel.toLowerCase()} ${story.title} online miễn phí chất lượng cao tại DocTruyen.vip. Hãy cùng đọc truyện ${story.title} với DocTruyen.VIP nhé!`;
 
   const coverUrl = story.cover_url
     ? normalizeMediaUrl(story.cover_url)
@@ -231,7 +232,9 @@ export default async function StoryDetailPage({
       created_at: story.created_at,
     },
   ];
-}
+  }
+
+  const firstChapterNumber = chapters[0]?.chapter_number || 1;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12">
@@ -329,11 +332,43 @@ export default async function StoryDetailPage({
         </section>
 
         {/* Story Description */}
-        <section className="rounded-2xl bg-card border border-border/50 p-6 flex flex-col gap-3">
-          <h2 className="text-base font-extrabold text-foreground">Giới thiệu truyện</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
-            {story.description}
-          </p>
+        <section className="rounded-2xl bg-card border border-border/50 p-6 sm:p-7 flex flex-col gap-4 shadow-xs">
+          <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-rose-500" />
+            Giới thiệu tác phẩm
+          </h2>
+          <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line space-y-4">
+            {story.description ? (
+              <p>{story.description.replace(/<\/?[^>]+(>|$)/g, "")}</p>
+            ) : (
+              <p>Đang cập nhật nội dung tóm tắt cho tác phẩm {story.title}...</p>
+            )}
+
+            {/* Hook Call-to-action Block */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-500/10 via-amber-500/10 to-indigo-500/10 border border-rose-500/25 text-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                  <Sparkles className="w-4 h-4 animate-pulse" />
+                </div>
+                <div>
+                  <p className="font-bold text-xs sm:text-sm text-foreground leading-snug">
+                    Hãy cùng đọc truyện <span className="text-rose-500 font-extrabold">{story.title}</span> với <span className="text-amber-500 font-extrabold">DocTruyen.VIP</span> nhé! ✨
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Chúc bạn có những phút giây đọc truyện thật vui vẻ và thư giãn. Đừng quên thả tim, bình luận và chia sẻ với bạn bè để nhận Xu thưởng miễn phí!
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                href={`/truyen/${story.slug}/${firstChapterNumber}`}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-95 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 transition-all flex items-center justify-center gap-1.5 shrink-0 active:scale-95 whitespace-nowrap"
+              >
+                <span>Đọc Ngay Chương 1</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
         </section>
 
         {/* Notice for Ongoing / In-progress processing stories */}
