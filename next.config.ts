@@ -40,6 +40,40 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: "/",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=60, s-maxage=120, stale-while-revalidate=600",
+          },
+          {
+            key: "CDN-Cache-Control",
+            value: "public, s-maxage=120",
+          },
+          {
+            key: "Cloudflare-CDN-Cache-Control",
+            value: "public, s-maxage=120",
+          },
+        ],
+      },
+      {
+        source: "/truyen/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=120, s-maxage=600, stale-while-revalidate=1200",
+          },
+          {
+            key: "CDN-Cache-Control",
+            value: "public, s-maxage=600",
+          },
+          {
+            key: "Cloudflare-CDN-Cache-Control",
+            value: "public, s-maxage=600",
+          },
+        ],
+      },
     ];
   },
 };

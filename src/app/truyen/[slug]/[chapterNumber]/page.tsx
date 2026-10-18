@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MOCK_STORIES, MOCK_CHAPTERS } from "@/lib/mock-data";
 import { ComicReader } from "@/components/reader/ComicReader";
 import { NovelReader } from "@/components/reader/NovelReader";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getPublicSupabase } from "@/lib/supabase/server";
 import { Story, Chapter } from "@/types";
 import { notFound, redirect } from "next/navigation";
 
@@ -14,7 +14,7 @@ const SLUG_REDIRECTS: Record<string, string> = {
   "co-be-tinh-nghich-asari": "co-be-tinh-nghich",
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,
@@ -27,7 +27,7 @@ export async function generateMetadata({
   let chapTitle = `Chương ${num}`;
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = getPublicSupabase();
     const { data: story } = await supabase
       .from("stories")
       .select("id, title")
@@ -84,7 +84,7 @@ export default async function ChapterPage({
   let chapter: Chapter | null = null;
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = getPublicSupabase();
     const { data: dbStory } = await supabase
       .from("stories")
       .select("*")

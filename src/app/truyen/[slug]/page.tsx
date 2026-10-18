@@ -34,11 +34,11 @@ import { CommentSection } from "@/components/comment/CommentSection";
 import { ChapterTableOfContents } from "@/components/story/ChapterTableOfContents";
 import { StoryInteractiveHero } from "@/components/story/StoryInteractiveHero";
 import { SafeImage } from "@/components/common/SafeImage";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getPublicSupabase } from "@/lib/supabase/server";
 import { Story, Chapter, StoryVersion } from "@/types";
 import { getSeriesGroupForSlug } from "@/lib/series-versions";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 export async function generateMetadata({
   params,
@@ -48,7 +48,7 @@ export async function generateMetadata({
   const { slug } = await params;
   let story: Story | null = null;
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = getPublicSupabase();
     const { data } = await supabase
       .from("stories")
       .select("*")
@@ -132,7 +132,7 @@ export default async function StoryDetailPage({
   let chapters: Chapter[] = [];
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = getPublicSupabase();
     const { data: dbStory } = await supabase
       .from("stories")
       .select("*")
@@ -171,7 +171,7 @@ export default async function StoryDetailPage({
 
   if (seriesGroup) {
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = getPublicSupabase();
       const siblingSlugs = seriesGroup.versions.map((v) => v.slug);
       const { data: siblings } = await supabase
         .from("stories")

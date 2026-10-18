@@ -5,7 +5,7 @@ import { StoryCard } from "@/components/story/StoryCard";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { StoryRail } from "@/components/home/StoryRail";
 import { MOCK_STORIES } from "@/lib/mock-data";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getPublicSupabase } from "@/lib/supabase/server";
 import { Story } from "@/types";
 import { 
   Sparkles, 
@@ -45,7 +45,7 @@ export default async function HomePage({
 
   let allStories: Story[] = MOCK_STORIES;
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = getPublicSupabase();
     const { data: dbStories } = await supabase
       .from("stories")
       .select("id, title, slug, type, description, cover_url, author_name, status, genres, total_views, total_likes, total_chapters")
