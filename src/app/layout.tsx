@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CapacitorAppHandler } from "@/components/common/CapacitorAppHandler";
 import "./globals.css";
 
@@ -212,10 +210,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
         {/* Native Capacitor App Handlers (Status bar, Android Back button) */}
         <CapacitorAppHandler />
-
-        {/* Vercel Web Analytics & Speed Insights */}
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );
