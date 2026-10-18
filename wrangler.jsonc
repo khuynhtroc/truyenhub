@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "doctruyen-vip",
+  "account_id": "2e901a592cf5f497b7b446745cce98fd",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-01-01",
   "compatibility_flags": [
@@ -9,5 +10,15 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "doctruyen.vip/*",
+      "zone_name": "doctruyen.vip"
+    },
+    {
+      "pattern": "www.doctruyen.vip/*",
+      "zone_name": "doctruyen.vip"
+    }
+  ]
 }
