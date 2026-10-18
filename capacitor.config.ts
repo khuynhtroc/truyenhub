@@ -3,7 +3,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: "vip.doctruyen.app",
   appName: "DocTruyen.vip",
-  webDir: "public",
+  webDir: "mobile-dist",
   server: {
     // Points directly to the live production server (https://www.doctruyen.vip)
     // Guarantees real-time sync with web, instant updates without re-submitting to App Store,

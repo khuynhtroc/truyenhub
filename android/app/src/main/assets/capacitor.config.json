@@ -1,7 +1,7 @@
 {
 	"appId": "vip.doctruyen.app",
 	"appName": "DocTruyen.vip",
-	"webDir": "public",
+	"webDir": "mobile-dist",
 	"server": {
 		"url": "https://www.doctruyen.vip",
 		"cleartext": false,
