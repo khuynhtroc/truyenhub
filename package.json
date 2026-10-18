@@ -7,7 +7,7 @@
     "build": "next build",
     "build:worker": "opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare build && wrangler dev",
-    "deploy": "opennextjs-cloudflare build && wrangler deploy",
+    "deploy": "opennextjs-cloudflare build && wrangler deploy --env-file .env.local",
     "start": "next start",
     "lint": "eslint",
     "cap:sync": "cap sync",
