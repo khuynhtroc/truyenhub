@@ -71,6 +71,16 @@ export function Footer() {
                   Nạp Xu Ủng Hộ Tác Giả
                 </Link>
               </li>
+              <li>
+                <a
+                  href="https://media.doctruyen.vip/DocTruyen-VIP.apk"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold transition-colors"
+                >
+                  <span>📲 Tải App Android (.APK)</span>
+                </a>
+              </li>
             </ul>
           </div>
 

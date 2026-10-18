@@ -883,13 +883,20 @@ export function Navbar() {
           {/* Mobile Theme Toggle & Quick Links */}
           <div className="flex flex-col gap-2 pt-2 border-t">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-muted-foreground">Chế độ hiển thị:</span>
+              <a
+                href="https://media.doctruyen.vip/DocTruyen-VIP.apk"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-500 hover:bg-emerald-500/20 transition-colors"
+              >
+                <span>📲 Tải App (.APK)</span>
+              </a>
               <button
                 onClick={toggleTheme}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-bold text-foreground hover:bg-muted"
               >
                 {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-muted-foreground" />}
-                <span>{isDark ? "Giao diện Sáng" : "Giao diện Tối"}</span>
+                <span>{isDark ? "Sáng" : "Tối"}</span>
               </button>
             </div>
 
