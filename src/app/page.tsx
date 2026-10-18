@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 const QUICK_FILTERS = [
   { label: "Tất cả", href: "/", type: undefined, icon: Sparkles },
@@ -48,9 +48,9 @@ export default async function HomePage({
     const supabase = await createServerSupabaseClient();
     const { data: dbStories } = await supabase
       .from("stories")
-      .select("*")
+      .select("id, title, slug, type, description, cover_url, author_name, status, genres, total_views, total_likes, total_chapters")
       .order("total_views", { ascending: false })
-      .limit(1000);
+      .limit(100);
     if (dbStories && dbStories.length > 0) {
       allStories = dbStories as unknown as Story[];
     }
