@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { MOCK_STORIES, MOCK_CHAPTERS } from "@/lib/mock-data";
 import { ComicReader } from "@/components/reader/ComicReader";
 import { NovelReader } from "@/components/reader/NovelReader";
@@ -16,6 +17,33 @@ const SLUG_REDIRECTS: Record<string, string> = {
 
 export const revalidate = 300;
 
+const getStoryWithChapterMetadata = cache(async (slug: string, num: number) => {
+  try {
+    const supabase = getPublicSupabase();
+    const { data: story } = await supabase
+      .from("stories")
+      .select("id, title, type, slug, cover_url, author_name, status, genres")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (!story) return { story: null, chapTitle: null };
+
+    const { data: chap } = await supabase
+      .from("chapters")
+      .select("title")
+      .eq("story_id", story.id)
+      .eq("chapter_number", num)
+      .maybeSingle();
+
+    return {
+      story: story as unknown as Story,
+      chapTitle: chap?.title || null,
+    };
+  } catch {
+    return { story: null, chapTitle: null };
+  }
+});
+
 export async function generateMetadata({
   params,
 }: {
@@ -26,24 +54,11 @@ export async function generateMetadata({
   let storyTitle = "Đọc Truyện";
   let chapTitle = `Chương ${num}`;
 
-  try {
-    const supabase = getPublicSupabase();
-    const { data: story } = await supabase
-      .from("stories")
-      .select("id, title")
-      .eq("slug", slug)
-      .maybeSingle();
-    if (story) {
-      storyTitle = story.title;
-      const { data: chap } = await supabase
-        .from("chapters")
-        .select("title")
-        .eq("story_id", story.id)
-        .eq("chapter_number", num)
-        .maybeSingle();
-      if (chap && chap.title) chapTitle = chap.title;
-    }
-  } catch (_) {}
+  const { story, chapTitle: dbChapTitle } = await getStoryWithChapterMetadata(slug, num);
+  if (story) {
+    storyTitle = story.title;
+    if (dbChapTitle) chapTitle = dbChapTitle;
+  }
 
   const title = `${chapTitle} - ${storyTitle}`;
   const fullTitle = `${title} | DocTruyen.vip`;
@@ -85,35 +100,32 @@ export default async function ChapterPage({
   let chapter: Chapter | null = null;
 
   try {
-    const supabase = getPublicSupabase();
-    const { data: dbStory } = await supabase
-      .from("stories")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle();
+    const { story: dbStory } = await getStoryWithChapterMetadata(slug, num);
 
     if (dbStory) {
-      story = dbStory as unknown as Story;
+      story = dbStory;
+      const supabase = getPublicSupabase();
 
-      // Lấy danh sách chương nhẹ để điều hướng (không tải text/ảnh nặng của toàn bộ chương)
-      const { data: dbChapters } = await supabase
-        .from("chapters")
-        .select("id, story_id, chapter_number, title, is_locked, price_coins, created_at")
-        .eq("story_id", story.id)
-        .order("chapter_number", { ascending: true });
+      // Tải song song danh sách chương nhẹ và nội dung chương hiện tại
+      const [chaptersRes, chapterRes] = await Promise.all([
+        supabase
+          .from("chapters")
+          .select("id, story_id, chapter_number, title, is_locked, price_coins, created_at")
+          .eq("story_id", dbStory.id)
+          .order("chapter_number", { ascending: true }),
+        supabase
+          .from("chapters")
+          .select("*")
+          .eq("story_id", dbStory.id)
+          .eq("chapter_number", num)
+          .maybeSingle(),
+      ]);
 
-      if (dbChapters) {
-        chapters = dbChapters as Chapter[];
+      if (chaptersRes.data) {
+        chapters = chaptersRes.data as Chapter[];
       }
 
-      // Lấy chi tiết chương hiện tại với nội dung đầy đủ (ảnh hoặc text)
-      const { data: dbChapter } = await supabase
-        .from("chapters")
-        .select("*")
-        .eq("story_id", story.id)
-        .eq("chapter_number", num)
-        .maybeSingle();
-
+      const dbChapter = chapterRes.data;
       if (dbChapter) {
         let pages = dbChapter.pages_images;
         if (typeof pages === "string") {

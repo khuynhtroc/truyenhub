@@ -4,15 +4,7 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next();
   const { pathname } = request.nextUrl;
 
-  // 1. Static Next.js chunks, fonts, and CSS: 1 year immutable edge & browser cache
-  if (pathname.startsWith("/_next/static/")) {
-    response.headers.set("Cache-Control", "public, max-age=31536000, immutable");
-    response.headers.set("CDN-Cache-Control", "public, max-age=31536000, immutable");
-    response.headers.set("Cloudflare-CDN-Cache-Control", "public, max-age=31536000, immutable");
-    return response;
-  }
-
-  // 2. Public HTML pages: Edge CDN cache with stale-while-revalidate
+  // Public HTML pages: Edge CDN cache with stale-while-revalidate
   const isPublicPage =
     pathname === "/" ||
     pathname === "/tai-app" ||
@@ -44,9 +36,11 @@ export const config = {
     /*
      * Match all request paths except for:
      * - api routes (e.g. /api/...)
+     * - _next/static (static build files)
      * - _next/image (image optimization files)
-     * - favicon.ico, robots.txt, sitemap.xml
+     * - metadata and well-known files (favicon, robots, sitemap, manifest)
+     * - static files with common extensions
      */
-    "/((?!api|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
+    "/((?!api|_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap\\.xml|manifest\\.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|apk|json)$).*)",
   ],
 };

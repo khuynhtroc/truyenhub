@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { cache } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
@@ -40,13 +41,7 @@ import { getSeriesGroupForSlug } from "@/lib/series-versions";
 
 export const revalidate = 120;
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  let story: Story | null = null;
+const getStoryBySlug = cache(async (slug: string) => {
   try {
     const supabase = getPublicSupabase();
     const { data } = await supabase
@@ -54,8 +49,19 @@ export async function generateMetadata({
       .select("*")
       .eq("slug", slug)
       .maybeSingle();
-    if (data) story = data as unknown as Story;
-  } catch (_) {}
+    return (data as unknown as Story) || null;
+  } catch {
+    return null;
+  }
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  let story = await getStoryBySlug(slug);
 
   if (!story) {
     story = MOCK_STORIES.find((s) => s.slug === slug) || null;
@@ -133,15 +139,11 @@ export default async function StoryDetailPage({
   let chapters: Chapter[] = [];
 
   try {
-    const supabase = getPublicSupabase();
-    const { data: dbStory } = await supabase
-      .from("stories")
-      .select("*")
-      .eq("slug", slug)
-      .maybeSingle();
+    const dbStory = await getStoryBySlug(slug);
 
     if (dbStory) {
-      story = dbStory as unknown as Story;
+      story = dbStory;
+      const supabase = getPublicSupabase();
       const { data: dbChapters } = await supabase
         .from("chapters")
         .select("id, story_id, chapter_number, title, is_locked, price_coins, created_at")
