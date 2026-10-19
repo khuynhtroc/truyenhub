@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { VipMembershipView } from "@/components/vip/VipMembershipView";
 
 export const metadata: Metadata = {
-  title: "Đặc Quyền Thành Viên VIP - Đọc Truyện & Sách Không Giới Hạn | DocTruyen.vip",
+  title: "Đặc Quyền Thành Viên VIP - Đọc Truyện & Sách Không Giới Hạn",
   description:
     "Phân loại hội viên VIP, điều kiện và quyền hạn đọc truyện tranh, tiểu thuyết, sách eBook bản quyền và nghe Audio AI chất lượng cao tại DocTruyen.vip.",
   alternates: {

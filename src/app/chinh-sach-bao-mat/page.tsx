@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ShieldCheck, ArrowLeft, Lock, Eye, FileText, CheckCircle2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Chính Sách Bảo Mật Thông Tin | DocTruyen.vip",
+  title: "Chính Sách Bảo Mật Thông Tin",
   description:
     "Chính sách bảo mật thông tin người dùng và quyền riêng tư khi truy cập nền tảng đọc truyện online DocTruyen.vip.",
   alternates: {

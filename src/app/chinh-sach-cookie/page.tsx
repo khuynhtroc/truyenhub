@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Cookie, CheckCircle2, ShieldAlert } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Chính Sách Cookie & Lưu Trữ Trình Duyệt | DocTruyen.vip",
+  title: "Chính Sách Cookie & Lưu Trữ Trình Duyệt",
   description:
     "Tìm hiểu cách DocTruyen.vip sử dụng cookie và bộ nhớ cục bộ (localStorage) để tối ưu hóa trải nghiệm đọc truyện của bạn.",
   alternates: {

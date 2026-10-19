@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, AlertTriangle, ShieldCheck, Scale } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Điều Khoản Sử Dụng Dịch Vụ | DocTruyen.vip",
+  title: "Điều Khoản Sử Dụng Dịch Vụ",
   description:
     "Điều khoản và quy định sử dụng dịch vụ đọc truyện tranh, truyện chữ online trên DocTruyen.vip.",
   alternates: {

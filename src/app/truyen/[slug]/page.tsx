@@ -63,12 +63,13 @@ export async function generateMetadata({
 
   if (!story) {
     return {
-      title: "Truyện Không Tồn Tại | DocTruyen.vip",
+      title: "Truyện Không Tồn Tại",
     };
   }
 
   const typeLabel = story.type === "comic" ? "Truyện Tranh" : "Truyện Chữ";
-  const title = `Đọc truyện ${story.title} Full HD | DocTruyen.vip`;
+  const title = `Đọc truyện ${story.title} Full HD`;
+  const fullTitle = `${title} | DocTruyen.vip`;
   const cleanDesc = (story.description || "").replace(/<[^>]*>/g, "").trim();
   const description = cleanDesc
     ? `${cleanDesc.slice(0, 150)}... Hãy cùng đọc truyện ${story.title} với DocTruyen.VIP nhé!`
@@ -98,7 +99,7 @@ export async function generateMetadata({
       locale: "vi_VN",
       url: `https://doctruyen.vip/truyen/${slug}`,
       siteName: "DocTruyen.vip",
-      title,
+      title: fullTitle,
       description,
       images: [
         {
@@ -111,7 +112,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: fullTitle,
       description,
       images: [coverUrl],
     },

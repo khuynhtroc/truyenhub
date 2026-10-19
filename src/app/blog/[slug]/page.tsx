@@ -22,11 +22,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!post) {
     return {
-      title: "Bài Viết Không Tồn Tại - DocTruyen.vip",
+      title: "Bài Viết Không Tồn Tại",
     };
   }
 
-  const title = post.seo_title || `${post.title} | DocTruyen.vip`;
+  const title = post.seo_title || post.title;
+  const fullTitle = `${title} | DocTruyen.vip`;
   const description = post.seo_description || post.excerpt || "Đọc bài viết chi tiết tại DocTruyen.vip";
   const image = post.hero_image || "https://media.doctruyen.vip/covers/doraemon-cover.webp";
 
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       canonical: `https://doctruyen.vip/blog/${slug}`,
     },
     openGraph: {
-      title,
+      title: fullTitle,
       description,
       url: `https://doctruyen.vip/blog/${slug}`,
       images: [{ url: image }],

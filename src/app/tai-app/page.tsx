@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Tải App DocTruyen.vip - Đọc Truyện Tranh & Truyện Chữ Siêu Tốc Cho Android & iOS",
+  title: "Tải App Đọc Truyện Tranh & Truyện Chữ Siêu Tốc Cho Android & iOS",
   description:
     "Tải ngay ứng dụng DocTruyen.vip cho Android (file APK gốc) và hướng dẫn cài đặt trên iPhone/iPad (PWA). Đọc truyện full HD, audio AI, không quảng cáo, hoàn toàn miễn phí.",
   alternates: {

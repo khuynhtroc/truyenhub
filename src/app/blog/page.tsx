@@ -6,7 +6,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 export const revalidate = 60; // ISR cache 60s
 
 export const metadata: Metadata = {
-  title: "Blog Truyện Tranh, Review & Spoil Mới Nhất - DocTruyen.vip",
+  title: "Blog Truyện Tranh, Review & Spoil Mới Nhất",
   description:
     "Góc Blog DocTruyen.vip: Nơi cập nhật các bài review truyện tranh, phân tích cốt truyện, spoil chap mới nhất, thông báo hệ thống và tin tức manga/anime nóng hổi.",
   keywords: [

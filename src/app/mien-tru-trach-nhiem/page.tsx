@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ShieldAlert, Mail, AlertCircle, FileCheck2 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Tuyên Bố Miễn Trừ Trách Nhiệm & Bản Quyền DMCA | DocTruyen.vip",
+  title: "Tuyên Bố Miễn Trừ Trách Nhiệm & Bản Quyền DMCA",
   description:
     "Tuyên bố miễn trừ trách nhiệm pháp lý và quy trình tiếp nhận khiếu nại bản quyền tác giả (DMCA) tại DocTruyen.vip.",
   alternates: {

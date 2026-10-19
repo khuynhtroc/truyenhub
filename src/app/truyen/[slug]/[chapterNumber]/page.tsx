@@ -45,7 +45,8 @@ export async function generateMetadata({
     }
   } catch (_) {}
 
-  const title = `${chapTitle} - ${storyTitle} | DocTruyen.vip`;
+  const title = `${chapTitle} - ${storyTitle}`;
+  const fullTitle = `${title} | DocTruyen.vip`;
   const description = `Đọc ${chapTitle} bộ truyện ${storyTitle} online chất lượng cao, hình ảnh sắc nét, tốc độ tải siêu tốc tại DocTruyen.vip.`;
 
   return {
@@ -55,14 +56,14 @@ export async function generateMetadata({
       canonical: `https://doctruyen.vip/truyen/${slug}/${chapterNumber}`,
     },
     openGraph: {
-      title,
+      title: fullTitle,
       description,
       url: `https://doctruyen.vip/truyen/${slug}/${chapterNumber}`,
       siteName: "DocTruyen.vip",
     },
     twitter: {
       card: "summary",
-      title,
+      title: fullTitle,
       description,
     },
   };

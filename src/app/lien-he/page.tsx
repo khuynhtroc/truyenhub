@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, MessageSquare, Send, Globe, ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Liên Hệ Hỗ Trợ & Hợp Tác | DocTruyen.vip",
+  title: "Liên Hệ Hỗ Trợ & Hợp Tác",
   description:
     "Thông tin liên hệ hỗ trợ độc giả, đóng góp ý kiến và hợp tác phát triển nội dung cùng DocTruyen.vip.",
   alternates: {

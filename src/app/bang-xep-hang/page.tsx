@@ -7,7 +7,7 @@ import { RankingsView } from "@/components/rankings/RankingsView";
 import { Trophy, RefreshCw } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Bảng Xếp Hạng Truyện & Sách Hay Nhất 2026 - DocTruyen.vip",
+  title: "Bảng Xếp Hạng Truyện & Sách Hay Nhất 2026",
   description:
     "Bảng xếp hạng truyện tranh (Manga), truyện chữ (Tiểu thuyết) và sách tinh hoa hay nhất theo lượt đọc, lượt yêu thích và đề cử thời gian thực tại DocTruyen.vip.",
   keywords: [
