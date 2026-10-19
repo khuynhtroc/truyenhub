@@ -175,8 +175,8 @@ export function RankingsView() {
       </div>
 
       {/* Main Criteria Tabs (Scrollable on mobile) */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 no-scrollbar text-xs sm:text-sm font-black">
+      <div className="flex flex-col gap-3 w-full min-w-0">
+        <div className="w-full min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 no-scrollbar text-xs sm:text-sm font-black">
           {CRITERIA_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

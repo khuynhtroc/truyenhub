@@ -272,7 +272,7 @@ function ExploreContent() {
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 w-full py-6 flex flex-col gap-6 overflow-x-clip">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 w-full py-6 flex flex-col gap-6 overflow-x-hidden min-w-0">
       {/* Page Title & Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -302,7 +302,7 @@ function ExploreContent() {
       </div>
 
       {/* Quick Category Presets Chips with smooth mouse-wheel & button controls */}
-      <div className="relative flex items-center group -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="relative flex items-center group -mx-4 px-4 sm:mx-0 sm:px-0 w-full min-w-0 overflow-hidden">
         {canScrollPresetsLeft && (
           <button
             onClick={() => scrollPresets("left")}
@@ -315,7 +315,7 @@ function ExploreContent() {
 
         <div 
           ref={presetsRef}
-          className="w-full flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none scroll-smooth px-1"
+          className="w-full min-w-0 flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none scroll-smooth px-1"
         >
           {QUICK_PRESETS.map((p) => {
             const Icon = p.icon;

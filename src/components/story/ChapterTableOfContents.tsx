@@ -143,7 +143,7 @@ export function ChapterTableOfContents({
             )}
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="w-full min-w-0 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
             {versions.map((ver) => {
               const isCurrent = ver.slug === (currentVersionSlug || storySlug);
               return (
@@ -207,7 +207,7 @@ export function ChapterTableOfContents({
 
       {/* Range Tabs (if chapters > CHUNK_SIZE and not searching) */}
       {!searchTerm && ranges.length > 1 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <div className="w-full min-w-0 flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           <span className="text-xs font-bold text-muted-foreground shrink-0 mr-1">
             Dải chương:
           </span>
