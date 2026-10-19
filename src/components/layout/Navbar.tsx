@@ -889,7 +889,7 @@ export function Navbar() {
           <div className="flex flex-col gap-2 pt-2 border-t">
             <div className="flex items-center justify-between">
               <a
-                href="https://media.doctruyen.vip/DocTruyen-VIP.apk"
+                href="https://media.doctruyen.vip/DocTruyen-VIP.apk?v=1.1"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-500 hover:bg-emerald-500/20 transition-colors"

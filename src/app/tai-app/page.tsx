@@ -116,7 +116,7 @@ export default function TaiAppPage() {
                   </div>
                 </div>
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                  v1.0 • 6.1 MB
+                  v1.1 • 6.4 MB
                 </span>
               </div>
 
@@ -126,7 +126,7 @@ export default function TaiAppPage() {
 
               {/* Download CTA Button */}
               <a
-                href="https://media.doctruyen.vip/DocTruyen-VIP.apk"
+                href="https://media.doctruyen.vip/DocTruyen-VIP.apk?v=1.1"
                 download="DocTruyen-VIP.apk"
                 className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all"
               >

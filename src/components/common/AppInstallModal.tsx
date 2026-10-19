@@ -117,7 +117,7 @@ export function AppInstallModal({ isOpen, onClose, defaultTab = "android" }: App
 
               {/* Download CTA Button */}
               <a
-                href="https://media.doctruyen.vip/DocTruyen-VIP.apk"
+                href="https://media.doctruyen.vip/DocTruyen-VIP.apk?v=1.1"
                 download="DocTruyen-VIP.apk"
                 className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all"
               >

@@ -81,7 +81,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://media.doctruyen.vip/DocTruyen-VIP.apk"
+                  href="https://media.doctruyen.vip/DocTruyen-VIP.apk?v=1.1"
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold transition-colors"

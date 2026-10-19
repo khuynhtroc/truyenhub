@@ -28,7 +28,7 @@ s3.upload_file(
     ExtraArgs={
         'ContentType': 'application/vnd.android.package-archive',
         'ContentDisposition': 'attachment; filename="DocTruyen-VIP.apk"',
-        'CacheControl': 'public, max-age=60'
+        'CacheControl': 'public, max-age=0, must-revalidate'
     }
 )
 print(f'Uploaded successfully! Size: {os.path.getsize("DocTruyen-VIP.apk")} bytes')

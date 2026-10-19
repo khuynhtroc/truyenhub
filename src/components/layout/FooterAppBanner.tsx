@@ -48,7 +48,7 @@ export function FooterAppBanner() {
           <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-3 w-full lg:w-auto">
             {/* Android APK Button */}
             <a
-              href="https://media.doctruyen.vip/DocTruyen-VIP.apk"
+              href="https://media.doctruyen.vip/DocTruyen-VIP.apk?v=1.1"
               download="DocTruyen-VIP.apk"
               className="flex-1 sm:flex-initial flex items-center gap-3 py-3 px-4.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-500/20 active:scale-95 transition-all group"
             >
