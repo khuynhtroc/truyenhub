@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Chapter, Story } from "@/types";
@@ -54,6 +54,15 @@ interface AiVoiceOption {
 }
 
 const AI_VOICES: AiVoiceOption[] = [
+  // Google TTS as official default voice
+  {
+    id: "google",
+    name: "Google TTS",
+    lang: "any",
+    gender: "female",
+    desc: "Giọng đọc Google chuẩn xác, nhanh nhẹn & ổn định 24/7",
+    tag: "Mặc định",
+  },
   // 14 Giọng Kokoro AI Studio (Zoo Reup Studio)
   {
     id: "kokoro-diem_trinh",
@@ -232,14 +241,6 @@ const AI_VOICES: AiVoiceOption[] = [
     desc: "Trầm tĩnh, tự nhiên",
     tag: "Tiếng Nhật",
   },
-  {
-    id: "google",
-    name: "Google TTS",
-    lang: "any",
-    gender: "female",
-    desc: "Giọng đọc Google nhanh nhẹn (Chế độ dự phòng)",
-    tag: "Dự phòng",
-  },
 ];
 
 /**
@@ -292,21 +293,96 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     story.title.toLowerCase().includes("english");
   const [selectedLang, setSelectedLang] = useState<string>(isDefaultEnglish ? "en" : "vi");
   const [selectedAiVoice, setSelectedAiVoice] = useState<string>(
-    isDefaultEnglish ? "en-US-JennyNeural" : "kokoro-diem_trinh"
+    isDefaultEnglish ? "en-US-JennyNeural" : "google"
   );
 
+  // Parse text into structured paragraphs & sentences with global chunk indices for reading highlight
+  const { parsedParagraphs, allChunks } = useMemo(() => {
+    const rawContent = cleanVietnameseText(chapter.content_text || "");
+    if (!rawContent.trim()) {
+      return { parsedParagraphs: [], allChunks: [] };
+    }
 
+    const rawParagraphs = rawContent.split(/\n\n+/).filter(Boolean);
+    const paragraphsData: { pIndex: number; sentences: { index: number; text: string }[] }[] = [];
+    const chunksList: string[] = [];
+    let globalIndex = 0;
+
+    for (let pIdx = 0; pIdx < rawParagraphs.length; pIdx++) {
+      const pText = rawParagraphs[pIdx].trim();
+      if (!pText) continue;
+
+      // Match sentences ending in punctuation or end of line
+      const rawSentences = pText.match(/[^.?!…\n]+(?:[.?!…]+['"”)]?|$)/g) || [pText];
+      const pSentences: { index: number; text: string }[] = [];
+
+      for (const rawS of rawSentences) {
+        const trimmed = rawS.trim();
+        if (!trimmed) continue;
+
+        // If sentence is unusually long (> 180 chars), break gracefully at commas/clauses for Google TTS safety
+        if (trimmed.length > 180) {
+          const parts = trimmed.split(/(?<=[,;:])\s+/);
+          let current = "";
+          for (const part of parts) {
+            if ((current + " " + part).length < 160) {
+              current = current ? current + " " + part : part;
+            } else {
+              if (current) {
+                pSentences.push({ index: globalIndex++, text: current });
+                chunksList.push(current);
+              }
+              current = part;
+            }
+          }
+          if (current) {
+            pSentences.push({ index: globalIndex++, text: current });
+            chunksList.push(current);
+          }
+        } else {
+          pSentences.push({ index: globalIndex++, text: trimmed });
+          chunksList.push(trimmed);
+        }
+      }
+
+      if (pSentences.length > 0) {
+        paragraphsData.push({ pIndex: pIdx, sentences: pSentences });
+      }
+    }
+
+    return {
+      parsedParagraphs: paragraphsData,
+      allChunks: chunksList.length > 0 ? chunksList : [rawContent.slice(0, 300)],
+    };
+  }, [chapter.content_text]);
 
   // System voices list
   const [systemVoices, setSystemVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedSystemVoice, setSelectedSystemVoice] = useState<SpeechSynthesisVoice | null>(null);
 
   // Chunking and audio element refs
-  const [chunks, setChunks] = useState<string[]>([]);
+  const [chunks, setChunks] = useState<string[]>(allChunks);
   const [currentChunkIdx, setCurrentChunkIdx] = useState(0);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const isPlayingRef = useRef(false);
   const currentChunkRef = useRef(0);
+
+  // Keep chunks in sync when chapter content changes
+  useEffect(() => {
+    setChunks(allChunks);
+    setCurrentChunkIdx(0);
+    currentChunkRef.current = 0;
+  }, [allChunks, chapter.id]);
+
+  // Auto-scroll to sentence being read
+  useEffect(() => {
+    if (isAudioOpen && isAudioPlaying) {
+      const el = document.getElementById(`reading-sentence-${currentChunkIdx}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [currentChunkIdx, isAudioOpen, isAudioPlaying]);
 
   // Table of Contents Drawer
   const [showToc, setShowToc] = useState(false);
@@ -318,29 +394,8 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
 
   // 1. Prepare text chunks (split sentences cleanly with OCR normalization)
   const parseChunks = useCallback((): string[] => {
-    const rawContent = cleanVietnameseText(chapter.content_text || "");
-    if (!rawContent.trim()) return [];
-
-    // Split text into coherent sentences or clauses
-    const raw = rawContent
-      .split(/(?<=[.?!;\n])\s+/)
-      .map((c) => c.trim())
-      .filter((c) => c.length > 0);
-
-    // Group small sentences together into ~120-160 character blocks
-    const grouped: string[] = [];
-    let current = "";
-    for (const piece of raw) {
-      if ((current + " " + piece).length < 160) {
-        current = current ? current + " " + piece : piece;
-      } else {
-        if (current) grouped.push(current);
-        current = piece;
-      }
-    }
-    if (current) grouped.push(current);
-    return grouped.length > 0 ? grouped : [rawContent.slice(0, 300)];
-  }, [chapter.content_text]);
+    return allChunks.length > 0 ? allChunks : [cleanVietnameseText(chapter.content_text || "").slice(0, 300)];
+  }, [allChunks, chapter.content_text]);
 
   // 2. STOP AUDIO SOUND (Does not close player bar unless explicit)
   const stopAudioSound = useCallback(() => {
@@ -819,8 +874,8 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     setSelectedLang(langId);
 
     let defaultVoice = selectedAiVoice;
-    if (langId === "vi" && !selectedAiVoice.startsWith("vi")) {
-      defaultVoice = "vi-VN-HoaiMyNeural";
+    if (langId === "vi" && !selectedAiVoice.startsWith("vi") && selectedAiVoice !== "google") {
+      defaultVoice = "google";
     } else if (langId === "en" && !selectedAiVoice.startsWith("en")) {
       defaultVoice = "en-US-JennyNeural";
     } else if (langId === "zh" && !selectedAiVoice.startsWith("zh")) {
@@ -1345,11 +1400,38 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
               className={`${fontFamily} space-y-6 leading-relaxed`}
               style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight }}
             >
-            {paragraphs.map((p, idx) => (
-              <p key={idx} className="whitespace-pre-line text-justify">
-                {p}
-              </p>
-            ))}
+            {parsedParagraphs.length > 0 ? (
+              parsedParagraphs.map((p) => (
+                <p key={p.pIndex} className="whitespace-pre-line text-justify">
+                  {p.sentences.map((s) => {
+                    const isCurrent = isAudioOpen && currentChunkIdx === s.index;
+                    return (
+                      <span
+                        key={s.index}
+                        id={`reading-sentence-${s.index}`}
+                        onClick={() => {
+                          startAudio(s.index);
+                        }}
+                        className={`cursor-pointer transition-all duration-200 rounded px-0.5 inline ${
+                          isCurrent
+                            ? "font-extrabold text-rose-600 dark:text-rose-400 bg-rose-500/20 dark:bg-rose-500/30 ring-1 ring-rose-500/40 shadow-xs"
+                            : "hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
+                        }`}
+                        title="Bấm để nghe từ câu này"
+                      >
+                        {s.text}{" "}
+                      </span>
+                    );
+                  })}
+                </p>
+              ))
+            ) : (
+              paragraphs.map((p, idx) => (
+                <p key={idx} className="whitespace-pre-line text-justify">
+                  {p}
+                </p>
+              ))
+            )}
           </article>
           </>
         ) : (
