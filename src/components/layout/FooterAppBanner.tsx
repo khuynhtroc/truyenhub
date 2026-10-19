@@ -23,8 +23,8 @@ export function FooterAppBanner() {
         <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
           {/* Left Title & Value Proposition */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 max-w-xl">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-xl shadow-rose-500/20 shrink-0">
-              <Smartphone className="w-7 h-7" />
+            <div className="w-14 h-14 rounded-2xl bg-card border border-border/80 p-2 flex items-center justify-center shadow-xl shadow-rose-500/10 shrink-0">
+              <img src="/logo-icon.png" alt="App Icon" className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="flex items-center justify-center sm:justify-start gap-2">

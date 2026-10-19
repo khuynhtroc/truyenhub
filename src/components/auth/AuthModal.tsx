@@ -144,8 +144,8 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
 
         {/* Modal Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white mx-auto mb-3 shadow-md shadow-rose-500/20">
-            <Sparkles className="w-6 h-6" />
+          <div className="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700/60 p-2 flex items-center justify-center mx-auto mb-3 shadow-md">
+            <img src="/logo-icon.png" alt="ĐọcTruyện.VIP" className="w-full h-full object-contain" />
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white">
             {mode === "login" ? "Chào Mừng Trở Lại!" : "Tạo Tài Khoản Mới"}

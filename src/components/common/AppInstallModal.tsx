@@ -45,8 +45,8 @@ export function AppInstallModal({ isOpen, onClose, defaultTab = "android" }: App
         <div className="relative p-4 sm:p-6 pb-4 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-indigo-600/10 border-b border-border/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-rose-500/20">
-                <Smartphone className="w-5 h-5 animate-pulse" />
+              <div className="w-10 h-10 rounded-2xl bg-card border border-border/80 p-1 flex items-center justify-center shadow-lg shadow-rose-500/10">
+                <img src="/logo-icon.png" alt="App Icon" className="w-full h-full object-contain" />
               </div>
               <div>
                 <h3 className="font-extrabold text-base sm:text-lg text-foreground flex items-center gap-1.5">

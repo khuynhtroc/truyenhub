@@ -12,15 +12,19 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Col 1: Brand & Intro */}
           <div className="flex flex-col gap-3 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2 group w-fit">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20 group-hover:scale-105 transition-transform">
-                <BookOpen className="w-5 h-5" />
+            <Link href="/" className="flex items-center gap-2.5 group w-fit">
+              <div className="relative w-9 h-9 shrink-0 group-hover:scale-105 transition-transform">
+                <img
+                  src="/logo-icon.png"
+                  alt="ĐọcTruyện.VIP Logo"
+                  className="w-full h-full object-contain drop-shadow-sm"
+                />
               </div>
-              <div className="flex items-center">
-                <span className="font-extrabold text-xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
-                  DocTruyen
+              <div className="flex items-baseline">
+                <span className="font-extrabold text-xl text-[#05325d] dark:text-white tracking-tight">
+                  ĐọcTruyện
                 </span>
-                <span className="ml-1 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-sm">
+                <span className="ml-1 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-[#f4a261] text-white shadow-sm">
                   VIP
                 </span>
               </div>

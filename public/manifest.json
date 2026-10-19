@@ -1,26 +1,36 @@
 {
-  "name": "DocTruyen.vip - Đọc Truyện Tranh & Truyện Chữ",
-  "short_name": "DocTruyen.vip",
+  "name": "ĐọcTruyện.VIP - Đọc Truyện Tranh & Truyện Chữ",
+  "short_name": "ĐọcTruyện.VIP",
   "description": "Nền tảng đọc truyện tranh Manga/Webtoon full HD và tiểu thuyết phong phú miễn phí",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#09090b",
-  "theme_color": "#f43f5e",
+  "theme_color": "#f59e0b",
   "orientation": "portrait-primary",
   "categories": ["books", "entertainment", "comics"],
   "lang": "vi",
   "icons": [
     {
-      "src": "/covers/logo-192.png",
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/covers/logo-512.png",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
     }
   ]
 }

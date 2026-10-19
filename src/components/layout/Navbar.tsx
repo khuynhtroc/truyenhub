@@ -312,15 +312,19 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto flex h-14 sm:h-16 items-center justify-between px-2 sm:px-6 gap-1.5 sm:gap-3 w-full min-w-0">
         {/* Brand Logo & Core Nav */}
         <div className="flex items-center gap-2 md:gap-5 shrink-0 min-w-0">
-          <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group shrink-0 min-w-0">
-            <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-rose-500/20 group-hover:scale-105 transition-transform shrink-0">
-              <BookOpen className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+          <Link href="/" className="flex items-center gap-1.5 sm:gap-2.5 group shrink-0 min-w-0">
+            <div className="relative w-8 h-8 sm:w-9 sm:h-9 shrink-0 group-hover:scale-105 transition-transform">
+              <img
+                src="/logo-icon.png"
+                alt="ĐọcTruyện.VIP Logo"
+                className="w-full h-full object-contain drop-shadow-sm"
+              />
             </div>
-            <div className="flex items-center min-w-0">
-              <span className="font-extrabold text-sm sm:text-xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 bg-clip-text text-transparent">
-                DocTruyen
+            <div className="flex items-baseline min-w-0">
+              <span className="font-extrabold text-base sm:text-xl text-[#05325d] dark:text-white tracking-tight">
+                ĐọcTruyện
               </span>
-              <span className="ml-1 text-[8px] sm:text-[10px] font-black uppercase tracking-wider px-1 py-0.5 sm:px-1.5 rounded bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-sm shrink-0">
+              <span className="ml-1 text-[8px] sm:text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-[#f4a261] text-white shadow-sm shrink-0">
                 VIP
               </span>
             </div>
