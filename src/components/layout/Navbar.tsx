@@ -117,7 +117,11 @@ export function Navbar() {
   // Scroll listener for expanding search on scroll down
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      const currentScrollY =
+        window.scrollY ||
+        document.documentElement.scrollTop ||
+        (document.body ? document.body.scrollTop : 0) ||
+        0;
       if (currentScrollY > 50) {
         setIsScrolledDown(true);
       } else if (currentScrollY < 20) {
@@ -127,8 +131,12 @@ export function Navbar() {
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   const searchRef = useRef<HTMLDivElement>(null);
