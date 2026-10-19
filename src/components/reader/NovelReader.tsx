@@ -28,6 +28,9 @@ import {
   User,
   Gauge,
   Crown,
+  Server,
+  Wifi,
+  RefreshCw,
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { createClient } from "@/lib/supabase/client";
@@ -54,9 +57,123 @@ interface AiVoiceOption {
 }
 
 const AI_VOICES: AiVoiceOption[] = [
+  // 14 Giọng Kokoro AI Studio (Zoo Reup Studio)
+  {
+    id: "kokoro-diem_trinh",
+    name: "Diễm Trinh (Studio AI)",
+    lang: "vi",
+    gender: "female",
+    desc: "Giọng Nữ truyền cảm, ngọt ngào, phát âm chuẩn tự nhiên",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-hung_thinh",
+    name: "Hưng Thịnh (Studio AI)",
+    lang: "vi",
+    gender: "male",
+    desc: "Giọng Nam trầm ấm, hào sảng, cuốn hút",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-my_yen",
+    name: "Mỹ Yến (Studio AI)",
+    lang: "vi",
+    gender: "female",
+    desc: "Giọng Nữ dịu dàng, thích hợp ngôn tình & truyện nhẹ nhàng",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-tuan_ngoc",
+    name: "Tuấn Ngọc (Studio AI)",
+    lang: "vi",
+    gender: "male",
+    desc: "Giọng Nam đĩnh đạc, rõ ràng, kiếm hiệp & trinh thám",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-thuc_trinh",
+    name: "Thục Trinh (Studio AI)",
+    lang: "vi",
+    gender: "female",
+    desc: "Giọng Nữ sâu lắng, êm dịu, ngữ điệu thanh thoát",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-mai_linh",
+    name: "Mai Linh (Studio AI)",
+    lang: "vi",
+    gender: "female",
+    desc: "Giọng Nữ trẻ trung, trong trẻo, nhẹ nhàng",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-mai_loan",
+    name: "Mai Loan (Studio AI)",
+    lang: "vi",
+    gender: "female",
+    desc: "Giọng Nữ chuẩn đài truyền hình, thanh lịch, khúc chiết",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-manh_dung",
+    name: "Mạnh Dũng (Studio AI)",
+    lang: "vi",
+    gender: "male",
+    desc: "Giọng Nam trầm hùng, khí phách, tiên hiệp & lịch sử",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-ngoc_huyen",
+    name: "Ngọc Huyền (Studio AI)",
+    lang: "vi",
+    gender: "female",
+    desc: "Giọng Nữ ấm áp, đời thường, tự nhiên, gần gũi",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-phat_tai",
+    name: "Phát Tài (Studio AI)",
+    lang: "vi",
+    gender: "male",
+    desc: "Giọng Nam sôi nổi, hoạt bát, đô thị & hài hước",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-thanh_dat",
+    name: "Thành Đạt (Studio AI)",
+    lang: "vi",
+    gender: "male",
+    desc: "Giọng Nam hiện đại, dứt khoát, khoa huyễn & phiêu lưu",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-duc_an",
+    name: "Đức An (Studio AI)",
+    lang: "vi",
+    gender: "male",
+    desc: "Giọng Nam điềm đạm, suy tư, triết lý & nhân sinh",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-duc_duy",
+    name: "Đức Duy (Studio AI)",
+    lang: "vi",
+    gender: "male",
+    desc: "Giọng Nam thanh niên hoạt bát, sắc bén, linh hoạt",
+    tag: "Studio AI",
+  },
+  {
+    id: "kokoro-storyvert",
+    name: "Truyện Audio (Studio AI)",
+    lang: "vi",
+    gender: "female",
+    desc: "Giọng đọc chuyên biệt cho tiểu thuyết & truyện dài kỳ",
+    tag: "Studio AI",
+  },
+  // Neural Edge Voices (Microsoft)
   {
     id: "vi-VN-HoaiMyNeural",
-    name: "Hoài My (Nữ)",
+    name: "Hoài My (Nữ - Edge)",
     lang: "vi",
     gender: "female",
     desc: "Giọng Nữ Hà Nội truyền cảm, mềm mại, êm tai (Tiểu thuyết & Ngôn tình)",
@@ -64,7 +181,7 @@ const AI_VOICES: AiVoiceOption[] = [
   },
   {
     id: "vi-VN-NamMinhNeural",
-    name: "Nam Minh (Nam)",
+    name: "Nam Minh (Nam - Edge)",
     lang: "vi",
     gender: "male",
     desc: "Giọng Nam trầm ấm, rõ ràng, hào sảng (Kiếm hiệp & Trinh thám)",
@@ -178,8 +295,34 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     story.title.toLowerCase().includes("english");
   const [selectedLang, setSelectedLang] = useState<string>(isDefaultEnglish ? "en" : "vi");
   const [selectedAiVoice, setSelectedAiVoice] = useState<string>(
-    isDefaultEnglish ? "en-US-JennyNeural" : "vi-VN-HoaiMyNeural"
+    isDefaultEnglish ? "en-US-JennyNeural" : "kokoro-diem_trinh"
   );
+
+  // Local / Custom Kokoro AI Server endpoint state
+  const [customTtsEndpoint, setCustomTtsEndpoint] = useState<string>("");
+  const [showServerConfig, setShowServerConfig] = useState(false);
+  const [serverCheckStatus, setServerCheckStatus] = useState<"idle" | "checking" | "connected" | "disconnected">("idle");
+  const [serverCheckMsg, setServerCheckMsg] = useState<string>("");
+
+  const testServerConnection = useCallback(async (endpointUrl?: string) => {
+    const ep = endpointUrl !== undefined ? endpointUrl : customTtsEndpoint;
+    setServerCheckStatus("checking");
+    setServerCheckMsg("Đang kiểm tra kết nối...");
+    try {
+      const res = await fetch(`/api/tts?check=health${ep ? `&endpoint=${encodeURIComponent(ep)}` : ""}`);
+      const data = await res.json();
+      if (data.ok) {
+        setServerCheckStatus("connected");
+        setServerCheckMsg("🟢 Đã kết nối máy chủ Kokoro (14 giọng sẵn sàng)");
+      } else {
+        setServerCheckStatus("disconnected");
+        setServerCheckMsg("⚪ Máy chủ offline (Dùng giọng Edge dự phòng)");
+      }
+    } catch (_) {
+      setServerCheckStatus("disconnected");
+      setServerCheckMsg("⚪ Máy chủ offline (Dùng giọng Edge dự phòng)");
+    }
+  }, [customTtsEndpoint]);
 
   // System voices list
   const [systemVoices, setSystemVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -328,6 +471,11 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       const savedVoice = localStorage.getItem("truyenhub_ai_voice");
       if (savedVoice) {
         setSelectedAiVoice(savedVoice);
+      }
+
+      const savedEndpoint = localStorage.getItem("truyenhub_tts_endpoint");
+      if (savedEndpoint) {
+        setCustomTtsEndpoint(savedEndpoint);
       }
     } catch (_) {}
   }, []);
@@ -513,9 +661,12 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     const ratePercent = Math.round((activeRate - 1.0) * 100);
     const rateParam = ratePercent >= 0 ? `+${ratePercent}%` : `${ratePercent}%`;
 
-    const audioUrl = `/api/tts?lang=${encodeURIComponent(activeLang)}&voice=${encodeURIComponent(
+    let audioUrl = `/api/tts?lang=${encodeURIComponent(activeLang)}&voice=${encodeURIComponent(
       activeVoice
     )}&rate=${encodeURIComponent(rateParam)}&text=${encodeURIComponent(text)}`;
+    if (customTtsEndpoint) {
+      audioUrl += `&endpoint=${encodeURIComponent(customTtsEndpoint)}`;
+    }
 
     audio.src = audioUrl;
 
@@ -1122,6 +1273,65 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                   ))}
                 </div>
               </div>
+
+              {/* Local AI Server Connection Banner */}
+              {audioEngine === "ai" && (
+                <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-2.5 flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 font-bold text-neutral-300">
+                      <Server className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Máy chủ AI Nội Bộ (Kokoro 14 Giọng)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowServerConfig(!showServerConfig)}
+                      className="text-[11px] text-rose-400 hover:text-rose-300 underline font-medium cursor-pointer"
+                    >
+                      {showServerConfig ? "Ẩn cài đặt" : "Cấu hình Server"}
+                    </button>
+                  </div>
+
+                  {showServerConfig && (
+                    <div className="flex flex-col gap-2 pt-2 border-t border-neutral-800/80">
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          placeholder="http://localhost:8008 hoặc Cloudflare URL"
+                          value={customTtsEndpoint}
+                          onChange={(e) => {
+                            const val = e.target.value.trim();
+                            setCustomTtsEndpoint(val);
+                            try {
+                              if (val) localStorage.setItem("truyenhub_tts_endpoint", val);
+                              else localStorage.removeItem("truyenhub_tts_endpoint");
+                            } catch (_) {}
+                          }}
+                          className="flex-1 bg-neutral-950 border border-neutral-700 rounded-lg px-2.5 py-1 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-rose-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => testServerConnection()}
+                          disabled={serverCheckStatus === "checking"}
+                          className="px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${serverCheckStatus === "checking" ? "animate-spin" : ""}`} />
+                          <span>Test</span>
+                        </button>
+                      </div>
+                      {serverCheckMsg && (
+                        <span className={`text-[11px] font-medium ${
+                          serverCheckStatus === "connected" ? "text-emerald-400" : "text-amber-400"
+                        }`}>
+                          {serverCheckMsg}
+                        </span>
+                      )}
+                      <p className="text-[10px] text-neutral-500 leading-tight">
+                        💡 Chạy file <code className="text-neutral-400">start_ai_voice_server.bat</code> trên máy tính để kích hoạt 14 giọng đọc Kokoro AI Studio. Khi tắt máy tính, hệ thống tự động dùng giọng Microsoft Edge dự phòng.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* 4. AI Voice Selector (Visible when Engine is AI) */}
               {audioEngine === "ai" && (

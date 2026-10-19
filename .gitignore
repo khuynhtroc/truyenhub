@@ -62,6 +62,8 @@ android/*.iml
 android/app/*.iml
 ios/App/App.xcworkspace/xcuserdata
 ios/App/App.xcworkspace/xcshareddata
-ios/App/Pods
-ios/DerivedData
-
+# Local Kokoro & audio artifacts
+scripts/cloudflared.exe
+scripts/current_tunnel_url.txt
+*.wav
+*.mp3
