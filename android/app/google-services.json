@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "247190554853",
+    "project_id": "doctruyenvip-b497e",
+    "storage_bucket": "doctruyenvip-b497e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:247190554853:android:bd6cf7e0bcfcef24c72c0c",
+        "android_client_info": {
+          "package_name": "vip.doctruyen.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjj8QygLBegmWZQE2GGT1YJoPyT4Kjxn4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -164,7 +164,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           }}
         />
 
-        {/* Google Analytics 4 (G-0CBF77MVXY) */}
+        {/* Google Analytics 4 Multi-Platform Tracking */}
         <script
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-0CBF77MVXY"
@@ -176,8 +176,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
+
+              var ua = navigator.userAgent || '';
+              var isCapacitor = window.Capacitor !== undefined || /Capacitor/i.test(ua);
+              var isIOSDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+              var isIOSStandalone = window.navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+
+              var platformType = 'website';
+              if (isCapacitor && /Android/i.test(ua)) {
+                platformType = 'android_app';
+              } else if (isCapacitor && isIOSDevice) {
+                platformType = 'ios_app';
+              } else if (isIOSDevice && isIOSStandalone) {
+                platformType = 'ios_pwa';
+              }
+
               gtag('config', 'G-0CBF77MVXY', {
                 page_path: window.location.pathname,
+                platform_type: platformType,
+                user_properties: {
+                  app_platform: platformType
+                }
               });
             `,
           }}
