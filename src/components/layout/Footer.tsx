@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { BookOpen, Sparkles, ShieldCheck, Heart, Mail } from "lucide-react";
+import { FooterAppBanner } from "./FooterAppBanner";
 
 export function Footer() {
   return (
     <footer className="w-full bg-card/60 border-t border-border/50 text-muted-foreground mt-12 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 flex flex-col gap-10">
+        {/* Mobile App Download & Install Banner */}
+        <FooterAppBanner />
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Col 1: Brand & Intro */}
           <div className="flex flex-col gap-3 md:col-span-1">

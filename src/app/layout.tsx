@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import { CapacitorAppHandler } from "@/components/common/CapacitorAppHandler";
+import { AppInstallFloatWidget } from "@/components/common/AppInstallFloatWidget";
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -229,6 +230,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
         {/* Native Capacitor App Handlers (Status bar, Android Back button) */}
         <CapacitorAppHandler />
+
+        {/* Floating App Install Widget for Mobile & Desktop */}
+        <AppInstallFloatWidget />
       </body>
     </html>
   );

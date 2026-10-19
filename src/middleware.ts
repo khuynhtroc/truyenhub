@@ -15,6 +15,7 @@ export function middleware(request: NextRequest) {
   // 2. Public HTML pages: Edge CDN cache with stale-while-revalidate
   const isPublicPage =
     pathname === "/" ||
+    pathname === "/tai-app" ||
     pathname.startsWith("/truyen/") ||
     pathname.startsWith("/kham-pha") ||
     pathname.startsWith("/bang-xep-hang");

@@ -74,6 +74,23 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      {
+        source: "/tai-app",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=120, s-maxage=600, stale-while-revalidate=1200",
+          },
+          {
+            key: "CDN-Cache-Control",
+            value: "public, s-maxage=600",
+          },
+          {
+            key: "Cloudflare-CDN-Cache-Control",
+            value: "public, s-maxage=600",
+          },
+        ],
+      },
     ];
   },
 };
