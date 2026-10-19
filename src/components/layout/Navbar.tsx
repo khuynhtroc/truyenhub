@@ -793,15 +793,8 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={async () => {
-                    const supabase = createClient();
-                    await supabase.auth.signInWithOAuth({
-                      provider: "facebook",
-                      options: {
-                        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-                          window.location.pathname
-                        )}`,
-                      },
-                    });
+                    const { loginWithFacebook } = await import("@/lib/auth/facebookLogin");
+                    await loginWithFacebook(window.location.pathname);
                   }}
                   className="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-[#1877F2] text-white hover:bg-[#166fe5] text-xs font-bold transition-all shadow-sm cursor-pointer"
                 >

@@ -136,13 +136,8 @@ export default function ProfilePage() {
     try {
       setAuthLoading(true);
       setErrorMessage("");
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "facebook",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/tai-khoan`,
-        },
-      });
-      if (error) throw error;
+      const { loginWithFacebook } = await import("@/lib/auth/facebookLogin");
+      await loginWithFacebook("/tai-khoan");
     } catch (err: any) {
       setErrorMessage(err.message || "Không thể kết nối với tài khoản Facebook.");
       setAuthLoading(false);

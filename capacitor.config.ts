@@ -17,10 +17,7 @@ const config: CapacitorConfig = {
       "*.supabase.co",
       "accounts.google.com",
       "*.google.com",
-      "*.googleusercontent.com",
-      "*.facebook.com",
-      "*.m.facebook.com",
-      "m.facebook.com"
+      "*.googleusercontent.com"
     ],
   },
   plugins: {

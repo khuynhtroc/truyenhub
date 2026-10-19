@@ -65,5 +65,7 @@ ios/App/App.xcworkspace/xcshareddata
 # Local Kokoro & audio artifacts
 scripts/cloudflared.exe
 scripts/current_tunnel_url.txt
+scripts/GoogleCloudSDKInstaller.exe
+deploy/cloudrun/model/
 *.wav
 *.mp3

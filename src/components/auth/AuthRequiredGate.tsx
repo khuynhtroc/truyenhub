@@ -65,15 +65,8 @@ export function AuthRequiredGate({
     try {
       setLoading(true);
       setErrorMessage("");
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "facebook",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-            window.location.pathname
-          )}`,
-        },
-      });
-      if (error) throw error;
+      const { loginWithFacebook } = await import("@/lib/auth/facebookLogin");
+      await loginWithFacebook(window.location.pathname);
     } catch (err: any) {
       setErrorMessage(err.message || "Không thể kết nối với tài khoản Facebook.");
       setLoading(false);
