@@ -20,5 +20,8 @@
       "pattern": "www.doctruyen.vip/*",
       "zone_name": "doctruyen.vip"
     }
-  ]
+  ],
+  "vars": {
+    "KOKORO_TTS_URL": "https://kokoro-tts-611714558589.asia-southeast1.run.app"
+  }
 }

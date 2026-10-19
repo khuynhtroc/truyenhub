@@ -128,7 +128,7 @@ async function generateKokoroTts(
   const url = `${cleanEndpoint}/tts?voice=${encodeURIComponent(rawVoice)}&speed=${speed}&text=${encodeURIComponent(text)}`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 9000);
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
 
   try {
     const res = await fetch(url, {
@@ -156,11 +156,12 @@ export async function GET(req: NextRequest) {
 
   // Health check endpoint for UI testing
   if (searchParams.get("check") === "health") {
-    const customEndpoint = searchParams.get("endpoint") || process.env.KOKORO_TTS_URL || "http://127.0.0.1:8008";
+    const defaultEndpoint = process.env.KOKORO_TTS_URL || "https://kokoro-tts-611714558589.asia-southeast1.run.app";
+    const customEndpoint = searchParams.get("endpoint") || defaultEndpoint;
     try {
       const cleanEndpoint = customEndpoint.replace(/\/+$/, "");
       const res = await fetch(`${cleanEndpoint}/health`, {
-        signal: AbortSignal.timeout(3500),
+        signal: AbortSignal.timeout(8000),
       });
       if (res.ok) {
         const data = await res.json();
@@ -201,11 +202,13 @@ export async function GET(req: NextRequest) {
     const endpointsToTry: string[] = [];
     if (customEndpoint) endpointsToTry.push(customEndpoint);
     if (process.env.KOKORO_TTS_URL) endpointsToTry.push(process.env.KOKORO_TTS_URL);
+    // Cloud Run 24/7 dedicated service (Google Cloud Run Singapore)
+    endpointsToTry.push("https://kokoro-tts-611714558589.asia-southeast1.run.app");
     // In local dev, try localhost:8008
     if (process.env.NODE_ENV !== "production") {
       endpointsToTry.push("http://127.0.0.1:8008");
     }
-    // Also include default fallback tunnel or domain
+    // Also include fallback domain
     endpointsToTry.push("https://tts.doctruyen.vip");
 
     let lastKokoroErr = "";
