@@ -61,10 +61,10 @@ const DEFAULT_SETTINGS = {
 
   // VietQR & Banking Configuration
   banking: {
-    bankId: "970422",
-    bankName: "MBBank (Ngân Hàng Quân Đội)",
-    accountNo: "0388888888",
-    accountName: "DOCTRUYENVIP",
+    bankId: "970432",
+    bankName: "VPBank (Ngân Hàng TMCP Việt Nam Thịnh Vượng)",
+    accountNo: "10011918888",
+    accountName: "mimiclothing",
     coinRate: 1000, // 1,000 VND = 100 xu
     qrTemplate: "compact2",
   },

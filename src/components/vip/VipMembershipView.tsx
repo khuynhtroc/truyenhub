@@ -186,9 +186,9 @@ export function VipMembershipView() {
   };
 
   const transferCode = `VIP${profile?.id ? profile.id.substring(0, 6).toUpperCase() : "DOC"}`;
-  const qrUrl = `https://api.vietqr.io/image/970422-0388888888-compact2.jpg?amount=${selectedPackage.priceVnd}&addInfo=${encodeURIComponent(
+  const qrUrl = `https://api.vietqr.io/image/970432-10011918888-compact2.jpg?amount=${selectedPackage.priceVnd}&addInfo=${encodeURIComponent(
     transferCode
-  )}&accountName=DOCTRUYENVIP`;
+  )}&accountName=mimiclothing`;
 
   const copyTransferCode = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -567,7 +567,15 @@ export function VipMembershipView() {
             <div className="w-full bg-muted/60 p-3.5 rounded-xl border border-border/50 text-xs flex flex-col gap-2 mb-4 text-left">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Ngân hàng nhận:</span>
-                <b className="font-bold">MB Bank (Quân Đội)</b>
+                <b className="font-bold text-emerald-600 dark:text-emerald-400">VP Bank (VPBank)</b>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Số tài khoản:</span>
+                <b className="font-mono font-bold text-foreground">10011918888</b>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Chủ tài khoản:</span>
+                <b className="font-extrabold text-foreground uppercase">mimiclothing</b>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Số tiền:</span>

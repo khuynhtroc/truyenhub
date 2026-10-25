@@ -10,6 +10,7 @@
     "deploy": "opennextjs-cloudflare build && wrangler deploy --env-file .env.local",
     "start": "next start",
     "lint": "eslint",
+    "seo:bot": "node scripts/seo-telegram-bot.mjs",
     "cap:sync": "cap sync",
     "cap:android": "cap open android",
     "cap:ios": "cap open ios"
@@ -21,6 +22,7 @@
     "@capacitor/ios": "^8.5.3",
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.4",
+    "@google/genai": "^2.31.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.3",
     "clsx": "^2.1.1",

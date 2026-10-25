@@ -3694,21 +3694,49 @@ export default function AdminPage() {
                   <label className="text-xs font-bold text-foreground">Ngân Hàng Thụ Hưởng</label>
                   <input
                     type="text"
-                    value={settings?.banking?.bankName || "MBBank"}
+                    value={settings?.banking?.bankName || "VPBank"}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      let detectedBin = settings?.banking?.bankId || "970432";
+                      const vLower = val.toLowerCase();
+                      if (vLower.includes("vp")) detectedBin = "970432";
+                      else if (vLower.includes("mb")) detectedBin = "970422";
+                      else if (vLower.includes("vcb") || vLower.includes("vietcom")) detectedBin = "970436";
+                      else if (vLower.includes("techcom") || vLower.includes("tcb")) detectedBin = "970407";
+                      else if (vLower.includes("acb")) detectedBin = "970416";
+                      else if (vLower.includes("tpb") || vLower.includes("tien phong")) detectedBin = "970423";
+                      else if (vLower.includes("bidv")) detectedBin = "970418";
+                      else if (vLower.includes("vietin") || vLower.includes("ctg")) detectedBin = "970415";
+
+                      setSettings({
+                        ...settings,
+                        banking: { ...settings.banking, bankName: val, bankId: detectedBin },
+                      });
+                    }}
+                    placeholder="VD: VPBank, MBBank, Vietcombank..."
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-bold"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Mã BIN Ngân Hàng (VietQR)</label>
+                  <input
+                    type="text"
+                    value={settings?.banking?.bankId || "970432"}
                     onChange={(e) =>
                       setSettings({
                         ...settings,
-                        banking: { ...settings.banking, bankName: e.target.value },
+                        banking: { ...settings.banking, bankId: e.target.value },
                       })
                     }
-                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-bold"
+                    placeholder="970432 (VPBank)"
+                    className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono font-bold"
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-foreground">Số Tài Khoản</label>
                   <input
                     type="text"
-                    value={settings?.banking?.accountNo || "0388888888"}
+                    value={settings?.banking?.accountNo || "10011918888"}
                     onChange={(e) =>
                       setSettings({
                         ...settings,
@@ -3722,7 +3750,7 @@ export default function AdminPage() {
                   <label className="text-xs font-bold text-foreground">Tên Chủ Tài Khoản</label>
                   <input
                     type="text"
-                    value={settings?.banking?.accountName || "DOCTRUYENVIP"}
+                    value={settings?.banking?.accountName || "mimiclothing"}
                     onChange={(e) =>
                       setSettings({
                         ...settings,
@@ -4118,7 +4146,7 @@ export default function AdminPage() {
               {/* Render Live VietQR Image */}
               <div className="p-3 bg-white rounded-2xl shadow-lg border border-border/40">
                 <img
-                  src={`https://img.vietqr.io/image/970422-0388888888-compact2.png?amount=${qrAmount}&addInfo=NAPXU%20${qrModalUser.id.slice(0, 8)}&accountName=DOCTRUYENVIP`}
+                  src={`https://img.vietqr.io/image/${settings?.banking?.bankId || "970432"}-${settings?.banking?.accountNo || "10011918888"}-compact2.png?amount=${qrAmount}&addInfo=NAPXU%20${qrModalUser.id.slice(0, 8)}&accountName=${encodeURIComponent(settings?.banking?.accountName || "mimiclothing")}`}
                   alt="VietQR nạp xu"
                   className="w-56 h-auto"
                 />
@@ -4126,7 +4154,7 @@ export default function AdminPage() {
 
               <div className="text-[11px] text-muted-foreground flex flex-col gap-0.5">
                 <span>Cú pháp tự động: <strong>NAPXU {qrModalUser.id.slice(0, 8)}</strong></span>
-                <span>Chủ TK: <strong>DOCTRUYENVIP</strong> · Ngân hàng: <strong>MBBank</strong></span>
+                <span>Chủ TK: <strong>{settings?.banking?.accountName || "mimiclothing"}</strong> · Ngân hàng: <strong>{settings?.banking?.bankName || "VPBank"}</strong></span>
               </div>
             </div>
           </div>

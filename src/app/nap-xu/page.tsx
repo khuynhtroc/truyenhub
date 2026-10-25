@@ -21,8 +21,15 @@ const PACKAGES = [
 export default function NapXuPage() {
   const [selectedPkg, setSelectedPkg] = useState(PACKAGES[3]);
   const [copied, setCopied] = useState(false);
+  const [copiedAcc, setCopiedAcc] = useState(false);
 
   const transferCode = "NAPXU 888";
+  const bankConfig = {
+    bankId: "970432",
+    bankName: "VP Bank (VPBank)",
+    accountNo: "10011918888",
+    accountName: "mimiclothing",
+  };
 
   const copyCode = () => {
     navigator.clipboard.writeText(transferCode);
@@ -30,9 +37,15 @@ export default function NapXuPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const qrUrl = `https://api.vietqr.io/image/970422-0388888888-compact2.jpg?amount=${selectedPkg.amount}&addInfo=${encodeURIComponent(
+  const copyAccountNo = () => {
+    navigator.clipboard.writeText(bankConfig.accountNo);
+    setCopiedAcc(true);
+    setTimeout(() => setCopiedAcc(false), 2000);
+  };
+
+  const qrUrl = `https://api.vietqr.io/image/${bankConfig.bankId}-${bankConfig.accountNo}-compact2.jpg?amount=${selectedPkg.amount}&addInfo=${encodeURIComponent(
     transferCode
-  )}&accountName=DOCTRUYENVIP`;
+  )}&accountName=${encodeURIComponent(bankConfig.accountName)}`;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12">
@@ -147,7 +160,29 @@ export default function NapXuPage() {
               <div className="w-full bg-muted/60 p-4 rounded-2xl border border-border/50 text-xs flex flex-col gap-2.5 mb-4 text-left">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Ngân hàng nhận:</span>
-                  <b className="font-bold">MB Bank (Quân Đội)</b>
+                  <b className="font-bold text-emerald-600 dark:text-emerald-400">VP Bank (VPBank)</b>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Số tài khoản:</span>
+                  <div className="flex items-center gap-1.5">
+                    <code className="bg-background px-2 py-0.5 rounded font-mono font-bold text-foreground border border-border">
+                      10011918888
+                    </code>
+                    <button
+                      onClick={copyAccountNo}
+                      className="p-1 hover:bg-background rounded text-muted-foreground"
+                      title="Sao chép số tài khoản"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    {copiedAcc && (
+                      <span className="text-[10px] text-emerald-500 font-bold">Đã sao chép!</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Chủ tài khoản:</span>
+                  <b className="font-extrabold text-foreground uppercase">mimiclothing</b>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Số tiền:</span>

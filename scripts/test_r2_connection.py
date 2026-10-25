@@ -61,9 +61,9 @@ R2_BUCKET_NAME={target_bucket}
 R2_PUBLIC_DOMAIN=https://pub-xxxxxx.r2.dev
 
 # VIETQR
-VIETQR_BANK_ID=970422
-VIETQR_ACCOUNT_NO=0388888888
-VIETQR_ACCOUNT_NAME=TRUYENHUB
+VIETQR_BANK_ID=970432
+VIETQR_ACCOUNT_NO=10011918888
+VIETQR_ACCOUNT_NAME=mimiclothing
 """
     with open(r"F:\Antigravity\truyenhub\.env.local", "w", encoding="utf-8") as f:
         f.write(truyenhub_env)

@@ -300,7 +300,7 @@ export function PaywallModal({
           {/* Dynamic Mock VietQR Image */}
           <div className="p-3 bg-white rounded-2xl shadow-md border border-border/50 mb-4">
             <img
-              src="https://api.vietqr.io/image/970422-0388888888-compact2.jpg?amount=20000&addInfo=NAPXU%20888&accountName=DOCTRUYENVIP"
+              src="https://api.vietqr.io/image/970432-10011918888-compact2.jpg?amount=20000&addInfo=NAPXU%20888&accountName=mimiclothing"
               alt="Mã VietQR"
               className="w-56 h-auto rounded-lg"
             />
@@ -310,7 +310,15 @@ export function PaywallModal({
           <div className="w-full bg-muted/60 p-3.5 rounded-xl border border-border/50 text-xs flex flex-col gap-2 mb-4">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Ngân hàng:</span>
-              <b className="font-bold">MB Bank (Quân Đội)</b>
+              <b className="font-bold text-emerald-600 dark:text-emerald-400">VP Bank (VPBank)</b>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Số tài khoản:</span>
+              <b className="font-mono font-bold text-foreground">10011918888</b>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Chủ tài khoản:</span>
+              <b className="font-extrabold text-foreground uppercase">mimiclothing</b>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Số tiền:</span>
