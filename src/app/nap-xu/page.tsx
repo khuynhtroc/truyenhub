@@ -6,8 +6,8 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
 import Link from "next/link";
 import { formatVND } from "@/lib/utils";
-import { Coins, QrCode, Sparkles, CheckCircle2, Copy, ShieldCheck, Zap, Ticket, Crown } from "lucide-react";
-
+import { Coins, ShieldCheck, Ticket, Crown } from "lucide-react";
+import { VietQrPaymentSection } from "@/components/payment/VietQrPaymentSection";
 
 const PACKAGES = [
   { amount: 10000, coins: 100, bonus: "" },
@@ -20,32 +20,6 @@ const PACKAGES = [
 
 export default function NapXuPage() {
   const [selectedPkg, setSelectedPkg] = useState(PACKAGES[3]);
-  const [copied, setCopied] = useState(false);
-  const [copiedAcc, setCopiedAcc] = useState(false);
-
-  const transferCode = "NAPXU 888";
-  const bankConfig = {
-    bankId: "970432",
-    bankName: "VP Bank (VPBank)",
-    accountNo: "10011918888",
-    accountName: "mimiclothing",
-  };
-
-  const copyCode = () => {
-    navigator.clipboard.writeText(transferCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const copyAccountNo = () => {
-    navigator.clipboard.writeText(bankConfig.accountNo);
-    setCopiedAcc(true);
-    setTimeout(() => setCopiedAcc(false), 2000);
-  };
-
-  const qrUrl = `https://api.vietqr.io/image/${bankConfig.bankId}-${bankConfig.accountNo}-compact2.jpg?amount=${selectedPkg.amount}&addInfo=${encodeURIComponent(
-    transferCode
-  )}&accountName=${encodeURIComponent(bankConfig.accountName)}`;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12">
@@ -58,7 +32,7 @@ export default function NapXuPage() {
           </span>
           <h1 className="text-2xl sm:text-3xl font-black">Nạp Xu Đọc Truyện VIP</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Quét mã VietQR chuyển khoản ngân hàng - Tiền vào tài khoản trong 3 đến 5 giây hoàn toàn tự động.
+            Quét mã VietQR hoặc chuyển khoản trực tiếp qua App ngân hàng - Tiền vào tài khoản trong 3 đến 5 giây hoàn toàn tự động.
           </p>
         </div>
 
@@ -76,7 +50,7 @@ export default function NapXuPage() {
                     key={pkg.amount}
                     type="button"
                     onClick={() => setSelectedPkg(pkg)}
-                    className={`relative p-4 rounded-2xl border text-left transition-all ${
+                    className={`relative p-4 rounded-2xl border text-left transition-all cursor-pointer ${
                       isSelected
                         ? "border-rose-500 bg-rose-500/10 shadow-md ring-2 ring-rose-500/20"
                         : "border-border/60 hover:bg-muted/40"
@@ -144,81 +118,18 @@ export default function NapXuPage() {
             </div>
           </div>
 
-
-          {/* VietQR Display */}
+          {/* VietQR Display & Instant Banking App Transfer */}
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider">
-              2. Quét Mã Thanh Toán
+              2. Quét Mã Hoặc Mở App Ngân Hàng
             </h2>
 
-            <div className="rounded-3xl border border-border/50 bg-card p-6 flex flex-col items-center text-center shadow-lg">
-              <div className="p-3 bg-white rounded-2xl shadow-md border border-border/50 mb-4">
-                <img src={qrUrl} alt="VietQR" className="w-52 h-auto rounded-lg" />
-              </div>
-
-              {/* Details table */}
-              <div className="w-full bg-muted/60 p-4 rounded-2xl border border-border/50 text-xs flex flex-col gap-2.5 mb-4 text-left">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Ngân hàng nhận:</span>
-                  <b className="font-bold text-emerald-600 dark:text-emerald-400">VP Bank (VPBank)</b>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Số tài khoản:</span>
-                  <div className="flex items-center gap-1.5">
-                    <code className="bg-background px-2 py-0.5 rounded font-mono font-bold text-foreground border border-border">
-                      10011918888
-                    </code>
-                    <button
-                      onClick={copyAccountNo}
-                      className="p-1 hover:bg-background rounded text-muted-foreground"
-                      title="Sao chép số tài khoản"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
-                    {copiedAcc && (
-                      <span className="text-[10px] text-emerald-500 font-bold">Đã sao chép!</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Chủ tài khoản:</span>
-                  <b className="font-extrabold text-foreground uppercase">mimiclothing</b>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Số tiền:</span>
-                  <b className="font-black text-rose-500 text-sm">{formatVND(selectedPkg.amount)}</b>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Xu nhận được:</span>
-                  <b className="font-black text-amber-500">{selectedPkg.coins} Xu</b>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-border/50">
-                  <span className="text-muted-foreground">Nội dung chuyển khoản:</span>
-                  <div className="flex items-center gap-1.5">
-                    <code className="bg-background px-2.5 py-1 rounded-md font-mono font-bold text-amber-500 border border-border">
-                      {transferCode}
-                    </code>
-                    <button
-                      onClick={copyCode}
-                      className="p-1 hover:bg-background rounded text-muted-foreground"
-                      title="Sao chép"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {copied && (
-                <p className="text-xs text-emerald-500 font-bold mb-3 flex items-center gap-1">
-                  <CheckCircle2 className="w-4 h-4" /> Đã sao chép nội dung!
-                </p>
-              )}
-
-              <p className="text-[11px] text-muted-foreground">
-                Sau khi chuyển khoản thành công, hệ thống Webhook sẽ tự động cộng xu vào tài khoản của bạn trong 3–5 giây.
-              </p>
-            </div>
+            <VietQrPaymentSection
+              key={selectedPkg.amount}
+              amount={selectedPkg.amount}
+              defaultTransferCode="NAPXU 888"
+              coinsReceived={selectedPkg.coins}
+            />
           </div>
         </div>
       </main>

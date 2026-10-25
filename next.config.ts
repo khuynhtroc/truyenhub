@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "img.vietqr.io",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.vietqr.io",
+      },
+      {
+        protocol: "https",
         hostname: "images.unsplash.com",
       },
     ],

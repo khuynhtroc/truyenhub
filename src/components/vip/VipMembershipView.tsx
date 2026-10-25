@@ -33,6 +33,7 @@ import {
   getRemainingVipDays,
 } from "@/lib/vip";
 import { formatVND } from "@/lib/utils";
+import { VietQrPaymentSection } from "@/components/payment/VietQrPaymentSection";
 
 export function VipMembershipView() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -541,10 +542,10 @@ export function VipMembershipView() {
       {/* 5. VIETQR POPUP MODAL */}
       {showQrModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="relative w-full max-w-md rounded-3xl bg-card border border-border p-6 shadow-2xl flex flex-col items-center text-center">
+          <div className="relative w-full max-w-lg rounded-3xl bg-card border border-border p-4 sm:p-6 shadow-2xl flex flex-col items-center text-center">
             <button
               onClick={() => setShowQrModal(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-muted text-muted-foreground"
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer z-10"
             >
               <X className="w-5 h-5" />
             </button>
@@ -553,62 +554,23 @@ export function VipMembershipView() {
               <QrCode className="w-3.5 h-3.5" /> Kích Hoạt VIP Tự Động 24/7
             </div>
 
-            <h3 className="text-lg font-black text-foreground">
-              Quét Mã Mở Gói {selectedPackage.name}
+            <h3 className="text-lg font-black text-foreground mb-1">
+              Thanh Toán Gói {selectedPackage.name}
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Mở app ngân hàng quét mã VietQR, hệ thống sẽ tự động kích hoạt VIP trong 3 giây.
+              Quét mã QR hoặc bấm nút mở thẳng app ngân hàng để kích hoạt VIP tự động.
             </p>
 
-            <div className="p-3 bg-white rounded-2xl shadow-md border border-border/50 mb-4">
-              <img src={qrUrl} alt="VietQR VIP" className="w-52 h-auto rounded-lg" />
-            </div>
-
-            <div className="w-full bg-muted/60 p-3.5 rounded-xl border border-border/50 text-xs flex flex-col gap-2 mb-4 text-left">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Ngân hàng nhận:</span>
-                <b className="font-bold text-emerald-600 dark:text-emerald-400">VP Bank (VPBank)</b>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Số tài khoản:</span>
-                <b className="font-mono font-bold text-foreground">10011918888</b>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Chủ tài khoản:</span>
-                <b className="font-extrabold text-foreground uppercase">mimiclothing</b>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Số tiền:</span>
-                <b className="font-black text-rose-500 text-sm">
-                  {formatVND(selectedPackage.priceVnd)}
-                </b>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-border/40">
-                <span className="text-muted-foreground">Nội dung CK:</span>
-                <div className="flex items-center gap-1.5">
-                  <code className="bg-background px-2 py-0.5 rounded font-mono font-bold text-amber-500 border border-border">
-                    {transferCode}
-                  </code>
-                  <button
-                    onClick={copyTransferCode}
-                    className="p-1 hover:bg-background rounded text-muted-foreground"
-                    title="Sao chép"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {copiedCode && (
-              <p className="text-xs text-emerald-500 font-bold mb-2 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Đã sao chép nội dung chuyển khoản!
-              </p>
-            )}
+            <VietQrPaymentSection
+              amount={selectedPackage.priceVnd}
+              defaultTransferCode={transferCode}
+              vipPackageTitle={selectedPackage.name}
+              noteHint="Mở app ngân hàng hoặc quét mã QR, hệ thống sẽ tự động kích hoạt VIP trong 3 giây."
+            />
 
             <button
               onClick={() => setShowQrModal(false)}
-              className="w-full py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs"
+              className="mt-3 w-full py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs cursor-pointer"
             >
               Đóng Cửa Sổ
             </button>
