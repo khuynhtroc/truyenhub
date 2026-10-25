@@ -36,12 +36,15 @@ import {
   Loader2,
   ArrowRight,
   ExternalLink,
+  Settings,
+  Camera,
 } from "lucide-react";
 import { DailyCheckinCard } from "@/components/profile/DailyCheckinCard";
 import { VoucherRedeemCard } from "@/components/profile/VoucherRedeemCard";
 import { MemberMissionsCard } from "@/components/profile/MemberMissionsCard";
 import { DepositHistoryCard, CoinTransaction } from "@/components/profile/DepositHistoryCard";
 import { UserStatsOverview, UserStats } from "@/components/profile/UserStatsOverview";
+import { UserSettingsModal } from "@/components/profile/UserSettingsModal";
 import { isUserVipActive, VIP_TIERS, getRemainingVipDays } from "@/lib/vip";
 import { formatVND } from "@/lib/utils";
 
@@ -77,6 +80,26 @@ export default function ProfilePage() {
   const [isSubmittingSupport, setIsSubmittingSupport] = useState(false);
   const [supportSuccess, setSupportSuccess] = useState<string | null>(null);
   const [supportError, setSupportError] = useState<string | null>(null);
+
+  // User Settings & Profile Edit Modal
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  const handleProfileUpdated = (updated: { displayName?: string; avatarUrl?: string }) => {
+    setProfile((prev: any) => ({
+      ...prev,
+      display_name: updated.displayName || prev?.display_name,
+      avatar_url: updated.avatarUrl || prev?.avatar_url,
+    }));
+    setUser((prev: any) => ({
+      ...prev,
+      user_metadata: {
+        ...prev?.user_metadata,
+        display_name: updated.displayName || prev?.user_metadata?.display_name,
+        full_name: updated.displayName || prev?.user_metadata?.full_name,
+        avatar_url: updated.avatarUrl || prev?.user_metadata?.avatar_url,
+      },
+    }));
+  };
 
   // Auth form states when not logged in
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
@@ -609,16 +632,26 @@ export default function ProfilePage() {
             {/* User Profile Info Card */}
             <div className="rounded-3xl border border-border/60 bg-gradient-to-r from-card to-rose-500/5 p-5 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-md ring-4 ring-rose-500/20 overflow-hidden shrink-0">
-                  {user.user_metadata?.avatar_url || profile?.avatar_url ? (
-                    <img
-                      src={user.user_metadata?.avatar_url || profile?.avatar_url}
-                      alt="Avatar"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-8 h-8" />
-                  )}
+                <div
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  className="relative group cursor-pointer shrink-0"
+                  title="Nhấn để đổi ảnh đại diện hoặc sửa hồ sơ"
+                >
+                  <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-md ring-4 ring-rose-500/20 overflow-hidden">
+                    {user.user_metadata?.avatar_url || profile?.avatar_url ? (
+                      <img
+                        src={user.user_metadata?.avatar_url || profile?.avatar_url}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-8 h-8" />
+                    )}
+                  </div>
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[9px] font-bold transition-opacity">
+                    <Camera className="w-4 h-4 mb-0.5" />
+                    <span>Đổi ảnh</span>
+                  </div>
                 </div>
 
                 <div className="flex flex-col min-w-0">
@@ -649,7 +682,17 @@ export default function ProfilePage() {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2 self-end sm:self-center">
+              <div className="flex items-center gap-2 self-end sm:self-center flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsModalOpen(true)}
+                  className="py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Sửa đổi thông tin cá nhân, avatar, đổi pass"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Sửa Hồ Sơ</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setIsSupportModalOpen(true)}
@@ -674,6 +717,15 @@ export default function ProfilePage() {
 
             {/* Navigation Tabs Bar */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-border/60 scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="py-2.5 px-3.5 rounded-2xl text-xs sm:text-sm font-bold border border-rose-500/30 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                title="Sửa thông tin, đổi avatar, pass, thông báo"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Sửa Đổi Thông Tin</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("overview")}
@@ -997,7 +1049,7 @@ export default function ProfilePage() {
               {/* Direct Telegram link */}
               <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs flex items-center justify-center">
                 <a
-                  href="https://t.me/truyenvip_bot"
+                  href="https://t.me/angiabinh_seo_88_bot"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-bold text-sky-500 hover:text-sky-400 flex items-center gap-1.5 transition-colors"
@@ -1039,6 +1091,22 @@ export default function ProfilePage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* User Settings & Edit Profile Modal */}
+      {user && (
+        <UserSettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          user={{
+            id: user.id,
+            email: user.email,
+            display_name: profile?.display_name || user.user_metadata?.full_name,
+            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url,
+            user_metadata: user.user_metadata,
+          }}
+          onProfileUpdated={handleProfileUpdated}
+        />
       )}
 
       <Footer />
