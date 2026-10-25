@@ -11,7 +11,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # DocTruyen.VIP (truyenhub) Project Rules
 
 ## 1. Telegram Notification Bot (truyenvip)
-**QUY TẮC BẮT BUỘC**: Riêng trong project `truyenhub` này, mỗi khi thực hiện bất kỳ thay đổi nào (thêm tính năng mới, sửa lỗi, cập nhật cơ sở dữ liệu, sửa giao diện, hoặc triển khai deployment lên Cloudflare Workers / production), AI Agent PHẢI tự động gửi thông báo cập nhật qua bot Telegram `truyenvip` (`angiabinh_seo_88_bot`).
+**QUY TẮC BẮT BUỘC**: Riêng trong project `truyenhub` này, mỗi khi thực hiện bất kỳ thay đổi nào (thêm tính năng mới, sửa lỗi, cập nhật cơ sở dữ liệu, sửa giao diện, hoặc triển khai deployment lên Cloudflare Workers / production), AI Agent PHẢI tự động gửi thông báo cập nhật qua bot Telegram `truyenvip`.
 
 ### Hướng dẫn thực hiện:
 Sau khi hoàn tất thay đổi hoặc triển khai, chạy script:

@@ -995,15 +995,15 @@ export function VietQrPaymentSection({
               )}
 
               {/* Direct Telegram link */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40 text-[11px] text-muted-foreground flex items-center justify-between gap-2">
-                <span>Hoặc chat trực tiếp với bot:</span>
+              <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs flex items-center justify-center">
                 <a
-                  href="https://t.me/angiabinh_seo_88_bot?start=hotro"
+                  href="https://t.me/truyenvip_bot"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-bold text-rose-500 hover:underline flex items-center gap-1"
+                  className="font-semibold text-sky-500 hover:text-sky-400 flex items-center gap-1.5 transition-colors"
                 >
-                  <span>@angiabinh_seo_88_bot</span>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Liên hệ admin qua Telegram</span>
                   <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
