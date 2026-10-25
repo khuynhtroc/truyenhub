@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
@@ -8,6 +8,7 @@ import Link from "next/link";
 import { formatVND } from "@/lib/utils";
 import { Coins, ShieldCheck, Ticket, Crown } from "lucide-react";
 import { VietQrPaymentSection } from "@/components/payment/VietQrPaymentSection";
+import { createClient } from "@/lib/supabase/client";
 
 const PACKAGES = [
   { amount: 10000, coins: 100, bonus: "" },
@@ -20,6 +21,16 @@ const PACKAGES = [
 
 export default function NapXuPage() {
   const [selectedPkg, setSelectedPkg] = useState(PACKAGES[3]);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
+      if (u) setUser(u);
+    });
+  }, []);
+
+  const transferCode = user ? `NAPXU ${user.id.slice(0, 8).toUpperCase()}` : "NAPXU 888";
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-12">
@@ -125,10 +136,11 @@ export default function NapXuPage() {
             </h2>
 
             <VietQrPaymentSection
-              key={selectedPkg.amount}
+              key={`${selectedPkg.amount}-${user?.id || "guest"}`}
               amount={selectedPkg.amount}
-              defaultTransferCode="NAPXU 888"
+              defaultTransferCode={transferCode}
               coinsReceived={selectedPkg.coins}
+              user={user}
             />
           </div>
         </div>

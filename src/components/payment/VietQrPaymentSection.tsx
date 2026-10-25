@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useState, useEffect } from "react";
 import { VIETQR_BANKS, VietQrBankApp } from "@/lib/vietqr-banks";
 import { formatVND } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import {
   Copy,
   CheckCircle2,
@@ -15,6 +16,12 @@ import {
   ExternalLink,
   ShieldCheck,
   Check,
+  Send,
+  Loader2,
+  Coins,
+  User,
+  Mail,
+  AlertCircle,
 } from "lucide-react";
 
 export interface VietQrPaymentSectionProps {
@@ -22,6 +29,11 @@ export interface VietQrPaymentSectionProps {
   defaultTransferCode: string;
   coinsReceived?: number;
   vipPackageTitle?: string;
+  user?: {
+    id: string;
+    email?: string;
+    display_name?: string;
+  } | null;
   bankConfig?: {
     bankId: string; // e.g. "970432"
     bankCode: string; // e.g. "vpb"
@@ -46,6 +58,7 @@ export function VietQrPaymentSection({
   defaultTransferCode,
   coinsReceived,
   vipPackageTitle,
+  user,
   bankConfig = DEFAULT_BANK_CONFIG,
   noteHint,
   onTransferCodeChange,
@@ -55,6 +68,27 @@ export function VietQrPaymentSection({
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [tempNote, setTempNote] = useState(defaultTransferCode);
 
+  // Authenticated user state
+  const [currentUser, setCurrentUser] = useState<any>(user || null);
+
+  useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+    } else {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data: { user: u } }) => {
+        if (u) {
+          setCurrentUser(u);
+          if (defaultTransferCode === "NAPXU 888" || defaultTransferCode === "NAPXU") {
+            const personalCode = `NAPXU ${u.id.slice(0, 8).toUpperCase()}`;
+            setTransferCode(personalCode);
+            setTempNote(personalCode);
+          }
+        }
+      });
+    }
+  }, [user, defaultTransferCode]);
+
   // Selected bank app for deep linking (default to VCB or MB or VPB)
   const [selectedBank, setSelectedBank] = useState<VietQrBankApp>(
     VIETQR_BANKS.find((b) => b.appId === "vcb") || VIETQR_BANKS[0]
@@ -63,6 +97,14 @@ export function VietQrPaymentSection({
   // Bank selector modal state
   const [isBankModalOpen, setIsBankModalOpen] = useState(false);
   const [searchBankQuery, setSearchBankQuery] = useState("");
+
+  // Report transfer to Telegram state
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportEmail, setReportEmail] = useState("");
+  const [reportNote, setReportNote] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [reportSuccessMsg, setReportSuccessMsg] = useState<string | null>(null);
+  const [reportErrorMsg, setReportErrorMsg] = useState<string | null>(null);
 
   // Copy status indicators
   const [copiedCode, setCopiedCode] = useState(false);
@@ -127,6 +169,56 @@ export function VietQrPaymentSection({
     // 2. Open Deep Link on mobile
     if (typeof window !== "undefined") {
       window.location.href = deepLinkUrl;
+    }
+  };
+
+  const handleSubmitReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingReport(true);
+    setReportErrorMsg(null);
+
+    const emailToSend = currentUser?.email || reportEmail.trim();
+    if (!currentUser && !emailToSend) {
+      setReportErrorMsg("Vui lòng nhập Email tài khoản của bạn để Admin xác nhận cộng xu.");
+      setIsSubmittingReport(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/payment/notify-transfer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          userEmail: emailToSend,
+          userName:
+            currentUser?.user_metadata?.full_name ||
+            currentUser?.display_name ||
+            currentUser?.email?.split("@")[0] ||
+            "",
+          amount,
+          coins: coinsReceived || Math.floor(amount / 100),
+          transferCode,
+          bankName: selectedBank.shortName,
+          userNote: reportNote.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Không thể gửi thông báo, vui lòng thử lại.");
+      }
+
+      setReportSuccessMsg(
+        `✓ Đã gửi thông báo đến bot Telegram Admin! Admin sẽ kiểm tra và cộng +${data.coins || coinsReceived || Math.floor(amount / 100)} Xu cho bạn ngay.`
+      );
+      setTimeout(() => {
+        setIsReportModalOpen(false);
+      }, 2500);
+    } catch (err: any) {
+      setReportErrorMsg(err.message || "Có lỗi xảy ra khi gửi thông báo.");
+    } finally {
+      setIsSubmittingReport(false);
     }
   };
 
@@ -369,9 +461,31 @@ export function VietQrPaymentSection({
         </div>
       </div>
 
+      {/* 5. THÔNG BÁO ĐÃ CHUYỂN KHOẢN (USER REQUIREMENT) */}
+      <div className="w-full mb-3 flex flex-col gap-2">
+        {reportSuccessMsg ? (
+          <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{reportSuccessMsg}</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setReportErrorMsg(null);
+              setIsReportModalOpen(true);
+            }}
+            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all cursor-pointer"
+          >
+            <Send className="w-4 h-4 shrink-0" />
+            <span>Tôi Đã Chuyển Khoản - Báo Admin Duyệt Xu Ngay ⚡</span>
+          </button>
+        )}
+      </div>
+
       <p className="text-[11px] text-muted-foreground leading-relaxed">
         {noteHint ||
-          "Sau khi chuyển khoản thành công, hệ thống Webhook ngân hàng sẽ tự động cộng xu vào tài khoản của bạn trong 3–5 giây."}
+          "Sau khi chuyển khoản, bạn có thể bấm nút trên để thông báo ngay cho Admin qua Telegram bot truyenvip đối chiếu và duyệt xu lập tức."}
       </p>
 
       {/* ============================================================== */}
@@ -529,6 +643,149 @@ export function VietQrPaymentSection({
                 Đóng
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* 6. MODAL THÔNG BÁO ĐÃ CHUYỂN KHOẢN TỚI TELEGRAM TRUYENVIP */}
+      {/* ============================================================== */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md bg-card border border-border/80 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-rose-500 text-white flex items-center justify-center shadow-xs">
+                  <Send className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm sm:text-base text-foreground">
+                    Xác Nhận Đã Chuyển Khoản
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    Gửi tin nhắn trực tiếp đến Telegram bot truyenvip
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReportModalOpen(false)}
+                className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Transaction Summary Card */}
+            <div className="p-3.5 rounded-2xl bg-muted/60 border border-border/50 flex flex-col gap-2 text-xs text-left">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Số tiền đã chuyển:</span>
+                <b className="text-rose-500 font-extrabold text-sm">{formatVND(amount)}</b>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Số xu quy đổi:</span>
+                <b className="text-amber-500 font-extrabold flex items-center gap-1">
+                  <Coins className="w-3.5 h-3.5" />
+                  <span>+{coinsReceived || Math.floor(amount / 100)} Xu</span>
+                </b>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Nội dung chuyển:</span>
+                <code className="font-mono font-bold bg-background px-2 py-0.5 rounded border border-border text-amber-500">
+                  {transferCode}
+                </code>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Ngân hàng đã chuyển:</span>
+                <span className="font-bold text-foreground">{selectedBank.shortName}</span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmitReport} className="flex flex-col gap-3 text-left">
+              {currentUser ? (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs flex items-center gap-2 text-foreground">
+                  <User className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-bold block truncate">
+                      {currentUser?.user_metadata?.full_name || currentUser?.display_name || "Thành viên"}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate block">
+                      {currentUser?.email} (Tài khoản nhận xu)
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground flex items-center gap-1">
+                    <Mail className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Email tài khoản ĐọcTruyện.VIP của bạn: *</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={reportEmail}
+                    onChange={(e) => setReportEmail(e.target.value)}
+                    placeholder="ví dụ: taikhoan@gmail.com"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-border/80 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500/30 text-foreground"
+                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    Admin sẽ đối chiếu và cộng xu trực tiếp vào tài khoản có Email này.
+                  </span>
+                </div>
+              )}
+
+              {/* Note / Transaction Code */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-foreground">
+                  Mã giao dịch ngân hàng / Lời nhắn (Không bắt buộc):
+                </label>
+                <input
+                  type="text"
+                  value={reportNote}
+                  onChange={(e) => setReportNote(e.target.value)}
+                  placeholder="ví dụ: Mã GD FT2628... hoặc ghi chú cho admin"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-border/80 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-rose-500/30 text-foreground"
+                />
+              </div>
+
+              {reportErrorMsg && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{reportErrorMsg}</span>
+                </div>
+              )}
+
+              {/* Submit Buttons */}
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsReportModalOpen(false)}
+                  disabled={isSubmittingReport}
+                  className="flex-1 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground font-bold text-xs cursor-pointer transition-colors"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReport}
+                  className="flex-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-500/25 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingReport ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Đang Gửi...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Gửi Báo Cáo Admin ⚡</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -206,11 +206,12 @@ export function Navbar() {
         setCurrentUser(user);
         supabase
           .from("profiles")
-          .select("coins")
+          .select("coins_balance, coins")
           .eq("id", user.id)
           .single()
           .then(({ data }) => {
-            if (data?.coins !== undefined) setUserCoins(data.coins);
+            const bal = data?.coins_balance ?? data?.coins;
+            if (bal !== undefined && bal !== null) setUserCoins(bal);
           });
       }
     });
@@ -221,11 +222,12 @@ export function Navbar() {
       if (u) {
         supabase
           .from("profiles")
-          .select("coins")
+          .select("coins_balance, coins")
           .eq("id", u.id)
           .single()
           .then(({ data }) => {
-            if (data?.coins !== undefined) setUserCoins(data.coins);
+            const bal = data?.coins_balance ?? data?.coins;
+            if (bal !== undefined && bal !== null) setUserCoins(bal);
           });
       } else {
         setUserCoins(25);
