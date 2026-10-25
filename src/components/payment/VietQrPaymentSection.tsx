@@ -22,6 +22,9 @@ import {
   User,
   Mail,
   AlertCircle,
+  HelpCircle,
+  MessageSquare,
+  Phone,
 } from "lucide-react";
 
 export interface VietQrPaymentSectionProps {
@@ -105,6 +108,15 @@ export function VietQrPaymentSection({
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [reportSuccessMsg, setReportSuccessMsg] = useState<string | null>(null);
   const [reportErrorMsg, setReportErrorMsg] = useState<string | null>(null);
+
+  // Contact admin support state
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactMsg, setContactMsg] = useState("");
+  const [isSubmittingContact, setIsSubmittingContact] = useState(false);
+  const [contactSuccessMsg, setContactSuccessMsg] = useState<string | null>(null);
+  const [contactErrorMsg, setContactErrorMsg] = useState<string | null>(null);
 
   // Copy status indicators
   const [copiedCode, setCopiedCode] = useState(false);
@@ -219,6 +231,62 @@ export function VietQrPaymentSection({
       setReportErrorMsg(err.message || "Có lỗi xảy ra khi gửi thông báo.");
     } finally {
       setIsSubmittingReport(false);
+    }
+  };
+
+  const handleSubmitContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingContact(true);
+    setContactErrorMsg(null);
+
+    const emailToSend = currentUser?.email || contactEmail.trim();
+    if (!currentUser && !emailToSend) {
+      setContactErrorMsg("Vui lòng nhập Email tài khoản để Admin đối chiếu và phản hồi.");
+      setIsSubmittingContact(false);
+      return;
+    }
+
+    if (!contactMsg.trim()) {
+      setContactErrorMsg("Vui lòng nhập nội dung cần hỗ trợ hoặc thắc mắc.");
+      setIsSubmittingContact(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/payment/contact-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.id,
+          userEmail: emailToSend,
+          userName:
+            currentUser?.user_metadata?.full_name ||
+            currentUser?.display_name ||
+            currentUser?.email?.split("@")[0] ||
+            "",
+          userPhone: contactPhone.trim(),
+          amount,
+          transferCode,
+          bankName: selectedBank.shortName,
+          message: contactMsg.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Không thể gửi tin nhắn hỗ trợ, vui lòng thử lại.");
+      }
+
+      setContactSuccessMsg(
+        "✓ Tin nhắn của bạn đã được bot truyenvip chuyển tiếp trực tiếp vào Telegram của Admin! Admin sẽ kiểm tra và giải quyết ngay cho bạn."
+      );
+      setTimeout(() => {
+        setIsContactModalOpen(false);
+      }, 3000);
+    } catch (err: any) {
+      setContactErrorMsg(err.message || "Có lỗi xảy ra khi gửi tin nhắn.");
+    } finally {
+      setIsSubmittingContact(false);
     }
   };
 
@@ -461,26 +529,49 @@ export function VietQrPaymentSection({
         </div>
       </div>
 
-      {/* 5. THÔNG BÁO ĐÃ CHUYỂN KHOẢN (USER REQUIREMENT) */}
+      {/* 5. THÔNG BÁO ĐÃ CHUYỂN KHOẢN & LIÊN HỆ ADMIN (USER REQUIREMENT) */}
       <div className="w-full mb-3 flex flex-col gap-2">
-        {reportSuccessMsg ? (
-          <div className="p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-2 animate-in fade-in">
+        {reportSuccessMsg && (
+          <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{reportSuccessMsg}</span>
           </div>
-        ) : (
+        )}
+
+        {contactSuccessMsg && (
+          <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{contactSuccessMsg}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Nút 1: Đã chuyển khoản - Báo duyệt xu */}
           <button
             type="button"
             onClick={() => {
               setReportErrorMsg(null);
               setIsReportModalOpen(true);
             }}
-            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all cursor-pointer"
+            className="py-3 px-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/25 transition-all cursor-pointer"
           >
             <Send className="w-4 h-4 shrink-0" />
-            <span>Tôi Đã Chuyển Khoản - Báo Admin Duyệt Xu Ngay ⚡</span>
+            <span className="truncate">Tôi Đã Chuyển Khoản ⚡</span>
           </button>
-        )}
+
+          {/* Nút 2: Chưa được cộng xu - Liên hệ Admin (User Requirement) */}
+          <button
+            type="button"
+            onClick={() => {
+              setContactErrorMsg(null);
+              setIsContactModalOpen(true);
+            }}
+            className="py-3 px-3 rounded-2xl bg-muted/80 hover:bg-muted text-foreground border border-border/80 hover:border-amber-500/50 active:scale-[0.98] font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+          >
+            <HelpCircle className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="truncate">Chưa Nhận Xu? Báo Admin 💬</span>
+          </button>
+        </div>
       </div>
 
       <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -781,6 +872,166 @@ export function VietQrPaymentSection({
                     <>
                       <Send className="w-4 h-4" />
                       <span>Gửi Báo Cáo Admin ⚡</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* 7. MODAL LIÊN HỆ ADMIN NẾU CHƯA ĐƯỢC CỘNG XU (USER REQUIREMENT) */}
+      {/* ============================================================== */}
+      {isContactModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md bg-card border border-border/80 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-border/50">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-500 border border-amber-500/30 flex items-center justify-center shadow-xs">
+                  <HelpCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm sm:text-base text-foreground">
+                    Hỗ Trợ Nạp Xu & Chưa Nhận Xu
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    Bot truyenvip sẽ chuyển tiếp tin nhắn trực tiếp đến Telegram Admin
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsContactModalOpen(false)}
+                className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Quick Context Card */}
+            <div className="p-3 rounded-2xl bg-muted/60 border border-border/50 flex flex-col gap-1.5 text-xs text-left">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Gói thanh toán:</span>
+                <b className="text-foreground font-bold">
+                  {formatVND(amount)} ({coinsReceived || Math.floor(amount / 100)} Xu)
+                </b>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Mã nội dung:</span>
+                <code className="font-mono font-bold text-amber-500">{transferCode}</code>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmitContact} className="flex flex-col gap-3 text-left">
+              {currentUser ? (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs flex items-center gap-2 text-foreground">
+                  <User className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-bold block truncate">
+                      {currentUser?.user_metadata?.full_name || currentUser?.display_name || "Thành viên"}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground truncate block">
+                      {currentUser?.email}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground flex items-center gap-1">
+                    <Mail className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Email tài khoản của bạn: *</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="Nhập email bạn đã đăng ký..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-border/80 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30 text-foreground"
+                  />
+                </div>
+              )}
+
+              {/* Phone / Zalo */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-foreground flex items-center gap-1">
+                  <Phone className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Số điện thoại / Zalo để Admin liên hệ lại (Không bắt buộc):</span>
+                </label>
+                <input
+                  type="text"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  placeholder="Ví dụ: 0987xxxxxx"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-border/80 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30 text-foreground"
+                />
+              </div>
+
+              {/* Message */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-foreground flex items-center gap-1">
+                  <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Lời nhắn cho Admin: *</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={contactMsg}
+                  onChange={(e) => setContactMsg(e.target.value)}
+                  placeholder="Ví dụ: Em đã chuyển khoản thành công lúc 12h nhưng chưa thấy cộng xu vào ví, nhờ Admin kiểm tra giúp em với..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-border/80 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30 text-foreground resize-none"
+                />
+              </div>
+
+              {contactErrorMsg && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{contactErrorMsg}</span>
+                </div>
+              )}
+
+              {/* Direct Telegram link */}
+              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40 text-[11px] text-muted-foreground flex items-center justify-between gap-2">
+                <span>Hoặc chat trực tiếp với bot:</span>
+                <a
+                  href="https://t.me/angiabinh_seo_88_bot?start=hotro"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-rose-500 hover:underline flex items-center gap-1"
+                >
+                  <span>@angiabinh_seo_88_bot</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsContactModalOpen(false)}
+                  disabled={isSubmittingContact}
+                  className="flex-1 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground font-bold text-xs cursor-pointer transition-colors"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingContact}
+                  className="flex-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingContact ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Đang Gửi...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Gửi Tin Nhắn Cho Admin ⚡</span>
                     </>
                   )}
                 </button>
