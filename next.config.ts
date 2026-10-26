@@ -101,6 +101,21 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "doctruyen.vip",
+          },
+        ],
+        destination: "https://www.doctruyen.vip/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
