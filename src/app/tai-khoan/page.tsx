@@ -1049,7 +1049,7 @@ export default function ProfilePage() {
               {/* Direct Telegram link */}
               <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs flex items-center justify-center">
                 <a
-                  href="https://t.me/angiabinh_seo_88_bot"
+                  href="https://t.me/doctruyenvip_seo_bot"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-bold text-sky-500 hover:text-sky-400 flex items-center gap-1.5 transition-colors"

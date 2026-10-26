@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
   }
 
   const botToken =
-    process.env.TELEGRAM_BOT_TOKEN || "8602790652:AAFnwuorZgo0D75VMCzOFObSjlNbUZKk08I";
+    process.env.TELEGRAM_BOT_TOKEN || "8500909239:AAETeet771ZCAgi3qC7A8MMPJuz999CNNLM";
   const chatId = process.env.TELEGRAM_CHAT_ID || "8612893214";
 
   // 3. Handle Already Completed

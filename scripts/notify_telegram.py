@@ -29,7 +29,7 @@ def send_telegram_update(title, details, tags=None):
     env_file = os.path.join(project_dir, '.env.local')
     env = load_env(env_file)
 
-    token = env.get('TELEGRAM_BOT_TOKEN', '8602790652:AAFnwuorZgo0D75VMCzOFObSjlNbUZKk08I')
+    token = env.get('TELEGRAM_BOT_TOKEN', '8500909239:AAETeet771ZCAgi3qC7A8MMPJuz999CNNLM')
     chat_id = env.get('TELEGRAM_CHAT_ID', '8612893214')
 
     now_str = datetime.now().strftime('%H:%M:%S - %d/%m/%Y')
