@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Build update payload for profiles table
-    const profileUpdate: any = {
+    const profileUpdate: Record<string, any> = {
+      id: userId,
       updated_at: new Date().toISOString(),
     };
 
@@ -70,15 +71,15 @@ export async function POST(req: NextRequest) {
       profileUpdate.avatar_url = finalAvatarUrl;
     }
 
+    // Upsert into profiles table to handle both existing and newly created user profiles
     const { data: updatedProfile, error: profileErr } = await supabase
       .from("profiles")
-      .update(profileUpdate)
-      .eq("id", userId)
+      .upsert(profileUpdate, { onConflict: "id" })
       .select()
-      .single();
+      .maybeSingle();
 
     if (profileErr) {
-      console.error("Profile update error:", profileErr);
+      console.error("Profile upsert error:", profileErr);
     }
 
     // Also update auth.users metadata for consistency

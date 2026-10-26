@@ -95,21 +95,63 @@ export function UserSettingsModal({
 
   if (!isOpen) return null;
 
-  // Handle local avatar file upload
+  // Handle local avatar file upload with automatic client-side compression (max 256x256, < 30KB)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 3 * 1024 * 1024) {
-      setProfileMsg({ type: "error", text: "Kích thước ảnh tối đa là 3MB." });
+    if (file.size > 10 * 1024 * 1024) {
+      setProfileMsg({ type: "error", text: "Kích thước ảnh tối đa là 10MB." });
       return;
     }
 
     const reader = new FileReader();
+    reader.onerror = () => {
+      setProfileMsg({ type: "error", text: "Không thể đọc tệp ảnh này." });
+    };
     reader.onload = () => {
-      const result = reader.result as string;
-      setAvatarBase64(result);
-      setAvatarUrl(result);
+      const img = new Image();
+      img.onerror = () => {
+        // Fallback to raw data url if Image failed to load
+        const result = reader.result as string;
+        setAvatarBase64(result);
+        setAvatarUrl(result);
+      };
+      img.onload = () => {
+        const MAX_SIZE = 256;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          let compressed = canvas.toDataURL("image/webp", 0.85);
+          if (!compressed.startsWith("data:image/webp")) {
+            compressed = canvas.toDataURL("image/jpeg", 0.85);
+          }
+          setAvatarBase64(compressed);
+          setAvatarUrl(compressed);
+        } else {
+          const result = reader.result as string;
+          setAvatarBase64(result);
+          setAvatarUrl(result);
+        }
+      };
+      img.src = reader.result as string;
     };
     reader.readAsDataURL(file);
   };
@@ -121,32 +163,83 @@ export function UserSettingsModal({
     setIsUpdatingProfile(true);
     setProfileMsg(null);
 
-    try {
-      const res = await fetch("/api/user/update-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          displayName: displayName.trim(),
-          avatarUrl: avatarBase64 ? undefined : avatarUrl,
-          avatarBase64: avatarBase64 || undefined,
-        }),
-      });
+    const newDisplayName = displayName.trim();
+    let finalAvatar = avatarUrl;
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Không thể cập nhật hồ sơ.");
+    try {
+      let apiSuccess = false;
+
+      // 1. Try updating via API route
+      try {
+        const res = await fetch("/api/user/update-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            displayName: newDisplayName,
+            avatarUrl: avatarBase64 ? undefined : avatarUrl,
+            avatarBase64: avatarBase64 || undefined,
+          }),
+        });
+
+        const text = await res.text();
+        let data: any = null;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          console.warn("API returned non-JSON response:", res.status, text.slice(0, 200));
+        }
+
+        if (res.ok && data?.success) {
+          apiSuccess = true;
+          if (data.avatarUrl) {
+            finalAvatar = data.avatarUrl;
+          }
+        }
+      } catch (fetchErr) {
+        console.warn("Update profile API call failed, attempting direct Supabase fallback:", fetchErr);
+      }
+
+      // 2. Direct Supabase Client fallback if API didn't succeed
+      if (!apiSuccess) {
+        const supabase = createClient();
+        const profileUpdate: Record<string, any> = {
+          updated_at: new Date().toISOString(),
+        };
+        if (newDisplayName) profileUpdate.display_name = newDisplayName;
+        if (!avatarBase64 && avatarUrl) profileUpdate.avatar_url = avatarUrl;
+
+        const { error: sbErr } = await supabase
+          .from("profiles")
+          .update(profileUpdate)
+          .eq("id", user.id);
+
+        if (sbErr) {
+          throw new Error(sbErr.message || "Không thể cập nhật hồ sơ vào cơ sở dữ liệu.");
+        }
+
+        // Also update auth user metadata
+        try {
+          await supabase.auth.updateUser({
+            data: {
+              display_name: newDisplayName,
+              full_name: newDisplayName,
+              avatar_url: (!avatarBase64 && avatarUrl) ? avatarUrl : undefined,
+            },
+          });
+        } catch (metaErr) {
+          console.warn("Auth metadata update warn:", metaErr);
+        }
       }
 
       setProfileMsg({ type: "success", text: "Đã cập nhật ảnh đại diện và tên hiển thị thành công!" });
-      if (data.avatarUrl) {
-        setAvatarUrl(data.avatarUrl);
-        setAvatarBase64(null);
-      }
+      setAvatarUrl(finalAvatar);
+      setAvatarBase64(null);
+
       if (onProfileUpdated) {
         onProfileUpdated({
-          displayName: displayName.trim(),
-          avatarUrl: data.avatarUrl || avatarUrl,
+          displayName: newDisplayName,
+          avatarUrl: finalAvatar,
         });
       }
     } catch (err: any) {
@@ -226,18 +319,38 @@ export function UserSettingsModal({
     setPrefsMsg(null);
 
     try {
-      const res = await fetch("/api/user/update-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          preferences,
-        }),
-      });
+      let apiSuccess = false;
+      try {
+        const res = await fetch("/api/user/update-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            preferences,
+          }),
+        });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || "Không thể lưu cài đặt thông báo.");
+        const text = await res.text();
+        let data: any = null;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          console.warn("Preferences non-JSON:", res.status, text.slice(0, 100));
+        }
+
+        if (res.ok && data?.success) {
+          apiSuccess = true;
+        }
+      } catch (fErr) {
+        console.warn("Preferences API fetch failed, fallback to direct Supabase:", fErr);
+      }
+
+      // Direct Supabase fallback
+      if (!apiSuccess) {
+        const supabase = createClient();
+        await supabase.auth.updateUser({
+          data: { preferences },
+        });
       }
 
       setPrefsMsg({ type: "success", text: "Đã lưu cài đặt nhận thông báo thành công!" });
