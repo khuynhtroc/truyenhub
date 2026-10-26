@@ -127,6 +127,25 @@ export default async function ChapterPage({
 
       const dbChapter = chapterRes.data;
       if (dbChapter) {
+        let contentText = dbChapter.content_text;
+
+        // If content is offloaded to Cloudflare R2 (content_text is null, empty or 'r2')
+        if ((!contentText || contentText === "r2" || contentText.startsWith("r2:")) && dbStory.type !== "comic") {
+          try {
+            const r2Domain = process.env.NEXT_PUBLIC_R2_DOMAIN || "https://media.doctruyen.vip";
+            const r2Url = `${r2Domain}/chapters/${dbStory.id}/${num}.txt`;
+            const r2Res = await fetch(r2Url, {
+              next: { revalidate: 86400 },
+              headers: { "User-Agent": "DocTruyenVip-Server/1.0" },
+            });
+            if (r2Res.ok) {
+              contentText = await r2Res.text();
+            }
+          } catch (r2Err) {
+            console.warn("Fetch chapter from R2 warn:", r2Err);
+          }
+        }
+
         let pages = dbChapter.pages_images;
         if (typeof pages === "string") {
           try {
@@ -137,6 +156,7 @@ export default async function ChapterPage({
         }
         chapter = {
           ...dbChapter,
+          content_text: contentText,
           pages_images: Array.isArray(pages) ? pages : [],
         } as Chapter;
       }
