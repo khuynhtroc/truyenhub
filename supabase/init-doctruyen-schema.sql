@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     email TEXT UNIQUE NOT NULL,
     display_name TEXT,
     avatar_url TEXT,
-    coins_balance INT DEFAULT 0 CHECK (coins_balance >= 0),
+    coins_balance INT DEFAULT 1000 CHECK (coins_balance >= 0),
     vip_until TIMESTAMPTZ DEFAULT NULL,
     vip_level INT DEFAULT 0,
     role VARCHAR(20) DEFAULT 'member' CHECK (role IN ('admin', 'editor', 'vip', 'member')),
@@ -33,7 +33,7 @@ BEGIN
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
     COALESCE(NEW.raw_user_meta_data->>'avatar_url', ''),
-    10, -- Tặng 10 xu tân thủ
+    1000, -- Tặng 1000 xu tân thủ
     'member',
     COALESCE(NEW.raw_user_meta_data->>'source', 'web')
   );

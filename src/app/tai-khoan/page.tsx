@@ -228,7 +228,7 @@ export default function ProfilePage() {
           },
         });
         if (error) throw error;
-        setSuccessMessage("Đăng ký thành công! Bạn nhận được 10 Xu tân thủ.");
+        setSuccessMessage("Đăng ký thành công! Bạn nhận được 1.000 Xu tân thủ.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -481,7 +481,7 @@ export default function ProfilePage() {
                   {authMode === "login" ? "Đăng Nhập Tài Khoản" : "Đăng Ký Tài Khoản Mới"}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Nhận ngay <strong className="text-amber-500">10 Xu tân thủ</strong> khi đăng ký
+                  Nhận ngay <strong className="text-amber-500">1.000 Xu tân thủ</strong> khi đăng ký
                 </p>
               </div>
 

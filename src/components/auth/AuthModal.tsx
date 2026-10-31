@@ -111,7 +111,7 @@ export function AuthModal({
         });
         if (loginErr) throw loginErr;
 
-        setSuccessMessage("Đăng ký thành công! Bạn nhận được 50 Xu chào mừng.");
+        setSuccessMessage("Đăng ký thành công! Bạn nhận được ngay 1.000 Xu chào mừng.");
         setTimeout(() => {
           onClose();
           if (onSuccess) {
@@ -180,7 +180,7 @@ export function AuthModal({
               ? "Vui lòng đăng nhập để bắt đầu đọc truyện và đồng bộ tiến độ tự động"
               : mode === "login"
               ? "Đăng nhập để đồng bộ tủ truyện và số dư xu trên mọi thiết bị"
-              : "Đăng ký ngay để nhận 50 Xu tân thủ và lưu tiến độ đọc"}
+              : "Đăng ký ngay để nhận 1.000 Xu tân thủ và lưu tiến độ đọc"}
           </p>
         </div>
 
@@ -306,7 +306,7 @@ export function AuthModal({
               </>
             ) : (
               <>
-                <span>Đăng Ký & Nhận 10 Xu</span>
+                <span>Đăng Ký & Nhận 1.000 Xu</span>
                 <Sparkles className="w-4 h-4 text-amber-200" />
               </>
             )}
@@ -327,7 +327,7 @@ export function AuthModal({
                 }}
                 className="font-bold text-rose-500 hover:underline"
               >
-                Đăng ký ngay (+10 Xu)
+                Đăng ký ngay (+1.000 Xu)
               </button>
             </p>
           ) : (

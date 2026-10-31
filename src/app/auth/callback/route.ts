@@ -19,6 +19,46 @@ export async function GET(request: Request) {
     const supabase = await createServerSupabaseClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Đảm bảo tài khoản mới đăng nhập qua OAuth (Google / Facebook) nhận ngay 1000 Xu tân thủ
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const { createAdminSupabaseClient } = await import("@/lib/supabase/admin");
+          const adminSupabase = createAdminSupabaseClient();
+          const { data: profile } = await adminSupabase
+            .from("profiles")
+            .select("id, coins_balance, created_at")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (!profile) {
+            await adminSupabase.from("profiles").insert({
+              id: user.id,
+              email: user.email || "",
+              display_name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Độc giả",
+              avatar_url: user.user_metadata?.avatar_url || "",
+              coins_balance: 1000,
+              role: "member",
+              source: user.app_metadata?.provider || "oauth",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          } else if ((profile.coins_balance || 0) < 1000) {
+            const ageMs = Date.now() - new Date(profile.created_at).getTime();
+            if (ageMs < 24 * 3600 * 1000 || (profile.coins_balance || 0) <= 10) {
+              await adminSupabase
+                .from("profiles")
+                .update({ coins_balance: 1000, updated_at: new Date().toISOString() })
+                .eq("id", user.id);
+            }
+          }
+        }
+      } catch (oauthCoinsErr) {
+        console.warn("[OAuth Callback] Lỗi kiểm tra tặng xu:", oauthCoinsErr);
+      }
+
       const forwardedHost = request.headers.get("x-forwarded-host");
       const isLocalEnv = process.env.NODE_ENV === "development";
       const targetHost = isLocalEnv

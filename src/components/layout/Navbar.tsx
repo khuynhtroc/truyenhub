@@ -756,7 +756,7 @@ export function Navbar() {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-foreground">Tài Khoản Độc Giả</span>
                 <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full">
-                  +10 Xu Tân Thủ
+                  +1.000 Xu Tân Thủ
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2">

@@ -41,7 +41,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, user: data.user });
+    // Tặng ngay 1.000 Xu chào mừng cho tài khoản mới đăng ký
+    if (data?.user?.id) {
+      try {
+        await adminClient.from("profiles").upsert(
+          {
+            id: data.user.id,
+            email: data.user.email,
+            display_name: fullName || email.split("@")[0],
+            coins_balance: 1000,
+            role: "member",
+            source: "web",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+      } catch (profileErr) {
+        console.error("Lỗi cấp 1000 xu cho tài khoản mới:", profileErr);
+      }
+    }
+
+    return NextResponse.json({ success: true, user: data.user, bonus_coins: 1000 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Lỗi tạo tài khoản" }, { status: 500 });
   }

@@ -99,7 +99,7 @@ export function AuthRequiredGate({
         });
         if (loginErr) throw loginErr;
 
-        setSuccessMessage("Đăng ký thành công! Bạn nhận được 50 Xu tân thủ.");
+        setSuccessMessage("Đăng ký thành công! Bạn nhận được 1.000 Xu tân thủ.");
         setTimeout(() => {
           if (onSuccess) onSuccess();
           else window.location.reload();
@@ -303,7 +303,7 @@ export function AuthRequiredGate({
         <div className="pt-2 border-t border-border grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span className="font-bold text-amber-500">Tặng ngay 50 Xu</span>
+            <span className="font-bold text-amber-500">Tặng ngay 1.000 Xu</span>
           </div>
           <div className="flex items-center gap-1.5">
             <History className="w-3.5 h-3.5 text-rose-500 shrink-0" />
