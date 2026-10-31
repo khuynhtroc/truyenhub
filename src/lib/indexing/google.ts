@@ -1,4 +1,3 @@
-import 'server-only';
 import { createSign } from 'crypto';
 import { db } from '@/lib/db';
 import { SITE_URL } from '@/lib/urls';

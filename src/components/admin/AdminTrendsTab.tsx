@@ -43,7 +43,7 @@ export function AdminTrendsTab({
     }
   }, []);
 
-  // 1. Rescan live feeds
+  // 1. Rescan live book & comic feeds
   const handleScanNow = async () => {
     setIsScanning(true);
     setLastActionResult(null);
@@ -53,9 +53,12 @@ export function AdminTrendsTab({
       if (data.success) {
         setTrends(data.trends || []);
         setSettings(data.settings || settings);
+        if (data.recentNewsPosts && data.recentNewsPosts.length > 0) {
+          setRecentPosts(data.recentNewsPosts);
+        }
         setLastActionResult({
           type: 'success',
-          message: `Đã quét thành công ${data.trends?.length || 0} xu hướng thời gian thực từ Google Trends, Variety và Trend Hunter!`,
+          message: `Đã quét thành công ${data.trends?.length || 0} xu hướng sách & truyện tranh thời gian thực từ Google News VN, Anime News Network và Book Riot!`,
         });
       } else {
         throw new Error(data.error || 'Scan failed');
@@ -81,7 +84,7 @@ export function AdminTrendsTab({
       if (data.success && data.result) {
         setLastActionResult({
           type: 'success',
-          message: `✓ Đã tạo và xuất bản bài viết tin tức thành công (${data.result.wordCount} từ)! Đã tự động gửi URL lên Google Indexing API.`,
+          message: `✓ Đã tạo và xuất bản bài viết tin tức thành công (${data.result.wordCount} từ tiếng Việt)! Đã tự động gửi URL lên Google Indexing API và phát sóng mạng xã hội.`,
           url: data.result.url,
         });
         // Add to recent posts list
@@ -120,19 +123,34 @@ export function AdminTrendsTab({
     }
   };
 
+  const getSourceBadgeStyle = (source: string) => {
+    switch (source) {
+      case 'Google News Sách & Truyện':
+        return { backgroundColor: '#dbeafe', color: '#1e40af' };
+      case 'Anime News Network':
+        return { backgroundColor: '#fef3c7', color: '#92400e' };
+      case 'Book Riot':
+        return { backgroundColor: '#fce7f3', color: '#9d174d' };
+      case 'Google Trends VN':
+        return { backgroundColor: '#dcfce7', color: '#166534' };
+      default:
+        return { backgroundColor: '#f3f4f6', color: '#374151' };
+    }
+  };
+
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', color: '#111827' }}>
       {/* Top Header */}
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '1.8rem' }}>📡</span>
+            <span style={{ fontSize: '1.8rem' }}>📚</span>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: '#111827' }}>
-              Social Listening & Real-Time Trend Jacking
+              Social Listening & Xu Hướng Sách, Manga & Tiểu Thuyết
             </h1>
           </div>
           <p style={{ margin: '6px 0 0', color: '#4b5563', fontSize: '0.95rem' }}>
-            Tự động theo dõi các xu hướng bùng nổ trong vòng <strong>4–24h</strong> từ Google Trends US, Báo chí Giải trí (Variety, People) và Gift Releases để viết bài dạng News vào chuyên mục <code>/blog/</code>.
+            Tự động theo dõi các chủ đề bùng nổ trong <strong>4–24h</strong> từ Google News Sách, Anime News Network, Book Riot và Google Trends VN để biên tập bài viết dạng Blog/Review vào chuyên mục <code>/blog/</code>.
           </p>
         </div>
 
@@ -155,7 +173,7 @@ export function AdminTrendsTab({
             }}
           >
             <span>{isScanning ? '⏳' : '🔄'}</span>
-            <span>{isScanning ? 'Đang quét dữ liệu...' : 'Quét xu hướng ngay'}</span>
+            <span>{isScanning ? 'Đang quét dữ liệu...' : 'Quét xu hướng sách & truyện ngay'}</span>
           </button>
 
           <button
@@ -223,7 +241,7 @@ export function AdminTrendsTab({
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '28px' }}>
         <div style={{ padding: '16px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
-          <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Xu hướng vừa phát hiện</div>
+          <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Xu hướng sách & truyện</div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#111827', marginTop: '4px' }}>{trends.length}</div>
           <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '4px' }}>Từ 4 nguồn thời gian thực</div>
         </div>
@@ -237,13 +255,13 @@ export function AdminTrendsTab({
         <div style={{ padding: '16px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
           <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Ngưỡng điểm tự động viết</div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#6366f1', marginTop: '4px' }}>&ge; {settings.minScoreThreshold}/100</div>
-          <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>Dựa trên traffic & khả năng mua sắm</div>
+          <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>Dựa trên điểm thảo luận độc giả</div>
         </div>
 
         <div style={{ padding: '16px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
           <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Đích đến bài viết</div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#059669', marginTop: '4px' }}>/blog/</div>
-          <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>Auto-push Google Indexing</div>
+          <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>Auto-push Google Indexing & Social</div>
         </div>
       </div>
 
@@ -252,13 +270,14 @@ export function AdminTrendsTab({
         {/* Left: Trend Radar */}
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '16px', color: '#111827' }}>
-            Radar Xu Hướng Thời Gian Thực (US Market)
+            Radar Xu Hướng Sách, Manga & Tiểu Thuyết
           </h2>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {trends.map((t) => {
               const isGenerating = generatingId === t.id;
               const isHighPriority = t.score >= 75;
+              const badgeStyle = getSourceBadgeStyle(t.source);
 
               return (
                 <div
@@ -279,8 +298,7 @@ export function AdminTrendsTab({
                           borderRadius: '6px',
                           fontSize: '0.75rem',
                           fontWeight: 700,
-                          backgroundColor: t.source === 'Google Trends US' ? '#dbeafe' : t.source === 'Trend Hunter' ? '#fef3c7' : '#fce7f3',
-                          color: t.source === 'Google Trends US' ? '#1e40af' : t.source === 'Trend Hunter' ? '#92400e' : '#9d174d',
+                          ...badgeStyle,
                         }}
                       >
                         {t.source}
@@ -309,12 +327,14 @@ export function AdminTrendsTab({
                   </p>
 
                   <div style={{ padding: '10px 12px', backgroundColor: '#f9fafb', borderRadius: '8px', marginBottom: '16px', fontSize: '0.82rem', color: '#374151' }}>
-                    <span style={{ fontWeight: 700, color: '#ea580c' }}>💡 Góc nhìn quà tặng/mua sắm: </span>
-                    {t.giftAngle}
+                    <span style={{ fontWeight: 700, color: '#ea580c' }}>💡 Góc nhìn độc giả & văn học: </span>
+                    {t.storyAngle || t.giftAngle}
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>Chuyên mục: {t.category}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#6b7280', backgroundColor: '#f3f4f6', padding: '3px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                      Chuyên mục: {t.category}
+                    </span>
 
                     <button
                       onClick={() => handleGenerate(t)}
@@ -347,7 +367,7 @@ export function AdminTrendsTab({
         {/* Right: Published News Log */}
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '16px', color: '#111827' }}>
-            Tin Tức Đã Xuất Bản ({recentPosts.length})
+            Tin Tức & Blog Đã Xuất Bản ({recentPosts.length})
           </h2>
 
           <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', border: '1px solid #e5e7eb', padding: '16px' }}>
@@ -364,7 +384,7 @@ export function AdminTrendsTab({
                     }}
                   >
                     <a
-                      href={`/blog/${post.slug}/`}
+                      href={`/blog/${post.slug}`}
                       target="_blank"
                       rel="noreferrer"
                       style={{

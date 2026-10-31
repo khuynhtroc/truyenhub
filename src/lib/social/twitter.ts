@@ -1,4 +1,3 @@
-import 'server-only';
 import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { SITE_URL, postPath } from '@/lib/urls';

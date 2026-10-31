@@ -244,18 +244,18 @@ export async function POST(req: NextRequest) {
     if (action === 'test_post') {
       let postToShare: any = null;
       if (post_id) {
-        postToShare = await db.findOne('posts', { id: post_id });
+        postToShare = (await db.findOne('stories', { id: post_id })) || (await db.findOne('posts', { id: post_id }));
       }
       if (!postToShare) {
         // First try finding an active story
-        const { rows } = await db.find('posts', {
+        const { rows } = await db.find('stories', {
           neq: { status: 'trash' },
           limit: 1,
         });
         postToShare = rows[0];
       }
       if (!postToShare) {
-        // Fallback to any story in stories table
+        // Fallback to any published post in posts table
         const { rows } = await db.find('posts', { limit: 1 });
         postToShare = rows[0];
       }

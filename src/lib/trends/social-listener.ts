@@ -1,9 +1,8 @@
-import 'server-only';
 
 export interface TrendingItem {
   id: string;
   topic: string;
-  source: 'Google Trends US' | 'Variety' | 'Trend Hunter' | 'People' | 'Rolling Stone';
+  source: 'Google News Sách & Truyện' | 'Anime News Network' | 'Book Riot' | 'Google Trends VN';
   traffic: string;
   newsHeadline: string;
   newsUrl: string;
@@ -11,7 +10,8 @@ export interface TrendingItem {
   pubDate: string;
   hoursAgo: number;
   score: number;
-  giftAngle: string;
+  storyAngle: string;
+  giftAngle?: string; // backwards compatibility alias
   category: string;
 }
 
@@ -29,6 +29,27 @@ function extractTagContent(xml: string, tag: string): string {
 }
 
 /**
+ * Cleans HTML entities and tags from a string
+ */
+function cleanHtml(text: string): string {
+  return (text || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#8217;/g, "'")
+    .replace(/&#8216;/g, "'")
+    .replace(/&#8220;/g, '"')
+    .replace(/&#8221;/g, '"')
+    .replace(/&#8211;/g, '-')
+    .replace(/&#8212;/g, '—')
+    .replace(/&nbsp;/g, ' ')
+    .trim();
+}
+
+/**
  * Calculates hours difference from a date string to now
  */
 function getHoursAgo(dateStr: string): number {
@@ -42,237 +63,347 @@ function getHoursAgo(dateStr: string): number {
 }
 
 /**
- * Evaluates the Gift Angle & Virality Score (0 - 100)
+ * Strict negative keywords - any matching topic/headline is immediately DISCARDED (score = 0)
  */
-function evaluateTrendGiftScore(topic: string, headline: string, traffic: string, hoursAgo: number): { score: number; giftAngle: string; category: string } {
-  let score = 50;
+const STRICT_EXCLUDE_KEYWORDS = [
+  'boxing', 'bong da', 'bóng đá', 'the thao', 'thể thao', 'dam boc', 'đấm bốc', 'quyen anh', 'quyền anh',
+  'canelo', 'alvarez', 'mbilli', 'dazn', 'ufc', 'mma', 'premier league', 'champions league', 'v-league',
+  'brentford', 'roma', 'udinese', 'chelsea', 'arsenal', 'liverpool', 'man utd', 'barcelona', 'real madrid',
+  'ca si', 'ca sĩ', 'hoa hau', 'hoa hậu', 'showbiz', 'scandal', 'tai nan', 'tai nạn', 'vu an', 'vụ án',
+  'bat giu', 'bắt giữ', 'tu hinh', 'tử hình', 'giet nguoi', 'giết người', 'lua dao', 'lừa đảo', 'ma tuy', 'ma túy',
+  'sneaker', 'giay dep', 'giày dép', 'my pham', 'mỹ phẩm', 'thoi trang', 'thời trang', 'giam gia', 'sale off',
+  'court', 'murder', 'shooting', 'trial', 'arrested', 'lawsuit', 'funeral', 'crash', 'killed'
+];
+
+/**
+ * Positive book / comic / manga / novel keywords
+ */
+const BOOK_COMIC_KEYWORDS = [
+  'sách', 'truyện', 'truyen', 'manga', 'anime', 'webtoon', 'manhwa', 'comic', 'tiểu thuyết', 'tieu thuyet',
+  'văn học', 'van hoc', 'tác giả', 'tac gia', 'light novel', 'bestseller', 'xuất bản', 'xuat ban', 'chuyển thể',
+  'chuyen the', 'tập mới', 'tap moi', 'ngoại truyện', 'nhân vật', 'cốt truyện', 'cot truyen', 'review',
+  'spoil', 'book', 'novel', 'author', 'fiction', 'literature', 'adaptation', 'volume', 'chapter', 'mangaka',
+  'trinh thám', 'kinh dị', 'tiên hiệp', 'kiếm hiệp', 'ngôn tình', 'huyền huyễn', 'xuyên không', 'hồi ký'
+];
+
+/**
+ * Evaluates Book & Comic virality score (0 - 100)
+ */
+function evaluateBookComicScore(
+  topic: string,
+  headline: string,
+  traffic: string,
+  hoursAgo: number,
+  isSpecializedFeed: boolean
+): { score: number; storyAngle: string; category: string } | null {
   const text = `${topic} ${headline}`.toLowerCase();
 
-  // Traffic velocity bonus
-  if (traffic.includes('100K+') || traffic.includes('200K+')) score += 25;
-  else if (traffic.includes('50K+')) score += 20;
-  else if (traffic.includes('20K+')) score += 15;
-  else if (traffic.includes('10K+')) score += 10;
-  else if (traffic.includes('5000+')) score += 5;
+  // 1. Strict Exclude Check
+  for (const neg of STRICT_EXCLUDE_KEYWORDS) {
+    if (text.includes(neg)) {
+      return null; // Immediately discard
+    }
+  }
 
-  // Freshness bonus (Gold window: 2 to 18 hours)
-  if (hoursAgo >= 1 && hoursAgo <= 12) score += 15;
-  else if (hoursAgo <= 24) score += 10;
-  else score -= 15;
-
-  // Commercial / Gift affinity keywords
-  const giftKeywords = [
-    'shoes', 'sneakers', 'release', 'drop', 'collection', 'edition', 'collab',
-    'toy', 'game', 'album', 'movie', 'costume', 'halloween', 'christmas', 'holiday',
-    'merch', 'jacket', 'outfit', 'style', 'dress', 'fashion', 'gift', 'gadget',
-    'watch', 'perfume', 'makeup', 'beauty', 'viral', 'trend', 'flavor', 'limited'
-  ];
-
+  // 2. Count positive book/comic matches
   let matches = 0;
-  for (const kw of giftKeywords) {
+  for (const kw of BOOK_COMIC_KEYWORDS) {
     if (text.includes(kw)) matches++;
   }
-  score += Math.min(25, matches * 7);
 
-  // Exclude negative / non-commercial hard news (accidents, crimes, heavy politics)
-  const excludeKeywords = ['crash', 'killed', 'murder', 'shooting', 'arrested', 'lawsuit', 'funeral', 'court', 'trial'];
-  for (const neg of excludeKeywords) {
-    if (text.includes(neg)) score -= 40;
+  // If general feed (e.g. Google Trends VN) has 0 book keywords, discard it!
+  if (!isSpecializedFeed && matches === 0) {
+    return null;
   }
 
-  score = Math.max(10, Math.min(99, score));
+  let score = 55;
 
-  // Determine angle and category
-  let category = 'Pop Culture & Lifestyle';
-  let giftAngle = `Cómo sumarse a la tendencia de ${topic} y los mejores productos temáticos para regalar a fanáticos.`;
+  // Keyword relevance bonus
+  score += Math.min(30, matches * 8);
 
-  if (text.includes('shoe') || text.includes('sneaker') || text.includes('fashion') || text.includes('outfit')) {
-    category = 'Moda & Sneakers Viral';
-    giftAngle = `Lanzamiento exclusivo y cómo conseguir el look o las alternativas de moda más buscadas de ${topic}.`;
-  } else if (text.includes('movie') || text.includes('trailer') || text.includes('series') || text.includes('actor') || text.includes('film')) {
-    category = 'Cine & Entretenimiento';
-    giftAngle = `El fenómeno de ${topic} en pantalla y el merchandising oficial / regalos de colección imprescindibles.`;
-  } else if (text.includes('halloween') || text.includes('costume') || text.includes('spooky') || text.includes('disfraz')) {
-    category = 'Halloween & Festividades';
-    giftAngle = `Ideas de disfraces y detalles de última hora inspirados en el viral de ${topic} para celebrar este octubre.`;
-  } else if (text.includes('gadget') || text.includes('tech') || text.includes('game') || text.includes('app')) {
-    category = 'Tecnología & Ocio';
-    giftAngle = `La novedad tecnológica o juego de ${topic} que todos quieren tener y dónde comprarlo hoy.`;
+  // Freshness bonus (Gold window: 1 to 24 hours)
+  if (hoursAgo >= 1 && hoursAgo <= 12) score += 15;
+  else if (hoursAgo <= 24) score += 10;
+  else if (hoursAgo <= 48) score += 5;
+  else score -= 10;
+
+  // Traffic / Velocity bonus
+  if (traffic.includes('100K+') || traffic.includes('200K+')) score += 20;
+  else if (traffic.includes('50K+')) score += 15;
+  else if (traffic.includes('20K+') || traffic.includes('Manga Hot')) score += 12;
+  else if (traffic.includes('10K+') || traffic.includes('Xu Hướng Độc Giả')) score += 10;
+
+  score = Math.max(20, Math.min(99, score));
+
+  // Determine Category & Story Angle
+  let category = 'Sách & Văn Học';
+  let storyAngle = `Điểm nhấn nội dung và góc nhìn độc giả về tác phẩm "${topic}", đề xuất các tác phẩm hay cùng thể loại trên DocTruyen.VIP.`;
+
+  if (text.includes('manga') || text.includes('anime') || text.includes('comic') || text.includes('webtoon') || text.includes('manhwa')) {
+    category = 'Truyện Tranh & Manga';
+    storyAngle = `Phân tích tình tiết mới nhất, sự kiện nổi bật xoay quanh "${topic}" và góc nhìn cộng đồng người hâm mộ truyện tranh.`;
+  } else if (text.includes('tiểu thuyết') || text.includes('novel') || text.includes('light novel') || text.includes('tiên hiệp') || text.includes('ngôn tình')) {
+    category = 'Tiểu Thuyết & Light Novel';
+    storyAngle = `Khám phá chiều sâu cốt truyện, thế giới quan và tuyến nhân vật hấp dẫn của "${topic}".`;
+  } else if (text.includes('chuyển thể') || text.includes('adaptation') || text.includes('phim')) {
+    category = 'Tin Chuyển Thể & Phim';
+    storyAngle = `So sánh nguyên tác với bản chuyển thể của "${topic}", phân tích những điểm cộng đáng chú ý dành cho fan nguyên tác.`;
+  } else if (text.includes('trinh thám') || text.includes('kinh dị')) {
+    category = 'Trinh Thám & Giật Gân';
+    storyAngle = `Giải mã nút thắt cốt truyện và không khí hồi hộp, kịch tính làm nên sức hút của "${topic}".`;
   }
 
-  return { score, giftAngle, category };
+  return { score, storyAngle, category };
+}
+
+const FALLBACK_COVERS = [
+  'https://media.doctruyen.vip/covers/doraemon-cover.webp',
+  'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=800&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=800&auto=format&fit=crop&q=80',
+];
+
+function getRandomFallbackCover(): string {
+  return FALLBACK_COVERS[Math.floor(Math.random() * FALLBACK_COVERS.length)];
 }
 
 /**
- * 1. Fetch Realtime & Daily Trends from Google Trends US RSS
+ * 1. Fetch Realtime Book & Comic News from Google News VN
  */
-export async function fetchGoogleTrendsUS(): Promise<TrendingItem[]> {
+export async function fetchGoogleNewsBooksVN(): Promise<TrendingItem[]> {
+  try {
+    const url = 'https://news.google.com/rss/search?q=(s%C3%A1ch+hay+OR+truy%E1%BB%87n+tranh+OR+manga+OR+anime+OR+ti%E1%BB%83u+thuy%E1%BA%BFt)&hl=vi&gl=VN&ceid=VN:vi';
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml',
+      },
+      next: { revalidate: 1800 },
+    });
+
+    if (!res.ok) throw new Error(`Google News VN HTTP ${res.status}`);
+    const xml = await res.text();
+    const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
+    const items: TrendingItem[] = [];
+
+    for (let i = 0; i < Math.min(itemMatches.length, 25); i++) {
+      const itemXml = itemMatches[i];
+      const rawTitle = cleanHtml(extractTagContent(itemXml, 'title'));
+      const link = extractTagContent(itemXml, 'link');
+      const pubDate = extractTagContent(itemXml, 'pubDate') || new Date().toISOString();
+      const hoursAgo = getHoursAgo(pubDate);
+
+      // Clean topic from publisher suffix (e.g. "Title - VnExpress")
+      const titleParts = rawTitle.split(' - ');
+      const topic = titleParts.length > 1 ? titleParts.slice(0, -1).join(' - ').trim() : rawTitle;
+
+      const evaluated = evaluateBookComicScore(topic, rawTitle, 'Xu Hướng Độc Giả', hoursAgo, true);
+      if (!evaluated) continue;
+
+      items.push({
+        id: `gn-${topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 50)}`,
+        topic,
+        source: 'Google News Sách & Truyện',
+        traffic: 'Xu Hướng Độc Giả',
+        newsHeadline: rawTitle,
+        newsUrl: link,
+        picture: getRandomFallbackCover(),
+        pubDate,
+        hoursAgo,
+        score: evaluated.score,
+        storyAngle: evaluated.storyAngle,
+        giftAngle: evaluated.storyAngle,
+        category: evaluated.category,
+      });
+    }
+
+    return items;
+  } catch (err: any) {
+    console.warn('[Social Listener] Google News Books VN fetch error:', err.message);
+    return [];
+  }
+}
+
+/**
+ * 2. Fetch Manga, Anime & Light Novel News from Anime News Network (ANN)
+ */
+export async function fetchAnimeNewsNetwork(): Promise<TrendingItem[]> {
+  try {
+    const res = await fetch('https://www.animenewsnetwork.com/all/rss.xml', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      next: { revalidate: 1800 },
+    });
+
+    if (!res.ok) throw new Error(`Anime News Network HTTP ${res.status}`);
+    const xml = await res.text();
+    const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
+    const items: TrendingItem[] = [];
+
+    for (let i = 0; i < Math.min(itemMatches.length, 25); i++) {
+      const itemXml = itemMatches[i];
+      const title = cleanHtml(extractTagContent(itemXml, 'title'));
+      const link = extractTagContent(itemXml, 'link');
+      const pubDate = extractTagContent(itemXml, 'pubDate') || new Date().toISOString();
+      const hoursAgo = getHoursAgo(pubDate);
+
+      // ANN media thumbnail
+      const mediaMatch = itemXml.match(/url=["'](https?:\/\/[^"']+\.(?:jpg|jpeg|png|webp)[^"']*)["']/i);
+      const picture = mediaMatch ? mediaMatch[1] : getRandomFallbackCover();
+
+      const evaluated = evaluateBookComicScore(title, title, 'Manga/Anime Hot', hoursAgo, true);
+      if (!evaluated) continue;
+
+      items.push({
+        id: `ann-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 50)}`,
+        topic: title,
+        source: 'Anime News Network',
+        traffic: 'Manga/Anime Hot',
+        newsHeadline: title,
+        newsUrl: link,
+        picture,
+        pubDate,
+        hoursAgo,
+        score: Math.min(99, evaluated.score + 5), // boost global manga releases
+        storyAngle: evaluated.storyAngle,
+        giftAngle: evaluated.storyAngle,
+        category: evaluated.category,
+      });
+    }
+
+    return items;
+  } catch (err: any) {
+    console.warn('[Social Listener] Anime News Network fetch error:', err.message);
+    return [];
+  }
+}
+
+/**
+ * 3. Fetch Book & Adaptation News from Book Riot
+ */
+export async function fetchBookRiot(): Promise<TrendingItem[]> {
+  try {
+    const res = await fetch('https://bookriot.com/feed/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      next: { revalidate: 3600 },
+    });
+
+    if (!res.ok) throw new Error(`Book Riot HTTP ${res.status}`);
+    const xml = await res.text();
+    const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
+    const items: TrendingItem[] = [];
+
+    for (let i = 0; i < Math.min(itemMatches.length, 15); i++) {
+      const itemXml = itemMatches[i];
+      const title = cleanHtml(extractTagContent(itemXml, 'title'));
+      const link = extractTagContent(itemXml, 'link');
+      const pubDate = extractTagContent(itemXml, 'pubDate') || new Date().toISOString();
+      const hoursAgo = getHoursAgo(pubDate);
+
+      const enclosureMatch = itemXml.match(/<enclosure\s+url=["']([^"']+)["']/i);
+      const mediaMatch = itemXml.match(/url=["'](https?:\/\/[^"']+\.(?:jpg|jpeg|png|webp)[^"']*)["']/i);
+      const picture = enclosureMatch ? enclosureMatch[1] : mediaMatch ? mediaMatch[1] : getRandomFallbackCover();
+
+      const evaluated = evaluateBookComicScore(title, title, 'Văn Học Quốc Tế', hoursAgo, true);
+      if (!evaluated) continue;
+
+      items.push({
+        id: `br-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 50)}`,
+        topic: title,
+        source: 'Book Riot',
+        traffic: 'Văn Học Quốc Tế',
+        newsHeadline: title,
+        newsUrl: link,
+        picture,
+        pubDate,
+        hoursAgo,
+        score: evaluated.score,
+        storyAngle: evaluated.storyAngle,
+        giftAngle: evaluated.storyAngle,
+        category: evaluated.category,
+      });
+    }
+
+    return items;
+  } catch (err: any) {
+    console.warn('[Social Listener] Book Riot fetch error:', err.message);
+    return [];
+  }
+}
+
+/**
+ * 4. Fetch Book/Comic Trends from Google Trends VN (Strictly Filtered)
+ */
+export async function fetchGoogleTrendsBooksVN(): Promise<TrendingItem[]> {
   try {
     const res = await fetch('https://trends.google.com/trending/rss?geo=VN', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/rss+xml, application/xml, text/xml',
       },
-      next: { revalidate: 3600 },
+      next: { revalidate: 1800 },
     });
 
-    if (!res.ok) throw new Error(`Google Trends HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`Google Trends VN HTTP ${res.status}`);
     const xml = await res.text();
-
     const items: TrendingItem[] = [];
     const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
 
     for (let i = 0; i < itemMatches.length; i++) {
       const itemXml = itemMatches[i];
-      const topic = extractTagContent(itemXml, 'title');
+      const topic = cleanHtml(extractTagContent(itemXml, 'title'));
       const traffic = extractTagContent(itemXml, 'ht:approx_traffic') || '10K+';
       const pubDate = extractTagContent(itemXml, 'pubDate') || new Date().toISOString();
-      const newsHeadline = extractTagContent(itemXml, 'ht:news_item_title') || topic;
+      const newsHeadline = cleanHtml(extractTagContent(itemXml, 'ht:news_item_title')) || topic;
       const newsUrl = extractTagContent(itemXml, 'ht:news_item_url');
-      const picture = extractTagContent(itemXml, 'ht:picture') || extractTagContent(itemXml, 'ht:news_item_picture');
+      const picture = extractTagContent(itemXml, 'ht:picture') || extractTagContent(itemXml, 'ht:news_item_picture') || getRandomFallbackCover();
       const hoursAgo = getHoursAgo(pubDate);
 
-      const { score, giftAngle, category } = evaluateTrendGiftScore(topic, newsHeadline, traffic, hoursAgo);
+      // Google Trends VN is a general feed, so isSpecializedFeed = false
+      // Only items matching book/comic/novel keywords will pass!
+      const evaluated = evaluateBookComicScore(topic, newsHeadline, traffic, hoursAgo, false);
+      if (!evaluated) continue;
 
       items.push({
-        id: `gt-${topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`,
+        id: `gt-${topic.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').substring(0, 50)}`,
         topic,
-        source: 'Google Trends US',
+        source: 'Google Trends VN',
         traffic,
         newsHeadline,
         newsUrl,
-        picture: picture || 'https://images.unsplash.com/photo-1511707171634-5f897ff02560?w=800&auto=format&fit=crop&q=80',
+        picture,
         pubDate,
         hoursAgo,
-        score,
-        giftAngle,
-        category,
+        score: evaluated.score,
+        storyAngle: evaluated.storyAngle,
+        giftAngle: evaluated.storyAngle,
+        category: evaluated.category,
       });
     }
 
     return items;
   } catch (err: any) {
-    console.warn('[Social Listener] Google Trends RSS fetch error:', err.message);
+    console.warn('[Social Listener] Google Trends VN fetch error:', err.message);
     return [];
   }
 }
 
 /**
- * 2. Fetch Top US Entertainment & Culture Feeds (Variety, People)
- */
-export async function fetchEntertainmentTrends(): Promise<TrendingItem[]> {
-  const feeds = [
-    { name: 'Variety' as const, url: 'https://variety.com/feed/' },
-    { name: 'People' as const, url: 'https://people.com/feed/' },
-  ];
-
-  const items: TrendingItem[] = [];
-
-  for (const f of feeds) {
-    try {
-      const res = await fetch(f.url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-        next: { revalidate: 3600 },
-      });
-      if (!res.ok) continue;
-      const xml = await res.text();
-      const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
-
-      for (const itemXml of itemMatches.slice(0, 8)) {
-        const title = extractTagContent(itemXml, 'title');
-        const link = extractTagContent(itemXml, 'link');
-        const pubDate = extractTagContent(itemXml, 'pubDate');
-        const hoursAgo = getHoursAgo(pubDate);
-
-        // Find media thumbnail
-        const mediaMatch = itemXml.match(/url=["'](https?:\/\/[^"']+\.(?:jpg|jpeg|png|webp)[^"']*)["']/i);
-        const picture = mediaMatch ? mediaMatch[1] : '';
-
-        const { score, giftAngle, category } = evaluateTrendGiftScore(title, title, '20K+', hoursAgo);
-
-        items.push({
-          id: `ent-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 40)}`,
-          topic: title,
-          source: f.name,
-          traffic: 'Viral Pop Culture',
-          newsHeadline: title,
-          newsUrl: link,
-          picture: picture || 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=800&auto=format&fit=crop&q=80',
-          pubDate,
-          hoursAgo,
-          score,
-          giftAngle,
-          category,
-        });
-      }
-    } catch (err: any) {
-      console.warn(`[Social Listener] Error fetching ${f.name}:`, err.message);
-    }
-  }
-
-  return items;
-}
-
-/**
- * 3. Fetch Gift News Releases & Viral Product Drops (Trend Hunter)
- */
-export async function fetchGiftDropTrends(): Promise<TrendingItem[]> {
-  try {
-    const res = await fetch('https://www.trendhunter.com/rss', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-      next: { revalidate: 3600 },
-    });
-    if (!res.ok) return [];
-    const xml = await res.text();
-    const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/gi) || [];
-    const items: TrendingItem[] = [];
-
-    for (const itemXml of itemMatches.slice(0, 10)) {
-      const rawTitle = extractTagContent(itemXml, 'title');
-      const title = rawTitle.replace(/\(TrendHunter\.com\)/gi, '').trim();
-      const link = extractTagContent(itemXml, 'link');
-      const pubDate = extractTagContent(itemXml, 'pubDate');
-      const hoursAgo = getHoursAgo(pubDate);
-
-      const enclosureMatch = itemXml.match(/<enclosure\s+url=["']([^"']+)["']/i);
-      const picture = enclosureMatch ? enclosureMatch[1] : '';
-
-      const { score, giftAngle, category } = evaluateTrendGiftScore(title, title, 'Product Drop', hoursAgo);
-
-      items.push({
-        id: `th-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').substring(0, 40)}`,
-        topic: title,
-        source: 'Trend Hunter',
-        traffic: 'Product Release',
-        newsHeadline: title,
-        newsUrl: link,
-        picture: picture || 'https://images.unsplash.com/photo-1542295669297-4d352b042bca?w=800&auto=format&fit=crop&q=80',
-        pubDate,
-        hoursAgo,
-        score: Math.min(99, score + 10), // Boost product drops
-        giftAngle,
-        category: 'Lanzamientos & Novedades',
-      });
-    }
-
-    return items;
-  } catch (err: any) {
-    console.warn('[Social Listener] Error fetching Trend Hunter:', err.message);
-    return [];
-  }
-}
-
-/**
- * Combined Aggregator: Fetches, deduplicates, and ranks all trends across US channels
+ * Combined Aggregator: Fetches, deduplicates, and ranks all trends across Book & Comic channels
  */
 export async function scanAllLiveTrends(): Promise<TrendingItem[]> {
-  const [googleTrends, entTrends, dropTrends] = await Promise.all([
-    fetchGoogleTrendsUS(),
-    fetchEntertainmentTrends(),
-    fetchGiftDropTrends(),
+  const [googleNews, animeNews, bookRiot, googleTrends] = await Promise.all([
+    fetchGoogleNewsBooksVN(),
+    fetchAnimeNewsNetwork(),
+    fetchBookRiot(),
+    fetchGoogleTrendsBooksVN(),
   ]);
 
-  const all = [...googleTrends, ...entTrends, ...dropTrends];
+  const all = [...googleNews, ...animeNews, ...bookRiot, ...googleTrends];
 
   // Deduplicate by normalized topic name
   const seen = new Set<string>();
@@ -280,12 +411,12 @@ export async function scanAllLiveTrends(): Promise<TrendingItem[]> {
 
   for (const item of all) {
     const key = item.topic.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (seen.has(key)) continue;
+    if (!key || seen.has(key)) continue;
     seen.add(key);
     uniqueTrends.push(item);
   }
 
-  // Sort descending by Virality / Gift Score
+  // Sort descending by Virality Score
   uniqueTrends.sort((a, b) => b.score - a.score);
 
   return uniqueTrends;

@@ -166,7 +166,7 @@ export async function executeFacebookBackfillStep(options?: {
   let skippedCount = lockedState.skipped_count;
   let post: Post | null = null;
   while (cursor < lockedState.post_ids.length) {
-    const candidate = await db.findOne('posts', { id: lockedState.post_ids[cursor] });
+    const candidate = await db.findOne('stories', { id: lockedState.post_ids[cursor] });
     if (candidate && candidate.title && candidate.slug && candidate.status !== 'draft') {
       candidate.hero_image = candidate.hero_image || candidate.cover_url || candidate.coverImage || candidate.featured_image;
       candidate.og_image = candidate.og_image || candidate.cover_url;

@@ -50,7 +50,7 @@ export const db = {
         return await this.getSetting(key);
       }
       const supabase = createAdminSupabaseClient();
-      const targetTable = table === 'posts' ? 'stories' : table;
+      const targetTable = table;
       let q = supabase.from(targetTable).select('*');
       if (query) {
         Object.entries(query).forEach(([k, v]) => {
@@ -68,7 +68,7 @@ export const db = {
   async find(table: string, query?: any) {
     try {
       const supabase = createAdminSupabaseClient();
-      const targetTable = table === 'posts' ? 'stories' : table;
+      const targetTable = table;
       let q = supabase.from(targetTable).select(query?.select || '*', { count: 'exact' });
       if (query?.eq) {
         Object.entries(query.eq).forEach(([k, v]) => {
@@ -104,7 +104,7 @@ export const db = {
   async insert(table: string, data: any) {
     try {
       const supabase = createAdminSupabaseClient();
-      const targetTable = table === 'posts' ? 'stories' : table;
+      const targetTable = table;
       const { data: res, error } = await supabase.from(targetTable).insert(data).select().single();
       return { success: !error, data: res };
     } catch (err) {
@@ -121,7 +121,7 @@ export const db = {
         return { success: true };
       }
       const supabase = createAdminSupabaseClient();
-      const targetTable = table === 'posts' ? 'stories' : table;
+      const targetTable = table;
       const id = typeof idOrQuery === 'string' ? idOrQuery : idOrQuery?.id;
       const { error } = await supabase.from(targetTable).update(data).eq('id', id);
       return { success: !error };
