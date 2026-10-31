@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
               DocTruyen.vip tôn trọng tuyệt đối quyền riêng tư của độc giả. Chúng tôi chỉ thu thập các thông tin tối thiểu cần thiết để vận hành và nâng cao trải nghiệm đọc truyện của bạn:
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
-              <li>Thông tin tài khoản: Email và tên hiển thị khi bạn tự nguyện đăng ký hoặc đăng nhập qua Google.</li>
+              <li>Thông tin tài khoản: Email và tên hiển thị khi bạn tự nguyện đăng ký hoặc đăng nhập nhanh qua Google / Facebook Login. Xem thêm <Link href="/chinh-sach-quyen-rieng-tu" className="text-rose-500 underline font-semibold">Chính sách quyền riêng tư</Link> để biết chi tiết hướng dẫn xóa dữ liệu.</li>
               <li>Dữ liệu tủ truyện: Lịch sử đọc, chương đã mở khóa và bookmark truyện để đồng bộ giữa các thiết bị (Web, Android, iOS).</li>
               <li>Dữ liệu kỹ thuật ẩn danh: Địa chỉ IP, loại trình duyệt, hệ điều hành nhằm phân tích tốc độ tải trang và bảo vệ hệ thống khỏi tấn công DDoS.</li>
             </ul>

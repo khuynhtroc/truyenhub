@@ -48,8 +48,9 @@ export default async function HomePage({
     const supabase = getPublicSupabase();
     const { data: dbStories } = await supabase
       .from("stories")
-      .select("id, title, slug, type, description, cover_url, author_name, status, genres, total_views, total_likes, total_chapters")
+      .select("id, title, slug, type, description, cover_url, author_name, status, genres, total_views, total_likes, total_chapters, updated_at")
       .order("total_views", { ascending: false })
+      .order("updated_at", { ascending: false })
       .limit(100);
     if (dbStories && dbStories.length > 0) {
       allStories = dbStories as unknown as Story[];
@@ -71,9 +72,10 @@ export default async function HomePage({
   const comics = allStories.filter((s) => s.type === "comic");
   const novels = allStories.filter((s) => s.type === "novel");
 
-  // Hero Spotlight picks: High-engagement stories with valid covers
-  const featuredStories = allStories
+  // Hero Spotlight picks: High-engagement stories with valid covers, ordered strictly by real total_views
+  const featuredStories = [...allStories]
     .filter((s) => s.cover_url && !s.cover_url.includes("novel-default"))
+    .sort((a, b) => (b.total_views || 0) - (a.total_views || 0))
     .slice(0, 5);
 
   // Trending rail

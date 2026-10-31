@@ -34,7 +34,9 @@ import {
 import { CommentSection } from "@/components/comment/CommentSection";
 import { ChapterTableOfContents } from "@/components/story/ChapterTableOfContents";
 import { StoryInteractiveHero } from "@/components/story/StoryInteractiveHero";
+import { StoryReadCtaButton } from "@/components/story/StoryReadCtaButton";
 import { SafeImage } from "@/components/common/SafeImage";
+import { StoryViewTracker } from "@/components/common/StoryViewTracker";
 import { getPublicSupabase } from "@/lib/supabase/server";
 import { Story, Chapter, StoryVersion } from "@/types";
 import { getSeriesGroupForSlug } from "@/lib/series-versions";
@@ -244,6 +246,9 @@ export default async function StoryDetailPage({
       <Navbar />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 w-full py-6 flex flex-col gap-8">
+        {/* Real View Tracker */}
+        <StoryViewTracker slug={story.slug} storyId={story.id} />
+
         {/* Story Hero Header */}
         <section className="relative rounded-3xl overflow-hidden bg-card border border-border/50 p-6 sm:p-8 flex flex-col sm:flex-row gap-6 sm:gap-8 shadow-sm">
           {/* Blurred backdrop image */}
@@ -368,13 +373,11 @@ export default async function StoryDetailPage({
                 </div>
               </div>
 
-              <Link
-                href={`/truyen/${story.slug}/${firstChapterNumber}`}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-95 text-white font-extrabold text-xs shadow-md shadow-rose-500/20 transition-all flex items-center justify-center gap-1.5 shrink-0 active:scale-95 whitespace-nowrap"
-              >
-                <span>Đọc Ngay Chương 1</span>
-                <ChevronRight className="w-4 h-4" />
-              </Link>
+              <StoryReadCtaButton
+                storySlug={story.slug}
+                storyTitle={story.title}
+                firstChapterNumber={firstChapterNumber}
+              />
             </div>
           </div>
         </section>

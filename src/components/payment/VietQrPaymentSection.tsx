@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { VIETQR_BANKS, VietQrBankApp } from "@/lib/vietqr-banks";
 import { formatVND } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { PayPalPaymentSection } from "./PayPalPaymentSection";
 import {
   Copy,
   CheckCircle2,
@@ -25,6 +26,11 @@ import {
   HelpCircle,
   MessageSquare,
   Phone,
+  Zap,
+  Globe,
+  Download,
+  Sparkles,
+  Camera,
 } from "lucide-react";
 
 export interface VietQrPaymentSectionProps {
@@ -32,6 +38,7 @@ export interface VietQrPaymentSectionProps {
   defaultTransferCode: string;
   coinsReceived?: number;
   vipPackageTitle?: string;
+  initialMethod?: "vietqr" | "paypal";
   user?: {
     id: string;
     email?: string;
@@ -61,11 +68,15 @@ export function VietQrPaymentSection({
   defaultTransferCode,
   coinsReceived,
   vipPackageTitle,
+  initialMethod = "vietqr",
   user,
   bankConfig = DEFAULT_BANK_CONFIG,
   noteHint,
   onTransferCodeChange,
 }: VietQrPaymentSectionProps) {
+  // Payment method state (VietQR vs PayPal)
+  const [paymentMethod, setPaymentMethod] = useState<"vietqr" | "paypal">(initialMethod);
+
   // Transfer code state (preserves default or allows user editing)
   const [transferCode, setTransferCode] = useState(defaultTransferCode);
   const [isEditingNote, setIsEditingNote] = useState(false);
@@ -118,9 +129,40 @@ export function VietQrPaymentSection({
   const [contactSuccessMsg, setContactSuccessMsg] = useState<string | null>(null);
   const [contactErrorMsg, setContactErrorMsg] = useState<string | null>(null);
 
+  // SePay auto check state
+  const [isCheckingSePay, setIsCheckingSePay] = useState(false);
+  const [sePayStatus, setSePayStatus] = useState<{ success: boolean; msg: string } | null>(null);
+
+  const handleCheckSePayAuto = async () => {
+    if (!currentUser?.id) {
+      setSePayStatus({ success: false, msg: "Vui lòng đăng nhập tài khoản để hệ thống đối soát và cộng xu tự động." });
+      return;
+    }
+    setIsCheckingSePay(true);
+    setSePayStatus(null);
+    try {
+      const res = await fetch(`/api/payment/check-transaction?userId=${currentUser.id}`);
+      const data = await res.json();
+      if (data.credited) {
+        setSePayStatus({ success: true, msg: data.message });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        setSePayStatus({ success: false, msg: data.message || "Chưa thấy giao dịch mới từ SePay. Vui lòng thử lại sau vài giây." });
+      }
+    } catch (err: any) {
+      setSePayStatus({ success: false, msg: err.message || "Lỗi kiểm tra đối soát SePay." });
+    } finally {
+      setIsCheckingSePay(false);
+    }
+  };
+
   // Copy status indicators
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedAcc, setCopiedAcc] = useState(false);
+  const [copiedBoth, setCopiedBoth] = useState(false);
+  const [downloadingQr, setDownloadingQr] = useState(false);
   const [openAppStatus, setOpenAppStatus] = useState<string | null>(null);
 
   // Generated VietQR image URL
@@ -128,8 +170,8 @@ export function VietQrPaymentSection({
     transferCode
   )}&accountName=${encodeURIComponent(bankConfig.accountName)}`;
 
-  // Deep link to banking app
-  const deepLinkUrl = `https://dl.vietqr.io/pay?app=${selectedBank.appId}&ba=${bankConfig.accountNo}@${bankConfig.bankCode}&am=${amount}&tn=${encodeURIComponent(
+  // Deep link to banking app (using official bank BIN bankId)
+  const deepLinkUrl = `https://dl.vietqr.io/pay?app=${selectedBank.appId}&ba=${bankConfig.accountNo}@${bankConfig.bankId}&am=${amount}&tn=${encodeURIComponent(
     transferCode
   )}`;
 
@@ -151,6 +193,33 @@ export function VietQrPaymentSection({
     setTimeout(() => setCopiedAcc(false), 2000);
   };
 
+  const handleCopyBoth = () => {
+    copyToClipboard(`STK: ${bankConfig.accountNo} | ND: ${transferCode}`);
+    setCopiedBoth(true);
+    setTimeout(() => setCopiedBoth(false), 2000);
+  };
+
+  const handleDownloadQr = async () => {
+    setDownloadingQr(true);
+    try {
+      const res = await fetch(qrUrl);
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `VietQR_${bankConfig.bankCode}_${amount}_${transferCode.replace(/\s+/g, "_")}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setOpenAppStatus("✓ Đã lưu mã QR vào máy! Mở App Ngân hàng -> Chọn Quét QR -> Chọn ảnh từ thư viện để tự động điền 100%.");
+    } catch {
+      window.open(qrUrl, "_blank");
+    } finally {
+      setDownloadingQr(false);
+    }
+  };
+
   const handleSaveNote = () => {
     const cleaned = tempNote.trim() || defaultTransferCode;
     setTransferCode(cleaned);
@@ -170,13 +239,15 @@ export function VietQrPaymentSection({
   };
 
   const handleOpenBankApp = () => {
-    // 1. Copy both account number and transfer note to clipboard as a safety guarantee
+    // 1. Copy cả STK và mã nhận diện vào clipboard
     copyToClipboard(`${bankConfig.accountNo}`);
-    setOpenAppStatus(`Đã sao chép STK ${bankConfig.accountNo}! Đang mở ${selectedBank.appName}...`);
+    setOpenAppStatus(
+      `✓ Đã sao chép STK ${bankConfig.accountNo}! Nội dung: ${transferCode}. Đang chuyển sang ${selectedBank.appName}...`
+    );
 
     setTimeout(() => {
       setOpenAppStatus(null);
-    }, 3500);
+    }, 4500);
 
     // 2. Open Deep Link on mobile
     if (typeof window !== "undefined") {
@@ -306,15 +377,77 @@ export function VietQrPaymentSection({
 
   return (
     <div className="rounded-3xl border border-border/50 bg-card p-4 sm:p-6 flex flex-col items-center text-center shadow-lg w-full">
-      {/* 1. VIETQR IMAGE */}
-      <div className="relative p-3 bg-white rounded-2xl shadow-md border border-border/50 mb-3 group">
-        <img
-          src={qrUrl}
-          alt={`VietQR ${bankConfig.bankName}`}
-          className="w-52 sm:w-56 h-auto rounded-lg transition-transform duration-300 group-hover:scale-[1.02]"
+      {/* METHOD SELECTOR TABS */}
+      <div className="w-full grid grid-cols-2 p-1 bg-muted/60 rounded-2xl mb-5 border border-border/50">
+        <button
+          type="button"
+          onClick={() => setPaymentMethod("vietqr")}
+          className={`py-2 px-3 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            paymentMethod === "vietqr"
+              ? "bg-background text-emerald-600 dark:text-emerald-400 shadow-sm border border-border/40"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+          <span>VietQR / SePay (2s)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPaymentMethod("paypal")}
+          className={`py-2 px-3 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            paymentMethod === "paypal"
+              ? "bg-background text-blue-500 shadow-sm border border-border/40"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Globe className="w-4 h-4 text-blue-500" />
+          <span>PayPal / Quốc Tế</span>
+        </button>
+      </div>
+
+      {paymentMethod === "paypal" ? (
+        <PayPalPaymentSection
+          amountVnd={amount}
+          coinsReceived={coinsReceived}
+          vipPackageTitle={vipPackageTitle}
+          user={currentUser}
+          defaultTransferCode={transferCode}
         />
-        <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-emerald-600/90 text-[10px] text-white font-bold backdrop-blur-xs flex items-center gap-1">
-          <ShieldCheck className="w-3 h-3" /> Napas 24/7
+      ) : (
+        <>
+          {/* 1. VIETQR IMAGE & DOWNLOAD BUTTON */}
+      <div className="flex flex-col items-center gap-2.5 mb-3 w-full">
+        <div className="relative p-3 bg-white rounded-2xl shadow-md border border-border/50 group">
+          <img
+            src={qrUrl}
+            alt={`VietQR ${bankConfig.bankName}`}
+            className="w-52 sm:w-56 h-auto rounded-lg transition-transform duration-300 group-hover:scale-[1.02]"
+          />
+          <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-emerald-600/90 text-[10px] text-white font-bold backdrop-blur-xs flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3" /> Napas 24/7
+          </div>
+        </div>
+
+        {/* Nút Tải / Lưu Mã QR Vào Máy */}
+        <button
+          type="button"
+          onClick={handleDownloadQr}
+          disabled={downloadingQr}
+          className="py-2.5 px-4 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+        >
+          {downloadingQr ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-amber-500" />}
+          <span>📸 Tải Mã QR Về Máy (Tự Điền STK & Tiền 100%)</span>
+        </button>
+
+        {/* Box hướng dẫn tự động điền STK & Tiền */}
+        <div className="w-full p-3 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/5 border border-emerald-500/25 text-left text-xs flex flex-col gap-1.5 shadow-xs">
+          <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
+            <Sparkles className="w-4 h-4 shrink-0 text-amber-500" />
+            <span>Mẹo nạp tự động nhanh nhất (Không cần gõ tay):</span>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Nhấn <b>"Tải Mã QR Về Máy"</b> ở trên ➔ Mở App ngân hàng của bạn ➔ Chọn <b>"Quét QR"</b> ➔ Chọn <b>"Ảnh từ thư viện"</b>. App ngân hàng sẽ tự động nhận diện STK, Số tiền và Nội dung chính xác 100%!
+          </p>
         </div>
       </div>
 
@@ -527,6 +660,19 @@ export function VietQrPaymentSection({
             </div>
           )}
         </div>
+
+        {/* Quick copy both STK & Note */}
+        <div className="pt-2 border-t border-border/40 flex items-center justify-between">
+          <span className="text-[11px] text-muted-foreground font-medium">Sao chép nhanh cả hai:</span>
+          <button
+            type="button"
+            onClick={handleCopyBoth}
+            className="px-2.5 py-1 rounded-lg bg-background hover:bg-muted border border-border/80 text-[11px] font-bold text-foreground flex items-center gap-1 cursor-pointer transition-colors"
+          >
+            {copiedBoth ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-amber-500" />}
+            <span>{copiedBoth ? "Đã sao chép cả hai!" : "📋 Sao chép cả STK & Nội Dung"}</span>
+          </button>
+        </div>
       </div>
 
       {/* 5. THÔNG BÁO ĐÃ CHUYỂN KHOẢN & LIÊN HỆ ADMIN (USER REQUIREMENT) */}
@@ -542,6 +688,28 @@ export function VietQrPaymentSection({
           <div className="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{contactSuccessMsg}</span>
+          </div>
+        )}
+
+        {/* Nút 0: Kiểm tra nạp tự động SePay */}
+        <button
+          type="button"
+          onClick={handleCheckSePayAuto}
+          disabled={isCheckingSePay}
+          className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 transition-all cursor-pointer"
+        >
+          {isCheckingSePay ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+          <span>{isCheckingSePay ? "Đang đối soát SePay tự động..." : "⚡ Kiểm Tra Nạp Xu Tự Động (SePay 2s)"}</span>
+        </button>
+
+        {sePayStatus && (
+          <div className={`p-3 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 animate-in fade-in ${
+            sePayStatus.success
+              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500"
+              : "bg-amber-500/10 border-amber-500/30 text-amber-500"
+          }`}>
+            {sePayStatus.success ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+            <span>{sePayStatus.msg}</span>
           </div>
         )}
 
@@ -583,7 +751,7 @@ export function VietQrPaymentSection({
       {/* 5. MODAL CHỌN NGÂN HÀNG (ZALO STYLE) */}
       {/* ============================================================== */}
       {isBankModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 pb-20 sm:pb-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
           <div className="relative w-full max-w-lg bg-card border border-border/80 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 flex flex-col gap-4 max-h-[85vh] overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-border/50">
@@ -742,8 +910,8 @@ export function VietQrPaymentSection({
       {/* 6. MODAL THÔNG BÁO ĐÃ CHUYỂN KHOẢN TỚI TELEGRAM TRUYENVIP */}
       {/* ============================================================== */}
       {isReportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-md bg-card border border-border/80 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 pb-20 sm:pb-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md bg-card border border-border/80 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 pb-24 sm:pb-6 flex flex-col gap-4 max-h-[88vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-border/50">
               <div className="flex items-center gap-2">
@@ -849,19 +1017,19 @@ export function VietQrPaymentSection({
               )}
 
               {/* Submit Buttons */}
-              <div className="flex items-center gap-2 pt-2">
+              <div className="sticky bottom-0 -mx-5 -mb-5 px-5 py-3 sm:-mx-6 sm:-mb-6 sm:px-6 sm:py-3.5 bg-card/95 backdrop-blur-md border-t border-border/50 z-20 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsReportModalOpen(false)}
                   disabled={isSubmittingReport}
-                  className="flex-1 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground font-bold text-xs cursor-pointer transition-colors"
+                  className="flex-1 py-3 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground font-bold text-xs cursor-pointer transition-colors"
                 >
                   Đóng
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingReport}
-                  className="flex-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-500/25 transition-all cursor-pointer disabled:opacity-50"
+                  className="flex-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-500/25 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingReport ? (
                     <>
@@ -885,8 +1053,8 @@ export function VietQrPaymentSection({
       {/* 7. MODAL LIÊN HỆ ADMIN NẾU CHƯA ĐƯỢC CỘNG XU (USER REQUIREMENT) */}
       {/* ============================================================== */}
       {isContactModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-md bg-card border border-border/80 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 pb-20 sm:pb-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md bg-card border border-border/80 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 pb-24 sm:pb-6 flex flex-col gap-4 max-h-[88vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-border/50">
               <div className="flex items-center gap-2">
@@ -1009,19 +1177,19 @@ export function VietQrPaymentSection({
               </div>
 
               {/* Buttons */}
-              <div className="flex items-center gap-2 pt-2">
+              <div className="sticky bottom-0 -mx-5 -mb-5 px-5 py-3 sm:-mx-6 sm:-mb-6 sm:px-6 sm:py-3.5 bg-card/95 backdrop-blur-md border-t border-border/50 z-20 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIsContactModalOpen(false)}
                   disabled={isSubmittingContact}
-                  className="flex-1 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground font-bold text-xs cursor-pointer transition-colors"
+                  className="flex-1 py-3 rounded-xl bg-muted hover:bg-muted/80 text-muted-foreground font-bold text-xs cursor-pointer transition-colors"
                 >
                   Đóng
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingContact}
-                  className="flex-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-50"
+                  className="flex-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-amber-500/25 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isSubmittingContact ? (
                     <>
@@ -1039,6 +1207,8 @@ export function VietQrPaymentSection({
             </form>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

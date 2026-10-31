@@ -9,9 +9,21 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: "login" | "register";
+  redirectTo?: string;
+  onSuccess?: () => void;
+  title?: string;
+  subtitle?: string;
 }
 
-export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
+export function AuthModal({
+  isOpen,
+  onClose,
+  initialMode = "login",
+  redirectTo,
+  onSuccess,
+  title,
+  subtitle,
+}: AuthModalProps) {
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [email, setEmail] = useState("");
@@ -40,6 +52,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
   if (!isOpen || !mounted) return null;
 
   const supabase = createClient();
+  const targetNext = redirectTo || (typeof window !== "undefined" ? window.location.pathname : "/");
 
   // Đăng nhập bằng Google
   const handleGoogleLogin = async () => {
@@ -49,9 +62,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-            window.location.pathname
-          )}`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(targetNext)}`,
         },
       });
       if (error) throw error;
@@ -67,7 +78,7 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
       setIsLoading(true);
       setErrorMessage("");
       const { loginWithFacebook } = await import("@/lib/auth/facebookLogin");
-      await loginWithFacebook(window.location.pathname);
+      await loginWithFacebook(targetNext);
     } catch (err: any) {
       setErrorMessage(err.message || "Không thể kết nối với Facebook.");
       setIsLoading(false);
@@ -100,22 +111,34 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
         });
         if (loginErr) throw loginErr;
 
-        setSuccessMessage("Đăng ký thành công! Bạn nhận được 10 Xu chào mừng.");
+        setSuccessMessage("Đăng ký thành công! Bạn nhận được 50 Xu chào mừng.");
         setTimeout(() => {
           onClose();
-          window.location.reload();
-        }, 1000);
+          if (onSuccess) {
+            onSuccess();
+          } else if (redirectTo) {
+            window.location.href = redirectTo;
+          } else {
+            window.location.reload();
+          }
+        }, 800);
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        setSuccessMessage("Đăng nhập thành công!");
+        setSuccessMessage("Đăng nhập thành công! Bắt đầu đọc truyện...");
         setTimeout(() => {
           onClose();
-          window.location.reload();
-        }, 800);
+          if (onSuccess) {
+            onSuccess();
+          } else if (redirectTo) {
+            window.location.href = redirectTo;
+          } else {
+            window.location.reload();
+          }
+        }, 600);
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Xác thực thất bại, vui lòng kiểm tra lại thông tin.");
@@ -148,12 +171,16 @@ export function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalP
             <img src="/logo-icon.png" alt="ĐọcTruyện.VIP" className="w-full h-full object-contain" />
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-white">
-            {mode === "login" ? "Chào Mừng Trở Lại!" : "Tạo Tài Khoản Mới"}
+            {title ? title : mode === "login" ? "Chào Mừng Trở Lại!" : "Tạo Tài Khoản Mới"}
           </h2>
           <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-            {mode === "login"
+            {subtitle
+              ? subtitle
+              : title
+              ? "Vui lòng đăng nhập để bắt đầu đọc truyện và đồng bộ tiến độ tự động"
+              : mode === "login"
               ? "Đăng nhập để đồng bộ tủ truyện và số dư xu trên mọi thiết bị"
-              : "Đăng ký ngay để nhận 10 Xu tân thủ và lưu tiến độ đọc"}
+              : "Đăng ký ngay để nhận 50 Xu tân thủ và lưu tiến độ đọc"}
           </p>
         </div>
 

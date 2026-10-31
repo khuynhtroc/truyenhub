@@ -19,6 +19,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { toggleStoryBookmark, getLocalBookmarks } from "@/lib/sync/syncService";
 import { recordMissionActivity } from "@/lib/missions";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 interface StoryInteractiveHeroProps {
   story: Story;
@@ -26,6 +27,9 @@ interface StoryInteractiveHeroProps {
 }
 
 export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroProps) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [targetChapterUrl, setTargetChapterUrl] = useState<string>("");
   const [totalLikes, setTotalLikes] = useState<number>(story.total_likes || 0);
   const [isLiked, setIsLiked] = useState<boolean>(false);
   const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
@@ -33,6 +37,28 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
 
   const firstChapterNumber = chapters[0]?.chapter_number || 1;
   const latestChapterNumber = chapters[chapters.length - 1]?.chapter_number || 1;
+
+  // Track auth status
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user);
+    });
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user || null);
+    });
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  const handleReadClick = (e: React.MouseEvent, url: string) => {
+    if (!currentUser) {
+      e.preventDefault();
+      setTargetChapterUrl(url);
+      setIsAuthModalOpen(true);
+    }
+  };
 
   // Sync bookmark and like status
   useEffect(() => {
@@ -197,6 +223,7 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
         {/* Đọc từ đầu */}
         <Link
           href={`/truyen/${story.slug}/${firstChapterNumber}`}
+          onClick={(e) => handleReadClick(e, `/truyen/${story.slug}/${firstChapterNumber}`)}
           className="py-3 px-5 sm:px-6 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-rose-600 hover:opacity-95 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-rose-500/25 transition-all flex items-center gap-2 active:scale-95"
         >
           <Sparkles className="w-4 h-4" />
@@ -208,6 +235,7 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
         {chapters.length > 1 && (
           <Link
             href={`/truyen/${story.slug}/${latestChapterNumber}`}
+            onClick={(e) => handleReadClick(e, `/truyen/${story.slug}/${latestChapterNumber}`)}
             className="py-3 px-4 rounded-xl bg-muted/80 hover:bg-muted text-foreground font-bold text-xs border border-border/60 flex items-center gap-1.5 transition-all active:scale-95"
           >
             <span>Tập mới nhất</span>
@@ -275,6 +303,15 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
           </div>
         </div>
       )}
+
+      {/* Auth Modal when clicking to read story */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        redirectTo={targetChapterUrl}
+        title="Đăng Nhập Để Đọc Truyện"
+        subtitle={`Vui lòng đăng nhập để bắt đầu đọc tác phẩm "${story.title}"`}
+      />
     </>
   );
 }

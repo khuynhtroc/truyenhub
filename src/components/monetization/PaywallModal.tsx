@@ -21,6 +21,7 @@ import { formatVND } from "@/lib/utils";
 import { VietQrPaymentSection } from "@/components/payment/VietQrPaymentSection";
 
 interface PaywallModalProps {
+  chapterId?: string;
   chapterTitle: string;
   chapterNumber: number;
   priceCoins: number;
@@ -29,6 +30,7 @@ interface PaywallModalProps {
 }
 
 export function PaywallModal({
+  chapterId,
   chapterTitle,
   chapterNumber,
   priceCoins,
@@ -38,6 +40,7 @@ export function PaywallModal({
   const [showQR, setShowQR] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"single" | "combo10" | "full">("single");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   // VIP code redeem inline state
@@ -59,17 +62,37 @@ export function PaywallModal({
   const currentCost = plans[selectedPlan].coins;
   const isEnoughCoins = userCoins >= currentCost;
 
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
     if (!isEnoughCoins) {
       setShowQR(true);
       return;
     }
 
+    if (!chapterId) {
+      setIsProcessing(true);
+      setTimeout(() => {
+        setIsProcessing(false);
+        onUnlockSuccess();
+      }, 600);
+      return;
+    }
+
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
+    setUnlockError(null);
+    try {
+      const res = await fetch(`/api/chapters/${chapterId}/unlock`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Mở khóa thất bại");
+      }
       onUnlockSuccess();
-    }, 800);
+    } catch (err: any) {
+      setUnlockError(err.message || "Lỗi xử lý mở khóa chương");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const copyText = (text: string) => {
@@ -222,6 +245,13 @@ export function PaywallModal({
             </div>
           )}
 
+          {unlockError && (
+            <p className="w-full mt-2 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-500 font-bold flex items-center justify-center gap-1.5 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{unlockError}</span>
+            </p>
+          )}
+
           {/* Toggle Code / Giveaway input */}
           <div className="w-full mt-4 pt-4 border-t border-border/50 flex flex-col gap-2">
             {!showCodeInput ? (
@@ -283,19 +313,19 @@ export function PaywallModal({
         <div className="max-w-md mx-auto flex flex-col items-center">
           <div className="w-full flex items-center justify-between mb-4">
             <h3 className="font-extrabold text-lg text-foreground flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-amber-500" />
-              Quét Mã VietQR Nạp Xu
+              <Coins className="w-5 h-5 text-amber-500" />
+              Nạp Xu Mở Khóa (VietQR & PayPal)
             </h3>
             <button
               onClick={() => setShowQR(false)}
-              className="p-1 rounded-full hover:bg-muted text-muted-foreground"
+              className="p-1 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <p className="text-xs text-muted-foreground mb-3">
-            Quét mã QR hoặc bấm nút mở ứng dụng ngân hàng để nạp xu tự động trong 3 giây:
+            Chọn nạp tự động qua VietQR Ngân Hàng hoặc Quốc Tế qua PayPal & Thẻ Visa:
           </p>
 
           <VietQrPaymentSection

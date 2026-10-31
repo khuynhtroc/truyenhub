@@ -1,140 +1,279 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/lib/auth';
+import {
+  testFacebookConnection,
+  testInstagramConnection,
+  testTwitterConnection,
+  testMediumConnection,
+  testTelegramConnection,
+  testBlueskyConnection,
+  testThreadsConnection,
+  testMastodonConnection,
+  testDiscordConnection,
+  testLinkedInConnection,
+  testHubSpotConnection,
+  testDevToConnection,
+  testWordPressConnection,
+  testTumblrConnection,
+  testBloggerConnection,
+  testSocialWebhook,
+  getPinterestToken,
+  testPinterestConnection,
+  sharePostToAllChannels,
+  testRedditConnection,
+  testSlackConnection,
+  testGoogleBusinessConnection,
+  testHashnodeConnection,
+  testVkConnection,
+  testLemmyConnection,
+  testWarpcastConnection,
+  testNostrConnection,
+  testListmonkConnection,
+  testTikTokConnection,
+  testYouTubeConnection,
+  testDribbbleConnection,
+  testWhopConnection,
+  testTwitchConnection,
+  testSkoolConnection,
+  testKickConnection,
+  testMeWeConnection,
+} from '@/lib/social';
+import { db } from '@/lib/db';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   try {
-    const body = await request.json();
-    const { platform, config } = body;
+    const body = await req.json();
+    let channel = body.channel || body.platform;
+    let credentials = body.credentials || body.config || {};
+    let action = body.action || 'test_connection';
+    const post_id = body.post_id;
 
-    if (platform === "telegram") {
-      const { botToken, channelId, message } = config || {};
-      if (!botToken || !channelId) {
-        return NextResponse.json(
-          { success: false, error: "Vui lòng nhập Bot Token và Channel ID Telegram." },
-          { status: 400 }
-        );
-      }
-
-      const text = message || "🚀 [DocTruyen.vip] Kiểm tra kết nối Telegram Bot tự động thành công!\nHệ thống sẵn sàng gửi thông báo chương mới.";
-      const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: channelId,
-          text,
-          parse_mode: "Markdown",
-          disable_web_page_preview: false,
-        }),
-      });
-
-      const tgData = await tgRes.json();
-      if (!tgData.ok) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Lỗi Telegram: ${tgData.description || "Không thể gửi tin nhắn"} (Mã: ${tgData.error_code})`,
-          },
-          { status: 400 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: `Đã gửi tin nhắn thử nghiệm tới ${channelId} thành công!`,
-        result: tgData.result,
-      });
+    if (channel === 'facebook' && (credentials.pageId || credentials.pageAccessToken)) {
+      credentials = {
+        ...credentials,
+        page_id: credentials.page_id || credentials.pageId,
+        access_token: credentials.access_token || credentials.pageAccessToken,
+      };
+    }
+    if (channel === 'telegram' && (credentials.botToken || credentials.channelId)) {
+      credentials = {
+        ...credentials,
+        bot_token: credentials.bot_token || credentials.botToken,
+        chat_id: credentials.chat_id || credentials.channelId,
+      };
     }
 
-    if (platform === "facebook") {
-      const { pageId, pageAccessToken } = config || {};
-      if (!pageId || !pageAccessToken) {
-        return NextResponse.json(
-          { success: false, error: "Vui lòng nhập Page ID và Page Access Token Facebook." },
-          { status: 400 }
-        );
+    // Action 1: Test Connection
+    if (action === 'test_connection') {
+      if (channel === 'facebook') {
+        const { page_id, access_token } = credentials || {};
+        const result = await testFacebookConnection(page_id, access_token);
+        return NextResponse.json(result);
       }
 
-      const cleanToken = String(pageAccessToken).trim();
-      const cleanPageId = String(pageId).trim();
-
-      // 1. Try querying /me (standard for Page Access Tokens)
-      let fbRes = await fetch(
-        `https://graph.facebook.com/v19.0/me?fields=id,name,link&access_token=${encodeURIComponent(cleanToken)}`,
-        { headers: { "User-Agent": "DocTruyenVip/1.0" } }
-      );
-      let fbData = await fbRes.json();
-
-      // 2. If /me failed, try querying with the specific page ID
-      if (fbData.error && cleanPageId) {
-        fbRes = await fetch(
-          `https://graph.facebook.com/v19.0/${cleanPageId}?fields=id,name,link&access_token=${encodeURIComponent(cleanToken)}`,
-          { headers: { "User-Agent": "DocTruyenVip/1.0" } }
-        );
-        fbData = await fbRes.json();
+      if (channel === 'instagram') {
+        const { user_id, access_token, facebook_page_id } = credentials || {};
+        const result = await testInstagramConnection(user_id, access_token, facebook_page_id);
+        return NextResponse.json(result);
       }
 
-      if (fbData.error) {
-        const code = fbData.error.code;
-        const msg = fbData.error.message;
-
-        let guide = `Lỗi Facebook Graph API: ${msg} (Mã lỗi: ${code})`;
-        if (code === 1 || code === 190 || code === 100) {
-          guide += `\n\n📌 Nguyên nhân: Token bạn nhập không phải là "Page Access Token" hoặc chưa được cấp quyền quản trị Fanpage này.\n\n👉 Cách khắc phục:\n1. Vào Graph API Explorer: https://developers.facebook.com/tools/explorer/\n2. Chọn đúng App của bạn ở góc phải (App ID: 1591946348610071).\n3. Ở ô "User or Page", bấm chọn "Get Page Access Token" (KHÔNG chọn User Token).\n4. Tích chọn Fanpage của bạn và cấp quyền: pages_manage_posts, pages_read_engagement.\n5. Sao chép Page Token dán lại vào ô này.`;
-        }
-
-        return NextResponse.json(
-          {
-            success: false,
-            error: guide,
-            rawError: fbData.error,
-          },
-          { status: 400 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: `Kết nối thành công Fanpage: "${fbData.name}" (ID: ${fbData.id})!`,
-        page: fbData,
-      });
-    }
-
-    if (platform === "google_indexing") {
-      const { serviceAccountKey } = config || {};
-      if (!serviceAccountKey) {
-        return NextResponse.json(
-          { success: false, error: "Vui lòng dán nội dung JSON Service Account của Google." },
-          { status: 400 }
-        );
-      }
-
-      try {
-        const parsed = JSON.parse(serviceAccountKey);
-        if (!parsed.client_email || !parsed.private_key) {
-          return NextResponse.json(
-            { success: false, error: "File JSON không hợp lệ (thiếu client_email hoặc private_key)." },
-            { status: 400 }
-          );
-        }
-        return NextResponse.json({
-          success: true,
-          message: `Cấu hình Google Service Account hợp lệ! Client Email: ${parsed.client_email}`,
+      if (channel === 'twitter') {
+        const { api_key, api_secret, access_token, access_secret } = credentials || {};
+        const result = await testTwitterConnection({
+          apiKey: api_key,
+          apiSecret: api_secret,
+          accessToken: access_token,
+          accessSecret: access_secret,
         });
-      } catch (err: any) {
-        return NextResponse.json(
-          { success: false, error: "Nội dung JSON Service Account sai định dạng." },
-          { status: 400 }
-        );
+        return NextResponse.json(result);
       }
+
+      if (channel === 'medium') {
+        const { integration_token } = credentials || {};
+        const result = await testMediumConnection(integration_token);
+        return NextResponse.json(result);
+      }
+
+      if (channel === 'pinterest') {
+        const accessToken = credentials?.access_token || (await getPinterestToken());
+        if (!accessToken) {
+          return NextResponse.json({ success: false, error: 'Chưa điền Pinterest Access Token' });
+        }
+        return NextResponse.json(await testPinterestConnection(accessToken));
+      }
+
+      if (channel === 'telegram') {
+        const { bot_token, chat_id } = credentials || {};
+        return NextResponse.json(await testTelegramConnection(bot_token, chat_id));
+      }
+
+      if (channel === 'bluesky') {
+        const { identifier, app_password } = credentials || {};
+        return NextResponse.json(await testBlueskyConnection(identifier, app_password));
+      }
+
+      if (channel === 'threads') {
+        const { user_id, access_token } = credentials || {};
+        return NextResponse.json(await testThreadsConnection(user_id, access_token));
+      }
+
+      if (channel === 'mastodon') {
+        const { instance_url, access_token } = credentials || {};
+        return NextResponse.json(await testMastodonConnection(instance_url, access_token));
+      }
+
+      if (channel === 'discord') {
+        const { webhook_url } = credentials || {};
+        return NextResponse.json(await testDiscordConnection(webhook_url));
+      }
+
+      if (channel === 'linkedin') {
+        const { access_token, author_urn } = credentials || {};
+        return NextResponse.json(await testLinkedInConnection(access_token, author_urn));
+      }
+
+      if (channel === 'hubspot') {
+        const { access_token, blog_id } = credentials || {};
+        return NextResponse.json(await testHubSpotConnection(access_token, blog_id));
+      }
+
+      if (channel === 'devto') {
+        const { api_key } = credentials || {};
+        return NextResponse.json(await testDevToConnection(api_key));
+      }
+
+      if (channel === 'wordpress') {
+        const { site_url, username, app_password } = credentials || {};
+        return NextResponse.json(await testWordPressConnection(site_url, username, app_password));
+      }
+
+      if (channel === 'tumblr') {
+        const { blog_name, access_token } = credentials || {};
+        return NextResponse.json(await testTumblrConnection(blog_name, access_token));
+      }
+
+      if (channel === 'blogger') {
+        const { blog_id, access_token } = credentials || {};
+        return NextResponse.json(await testBloggerConnection(blog_id, access_token));
+      }
+
+      if (channel === 'webhook') {
+        const { webhook_url, webhook_secret } = credentials || {};
+        const result = await testSocialWebhook(webhook_url, webhook_secret);
+        return NextResponse.json(result);
+      }
+
+      // Extended Channels
+      if (channel === 'tiktok') {
+        return NextResponse.json(await testTikTokConnection(credentials || {}));
+      }
+
+      if (channel === 'youtube') {
+        return NextResponse.json(await testYouTubeConnection(credentials || {}));
+      }
+
+      if (channel === 'google_business') {
+        return NextResponse.json(await testGoogleBusinessConnection(credentials || {}));
+      }
+
+      if (channel === 'reddit') {
+        return NextResponse.json(await testRedditConnection(credentials || {}));
+      }
+
+      if (channel === 'slack') {
+        return NextResponse.json(await testSlackConnection(credentials?.webhook_url || ''));
+      }
+
+      if (channel === 'dribbble') {
+        return NextResponse.json(await testDribbbleConnection(credentials || {}));
+      }
+
+      if (channel === 'whop') {
+        return NextResponse.json(await testWhopConnection(credentials || {}));
+      }
+
+      if (channel === 'twitch') {
+        return NextResponse.json(await testTwitchConnection(credentials || {}));
+      }
+
+      if (channel === 'skool') {
+        return NextResponse.json(await testSkoolConnection(credentials || {}));
+      }
+
+      if (channel === 'kick') {
+        return NextResponse.json(await testKickConnection(credentials || {}));
+      }
+
+      if (channel === 'warpcast') {
+        return NextResponse.json(await testWarpcastConnection(credentials || {}));
+      }
+
+      if (channel === 'vk') {
+        return NextResponse.json(await testVkConnection(credentials || {}));
+      }
+
+      if (channel === 'lemmy') {
+        return NextResponse.json(await testLemmyConnection(credentials || {}));
+      }
+
+      if (channel === 'mewe') {
+        return NextResponse.json(await testMeWeConnection(credentials || {}));
+      }
+
+      if (channel === 'nostr') {
+        return NextResponse.json(await testNostrConnection(credentials || {}));
+      }
+
+      if (channel === 'listmonk') {
+        return NextResponse.json(await testListmonkConnection(credentials || {}));
+      }
+
+      if (channel === 'hashnode') {
+        return NextResponse.json(await testHashnodeConnection(credentials || {}));
+      }
+
+      return NextResponse.json({ success: false, error: 'Kênh không hợp lệ' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: false, error: "Nền tảng không hỗ trợ" }, { status: 400 });
-  } catch (error: any) {
-    console.error("Test social connection error:", error);
-    return NextResponse.json(
-      { success: false, error: error.message || "Lỗi xử lý kiểm tra kết nối" },
-      { status: 500 }
-    );
+    // Action 2: Test Post Share (send sample or real post)
+    if (action === 'test_post') {
+      let postToShare: any = null;
+      if (post_id) {
+        postToShare = await db.findOne('posts', { id: post_id });
+      }
+      if (!postToShare) {
+        const { rows } = await db.find('posts', {
+          eq: { status: 'published' },
+          limit: 1,
+        });
+        postToShare = rows[0];
+      }
+
+      if (!postToShare) {
+        return NextResponse.json({
+          success: false,
+          error: 'Chưa có bài viết xuất bản nào trên website để đăng thử',
+        });
+      }
+
+      const report = await sharePostToAllChannels(postToShare, {
+        forceChannels: channel ? [channel] : undefined,
+        ignoreGlobalToggle: true,
+      });
+
+      return NextResponse.json({
+        success: report.total_success > 0,
+        report,
+      });
+    }
+
+    return NextResponse.json({ success: false, error: 'Hành động không xác định' }, { status: 400 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || String(err) }, { status: 500 });
   }
 }

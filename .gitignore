@@ -69,3 +69,20 @@ scripts/GoogleCloudSDKInstaller.exe
 deploy/cloudrun/model/
 *.wav
 *.mp3
+
+# Build & temporary artifacts
+*.zip
+*.apk
+*-sa.json
+test_*.png
+test_*.webp
+premium_*.webp
+sample_*.webp
+scratch/
+generated_covers/
+google_cached_favicon.png
+
+
+scripts/*.py
+scripts/*.txt
+!scripts/notify_telegram.py

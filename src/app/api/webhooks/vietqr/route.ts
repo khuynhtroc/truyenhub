@@ -50,11 +50,34 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Tìm profile người dùng
-    const { data: profile } = await supabaseAdmin
-      .from("profiles")
-      .select("id, coins_balance")
-      .or(`id.eq.${orderOrUserId},email.ilike.%${orderOrUserId}%`)
-      .single();
+    let profile: any = null;
+    const isFullUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderOrUserId);
+    if (isFullUuid) {
+      const { data } = await supabaseAdmin
+        .from("profiles")
+        .select("id, coins_balance, email, display_name")
+        .eq("id", orderOrUserId)
+        .maybeSingle();
+      profile = data;
+    } else if (/^[0-9a-f]{8}$/i.test(orderOrUserId)) {
+      const lower = orderOrUserId.toLowerCase();
+      const { data } = await supabaseAdmin
+        .from("profiles")
+        .select("id, coins_balance, email, display_name")
+        .gte("id", `${lower}-0000-0000-0000-000000000000`)
+        .lt("id", `${lower}-ffff-ffff-ffff-ffffffffffff`)
+        .limit(1);
+      if (data && data.length > 0) profile = data[0];
+    }
+
+    if (!profile) {
+      const { data } = await supabaseAdmin
+        .from("profiles")
+        .select("id, coins_balance, email, display_name")
+        .ilike("email", `%${orderOrUserId}%`)
+        .limit(1);
+      if (data && data.length > 0) profile = data[0];
+    }
 
     if (!profile) {
       return NextResponse.json({ message: "Không tìm thấy user" }, { status: 404 });

@@ -133,6 +133,11 @@ export function Footer() {
             </h4>
             <ul className="flex flex-col gap-1.5 text-xs font-medium">
               <li>
+                <Link href="/chinh-sach-quyen-rieng-tu" className="hover:text-rose-500 transition-colors">
+                  Chính Sách Quyền Riêng Tư
+                </Link>
+              </li>
+              <li>
                 <Link href="/chinh-sach-bao-mat" className="hover:text-rose-500 transition-colors">
                   Chính Sách Bảo Mật
                 </Link>

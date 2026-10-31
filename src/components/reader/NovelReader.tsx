@@ -28,6 +28,7 @@ import {
   User,
   Gauge,
   Crown,
+  RefreshCw,
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { createClient } from "@/lib/supabase/client";
@@ -762,6 +763,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
 
   // 9. Start / Resume Audio Playback
   const startAudio = (fromIdx?: number) => {
+    if (!currentUser) return;
     const list = chunks.length > 0 ? chunks : parseChunks();
     setChunks(list);
 
@@ -1377,13 +1379,32 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
           {chapter.title}
         </h2>
 
-        {authChecked && !currentUser ? (
+        {!authChecked ? (
+          <div className="py-24 flex flex-col items-center justify-center gap-3">
+            <RefreshCw className="w-7 h-7 text-rose-500 animate-spin" />
+            <p className="text-xs text-muted-foreground font-semibold">Đang kiểm tra quyền đọc truyện...</p>
+          </div>
+        ) : !currentUser ? (
           <AuthRequiredGate
             storyTitle={story.title}
             chapterTitle={chapter.title}
             storySlug={story.slug}
           />
-        ) : isUnlocked ? (
+        ) : chapter.is_locked && !isUnlocked ? (
+          <div className="my-8">
+            <PaywallModal
+              chapterId={chapter.id}
+              chapterTitle={chapter.title}
+              chapterNumber={chapter.chapter_number}
+              priceCoins={chapter.price_coins}
+              userCoins={userCoins}
+              onUnlockSuccess={() => {
+                setIsUnlocked(true);
+                setUserCoins((prev) => Math.max(0, prev - (chapter.price_coins || 10)));
+              }}
+            />
+          </div>
+        ) : (
           <>
             {vipUnlockedReason && (
               <div className="mb-6 p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border border-amber-500/30 text-xs font-bold text-amber-500 flex items-center justify-between gap-3 shadow-xs">
@@ -1434,20 +1455,10 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
             )}
           </article>
           </>
-        ) : (
-          <div className="my-8">
-            <PaywallModal
-              chapterTitle={chapter.title}
-              chapterNumber={chapter.chapter_number}
-              priceCoins={chapter.price_coins}
-              userCoins={userCoins}
-              onUnlockSuccess={() => setIsUnlocked(true)}
-            />
-          </div>
         )}
 
         {/* Chapter Navigation Buttons (Clicking cleanly stops audio of this chapter!) */}
-        {isUnlocked && (!authChecked || currentUser) && (
+        {currentUser && isUnlocked && (
           <div className="w-full my-12 flex items-center justify-between gap-4">
             {prevChapter ? (
               <Link

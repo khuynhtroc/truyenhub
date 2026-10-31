@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Chapter, StoryVersion } from "@/types";
 import { 
@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   Layers
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 interface ChapterTableOfContentsProps {
   storySlug: string;
@@ -37,6 +39,30 @@ export function ChapterTableOfContents({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortAsc, setSortAsc] = useState(true);
   const [selectedRange, setSelectedRange] = useState<number>(0); // 0 = chunk 0 (1-50)
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [targetChapterUrl, setTargetChapterUrl] = useState<string>("");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user);
+    });
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user || null);
+    });
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  const handleChapterClick = (e: React.MouseEvent, url: string) => {
+    if (!currentUser) {
+      e.preventDefault();
+      setTargetChapterUrl(url);
+      setIsAuthModalOpen(true);
+    }
+  };
 
   // Sắp xếp
   const sortedChapters = useMemo(() => {
@@ -238,6 +264,7 @@ export function ChapterTableOfContents({
             <Link
               key={ch.id || `ch-${ch.chapter_number}`}
               href={`/truyen/${storySlug}/${ch.chapter_number}`}
+              onClick={(e) => handleChapterClick(e, `/truyen/${storySlug}/${ch.chapter_number}`)}
               className="flex items-center justify-between p-3 rounded-xl border border-border/50 hover:border-rose-500/50 hover:bg-muted/50 transition-all group bg-background/50"
             >
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
@@ -276,6 +303,15 @@ export function ChapterTableOfContents({
           Cập nhật định kỳ từ DocTruyen.vip
         </span>
       </div>
+
+      {/* Auth Modal when clicking any chapter */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        redirectTo={targetChapterUrl}
+        title="Đăng Nhập Để Đọc Truyện"
+        subtitle={`Vui lòng đăng nhập để bắt đầu đọc tác phẩm "${storyTitle}"`}
+      />
     </section>
   );
 }

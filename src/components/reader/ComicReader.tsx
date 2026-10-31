@@ -19,6 +19,7 @@ import {
   X,
   Lock,
   Crown,
+  RefreshCw,
 } from "lucide-react";
 import { CommentSection } from "@/components/comment/CommentSection";
 import { normalizeMediaUrl, SITE_CONFIG } from "@/lib/utils";
@@ -383,13 +384,43 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
 
       {/* Comic Pages Container */}
       <main ref={containerRef} className={`w-full ${imageWidth} mx-auto flex flex-col items-center my-4`}>
-        {authChecked && !currentUser ? (
+        {!authChecked ? (
+          <div className="py-24 flex flex-col items-center justify-center gap-3">
+            <RefreshCw className="w-7 h-7 text-rose-500 animate-spin" />
+            <p className="text-xs text-neutral-400 font-semibold">Đang kiểm tra quyền đọc truyện...</p>
+          </div>
+        ) : !currentUser ? (
           <AuthRequiredGate
             storyTitle={story.title}
             chapterTitle={chapter.title}
             storySlug={story.slug}
           />
-        ) : isUnlocked ? (
+        ) : chapter.is_locked && !isUnlocked ? (
+          /* Locked State Preview */
+          <div className="w-full flex flex-col items-center px-4">
+            {pages.length > 0 && (
+              <div className="relative w-full max-h-[480px] overflow-hidden rounded-2xl mb-4">
+                <img
+                  src={pages[0]}
+                  alt="Trang xem thử"
+                  className="w-full h-auto object-cover blur-[2px] opacity-60"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-transparent" />
+              </div>
+            )}
+
+            <div className="w-full max-w-lg">
+              <PaywallModal
+                chapterId={chapter.id}
+                chapterTitle={chapter.title}
+                chapterNumber={chapter.chapter_number}
+                priceCoins={chapter.price_coins}
+                userCoins={userCoins}
+                onUnlockSuccess={handleUnlockSuccess}
+              />
+            </div>
+          </div>
+        ) : (
           <div className="w-full flex flex-col items-center">
             {vipUnlockedReason && (
               <div className="w-full mb-4 px-4">
@@ -424,34 +455,10 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
               );
             })}
           </div>
-        ) : (
-          /* Locked State Preview */
-          <div className="w-full flex flex-col items-center px-4">
-            {pages.length > 0 && (
-              <div className="relative w-full max-h-[480px] overflow-hidden rounded-2xl mb-4">
-                <img
-                  src={pages[0]}
-                  alt="Trang xem thử"
-                  className="w-full h-auto object-cover blur-[2px] opacity-60"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-transparent" />
-              </div>
-            )}
-
-            <div className="w-full max-w-lg">
-              <PaywallModal
-                chapterTitle={chapter.title}
-                chapterNumber={chapter.chapter_number}
-                priceCoins={chapter.price_coins}
-                userCoins={userCoins}
-                onUnlockSuccess={handleUnlockSuccess}
-              />
-            </div>
-          </div>
         )}
 
         {/* Bottom Chapter Switcher */}
-        {isUnlocked && (
+        {currentUser && isUnlocked && (
           <div className="w-full max-w-md mx-auto my-12 px-4 flex items-center justify-between gap-4">
             {prevChapter ? (
               <Link

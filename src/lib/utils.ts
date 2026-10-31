@@ -47,7 +47,23 @@ export function normalizeMediaUrl(url?: string | null): string {
   return url;
 }
 
+export function cleanDescription(desc?: string | null): string {
+  if (!desc) return "";
+  return desc
+    .replace(/<\/?[^>]+(>|$)/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/(\n\s*)?(👉\s*)?Hãy cùng đọc[\s\S]*?DocTruyen\.VIP.*$/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function removeVietnameseTones(str: string): string {
+
   if (!str) return "";
   str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
   str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");

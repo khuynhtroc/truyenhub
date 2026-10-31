@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Story } from "@/types";
-import { normalizeMediaUrl, formatNumber, SITE_CONFIG } from "@/lib/utils";
+import { normalizeMediaUrl, cleanDescription, formatNumber, SITE_CONFIG } from "@/lib/utils";
 import { Sparkles, BookOpen, Flame, Heart, Eye, ArrowRight } from "lucide-react";
 
 interface HeroCarouselProps {
@@ -90,7 +90,7 @@ export function HeroCarousel({ stories }: HeroCarouselProps) {
 
           {/* Synopsis */}
           <p className="text-xs sm:text-sm text-neutral-400 line-clamp-2 leading-relaxed">
-            {current.description ||
+            {cleanDescription(current.description) ||
               "Khám phá thế giới cốt truyện lôi cuốn, hình ảnh sắc nét chuẩn 4K và nội dung cập nhật mới mỗi ngày tại DocTruyen.vip."}
           </p>
 
@@ -108,11 +108,11 @@ export function HeroCarousel({ stories }: HeroCarouselProps) {
             <div className="flex items-center gap-3 text-xs text-neutral-400 font-semibold">
               <span className="flex items-center gap-1 text-rose-400">
                 <Heart className="w-3.5 h-3.5 fill-rose-500" />
-                {formatNumber(current.total_likes || 420)}
+                {formatNumber(current.total_likes || 0)}
               </span>
               <span className="flex items-center gap-1">
                 <Eye className="w-3.5 h-3.5" />
-                {formatNumber(current.total_views || 7800)}
+                {formatNumber(current.total_views || 0)}
               </span>
             </div>
           </div>

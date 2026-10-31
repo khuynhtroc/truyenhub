@@ -50,15 +50,23 @@ import {
   Share2,
   Ticket,
   Crown,
+  Radio,
+  Calendar,
+  X,
 } from "lucide-react";
 import { AdminAiSeoModal } from "@/components/admin/AdminAiSeoModal";
 import { AdminBookImportModal } from "@/components/admin/AdminBookImportModal";
 import { AdminBuffModal } from "@/components/admin/AdminBuffModal";
 import { AdminBlogModal } from "@/components/admin/AdminBlogModal";
 import { AdminReportsSection } from "@/components/admin/AdminReportsSection";
+import { AdminUserDetailModal } from "@/components/admin/AdminUserDetailModal";
 import { AdminSocialSection } from "@/components/admin/AdminSocialSection";
 import { AdminBulkPricingModal } from "@/components/admin/AdminBulkPricingModal";
 import { AdminVouchersSection } from "@/components/admin/AdminVouchersSection";
+import SocialAutoShareManager from "@/components/admin/SocialAutoShareManager";
+import AdminGoogleIndexingTab from "@/components/admin/AdminGoogleIndexingTab";
+import AdminTrendsTab from "@/components/admin/AdminTrendsTab";
+import AdminAiSchedulerTab from "@/components/admin/AdminAiSchedulerTab";
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -78,6 +86,9 @@ export default function AdminPage() {
     | "import"
     | "trash"
     | "social"
+    | "indexing"
+    | "trends"
+    | "ai-scheduler"
     | "settings"
   >("overview");
 
@@ -218,8 +229,17 @@ export default function AdminPage() {
   const [userVipModal, setUserVipModal] = useState<any>(null);
   const [selectedVipLevel, setSelectedVipLevel] = useState<number>(1);
   const [selectedVipDays, setSelectedVipDays] = useState<number>(30);
-  const [userVipFilter, setUserVipFilter] = useState<string>("");
+  const [userSearchQuery, setUserSearchQuery] = useState<string>("");
+  const [userVipFilter, setUserVipFilter] = useState<string>("all");
+  const [userCoinsFilter, setUserCoinsFilter] = useState<string>("all");
+  const [userSortFilter, setUserSortFilter] = useState<string>("newest");
   const [userSourceFilter, setUserSourceFilter] = useState<string>("");
+  const [selectedDetailUserId, setSelectedDetailUserId] = useState<string | null>(null);
+
+  // GA4 Real Views Sync State
+  const [ga4Syncing, setGa4Syncing] = useState<boolean>(false);
+  const [ga4SyncResult, setGa4SyncResult] = useState<string | null>(null);
+  const [ga4PropertyIdInput, setGa4PropertyIdInput] = useState<string>("");
 
   // Dynamic VietQR Generator
   const [qrModalUser, setQrModalUser] = useState<any>(null);
@@ -288,6 +308,13 @@ export default function AdminPage() {
     if (activeTab === "trash") fetchTrash();
     if (activeTab === "settings" || activeTab === "social") fetchSettings();
   }, [isAuthenticated, activeTab]);
+
+  // Re-fetch users when filter options change
+  useEffect(() => {
+    if (activeTab === "users" && isAuthenticated) {
+      fetchUsers();
+    }
+  }, [userVipFilter, userCoinsFilter, userSortFilter]);
 
   // 1. Fetch Stats
   const fetchStats = async () => {
@@ -450,11 +477,18 @@ export default function AdminPage() {
     }
   };
 
-  // 8. Fetch Users
+  // 8. Fetch Users with Advanced Filters & High Limit
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      const res = await fetch("/api/admin/users");
+      const params = new URLSearchParams();
+      if (userSearchQuery.trim()) params.append("q", userSearchQuery.trim());
+      if (userVipFilter && userVipFilter !== "all") params.append("vip", userVipFilter);
+      if (userCoinsFilter && userCoinsFilter !== "all") params.append("coins", userCoinsFilter);
+      if (userSortFilter) params.append("sort", userSortFilter);
+      params.append("limit", "250");
+
+      const res = await fetch(`/api/admin/users?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setUsers(data.users);
@@ -463,6 +497,31 @@ export default function AdminPage() {
       console.error(e);
     } finally {
       setLoadingUsers(false);
+    }
+  };
+
+  // GA4 & Real Reading History Sync Handler
+  const handleSyncRealViews = async () => {
+    setGa4Syncing(true);
+    setGa4SyncResult(null);
+    try {
+      const res = await fetch("/api/admin/analytics/sync-views", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId: ga4PropertyIdInput.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGa4SyncResult(data.message);
+        showToast(data.message);
+        fetchStats();
+      } else {
+        setGa4SyncResult("Lỗi: " + (data.error || "Không thể đồng bộ"));
+      }
+    } catch (err: any) {
+      setGa4SyncResult("Lỗi kết nối: " + err.message);
+    } finally {
+      setGa4Syncing(false);
     }
   };
 
@@ -1381,7 +1440,10 @@ export default function AdminPage() {
             { id: "import", label: "Nhập Hàng Loạt", icon: Upload },
             { id: "trash", label: "Thùng Rác", icon: Trash2, badge: stats?.totalTrash },
 
-            { id: "social", label: "Mạng Xã Hội & Auto Share", icon: Share2 },
+            { id: "social", label: "Social AutoShare (25+ Kênh)", icon: Share2 },
+            { id: "indexing", label: "Google Auto Indexing", icon: Zap },
+            { id: "trends", label: "Social Listening & Trends", icon: Radio },
+            { id: "ai-scheduler", label: "Lên Lịch AI", icon: Calendar },
             { id: "settings", label: "Cấu Hình & SEO", icon: Settings },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -3185,59 +3247,140 @@ export default function AdminPage() {
         {/* ============================================================== */}
         {activeTab === "users" && (
           <div className="flex flex-col gap-4 animate-in fade-in">
-            <div className="p-4 rounded-2xl bg-card border border-border/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-sm">
+            {/* Header Card & GA4 Sync Bar */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-card border border-border/50 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 shadow-sm">
               <div>
-                <h3 className="font-extrabold text-sm text-foreground flex items-center gap-2">
-                  <Users className="w-4 h-4 text-indigo-400" /> Phân Loại Độc Giả & Nạp Xu Tự Động
+                <h3 className="font-extrabold text-sm sm:text-base text-foreground flex items-center gap-2">
+                  <Users className="w-5 h-5 text-indigo-400" /> Quản Lý Độc Giả & Hồ Sơ Thành Viên Toàn Diện
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  Quản lý số dư xu, cấp độ thành viên VIP, nguồn khách hàng và sinh mã VietQR cá nhân
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Lọc thành viên, theo dõi số dư xu, lịch sử nạp, tần suất đọc truyện và đồng bộ lượt xem thực tế
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* GA4 Real View Sync Button */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={handleSyncRealViews}
+                  disabled={ga4Syncing}
+                  className="px-3.5 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-indigo-400 text-xs font-bold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-60"
+                  title="Đồng bộ lượt xem thực tế từ GA4 & Lịch sử đọc"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${ga4Syncing ? "animate-spin text-indigo-400" : ""}`} />
+                  {ga4Syncing ? "Đang đồng bộ..." : "Đồng Bộ View GA4 & Thực Tế"}
+                </button>
+              </div>
+            </div>
+
+            {ga4SyncResult && (
+              <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 flex items-center justify-between">
+                <span>{ga4SyncResult}</span>
+                <button onClick={() => setGa4SyncResult(null)} className="p-1 hover:text-white cursor-pointer">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Filter & Search Bar */}
+            <div className="p-3.5 rounded-2xl bg-card border border-border/50 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+              {/* Search Box */}
+              <div className="relative flex-1 min-w-[220px]">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Tìm theo Tên, Email hoặc User ID..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && fetchUsers()}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-muted/40 border border-border/60 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* VIP Filter */}
                 <select
                   value={userVipFilter}
                   onChange={(e) => setUserVipFilter(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
                 >
-                  <option value="">Tất cả Cấp độ</option>
-                  <option value="vip_diamond">VIP Kim Cương</option>
-                  <option value="vip_gold">VIP Vàng</option>
-                  <option value="vip_silver">VIP Bạc</option>
-                  <option value="normal">Độc giả thường</option>
+                  <option value="all">Tất cả Cấp VIP</option>
+                  <option value="1">VIP 1 (Đồng)</option>
+                  <option value="2">VIP 2 (Bạc)</option>
+                  <option value="3">VIP 3 (Vàng)</option>
+                  <option value="4">VIP 4 (Kim Cương)</option>
+                  <option value="any_vip">Chỉ Thành Viên VIP</option>
+                  <option value="free">Độc giả thường (Free)</option>
                 </select>
 
+                {/* Coin Filter */}
                 <select
-                  value={userSourceFilter}
-                  onChange={(e) => setUserSourceFilter(e.target.value)}
+                  value={userCoinsFilter}
+                  onChange={(e) => setUserCoinsFilter(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
                 >
-                  <option value="">Tất cả Nguồn KH</option>
-                  <option value="seo">Google SEO</option>
-                  <option value="facebook">Facebook / Zalo</option>
-                  <option value="app">App Mobile</option>
-                  <option value="direct">Truy cập trực tiếp</option>
+                  <option value="all">Tất cả Số Dư Xu</option>
+                  <option value="has_coins">Có Xu (&gt; 0)</option>
+                  <option value="no_coins">Hết Xu (= 0)</option>
+                  <option value="gt_100">Nhiều Xu (≥ 100 xu)</option>
+                  <option value="gt_1000">Đại gia (≥ 1,000 xu)</option>
+                </select>
+
+                {/* Sort Order */}
+                <select
+                  value={userSortFilter}
+                  onChange={(e) => setUserSortFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs font-semibold focus:outline-none"
+                >
+                  <option value="newest">Mới tham gia nhất</option>
+                  <option value="recently_active">Hoạt động gần nhất</option>
+                  <option value="most_coins">Số dư xu cao nhất</option>
+                  <option value="highest_vip">Cấp VIP cao nhất</option>
+                  <option value="oldest">Thành viên lâu năm</option>
                 </select>
 
                 <button
                   onClick={fetchUsers}
+                  className="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  title="Tìm kiếm & Cập nhật"
+                >
+                  <Search className="w-3.5 h-3.5" /> Tìm
+                </button>
+
+                <button
+                  onClick={() => {
+                    setUserSearchQuery("");
+                    setUserVipFilter("all");
+                    setUserCoinsFilter("all");
+                    setUserSortFilter("newest");
+                    fetchUsers();
+                  }}
                   className="px-3 py-2 rounded-xl bg-muted hover:bg-muted/80 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  title="Làm mới bộ lọc"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
+            {/* Results Count Bar */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+              <span>
+                Hiển thị: <strong className="text-foreground">{users.length}</strong> thành viên
+              </span>
+              <span className="italic">💡 Click vào bất kỳ dòng nào hoặc nút "Chi Tiết" để xem toàn bộ lịch sử đọc & giao dịch</span>
+            </div>
+
+            {/* Users Table */}
             <div className="rounded-2xl border border-border/50 bg-card overflow-hidden shadow-sm">
               <table className="w-full text-left text-xs">
                 <thead className="bg-muted/40 border-b border-border/50 text-muted-foreground uppercase text-[10px] font-black">
                   <tr>
-                    <th className="p-3.5">Độc Giả</th>
+                    <th className="p-3.5">Độc Giả (Click Xem Lịch Sử)</th>
                     <th className="p-3.5">Cấp Bậc VIP</th>
-                    <th className="p-3.5">Nguồn KH</th>
+                    <th className="p-3.5">Tham Gia / Hoạt Động</th>
                     <th className="p-3.5">Số Dư Xu</th>
-                    <th className="p-3.5 text-right">Thao Tác Nạp & QR</th>
+                    <th className="p-3.5 text-right">Thao Tác Quản Trị</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
@@ -3251,19 +3394,42 @@ export default function AdminPage() {
                   ) : users.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                        Chưa có người dùng nào đăng ký tài khoản.
+                        Không tìm thấy người dùng nào khớp với bộ lọc.
                       </td>
                     </tr>
                   ) : (
                     users.map((u) => (
-                      <tr key={u.id} className="hover:bg-muted/30 transition-colors">
+                      <tr
+                        key={u.id}
+                        className="hover:bg-muted/40 transition-colors group cursor-pointer"
+                        onClick={(e) => {
+                          // Prevent modal open when clicking buttons
+                          if ((e.target as HTMLElement).closest("button")) return;
+                          setSelectedDetailUserId(u.id);
+                        }}
+                      >
                         <td className="p-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-500 to-rose-500 text-white font-bold flex items-center justify-center shrink-0">
-                              {(u.display_name || u.email || "U")[0].toUpperCase()}
+                            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 text-white font-bold flex items-center justify-center shrink-0 shadow-sm">
+                              {u.avatar_url ? (
+                                <img
+                                  src={u.avatar_url}
+                                  alt={u.display_name || "User"}
+                                  className="w-full h-full object-cover rounded-2xl"
+                                />
+                              ) : (
+                                (u.display_name || u.email || "U")[0].toUpperCase()
+                              )}
                             </div>
                             <div className="flex flex-col">
-                              <span className="font-bold text-foreground">{u.display_name || "Chưa đặt tên"}</span>
+                              <span className="font-bold text-foreground group-hover:text-indigo-400 transition-colors flex items-center gap-1.5">
+                                {u.display_name || "Chưa đặt tên"}
+                                {u.role === "admin" && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-500/20 text-rose-400">
+                                    Admin
+                                  </span>
+                                )}
+                              </span>
                               <span className="text-[11px] text-muted-foreground font-mono">{u.email}</span>
                             </div>
                           </div>
@@ -3280,11 +3446,25 @@ export default function AdminPage() {
                             )}
                           </div>
                         </td>
-                        <td className="p-3.5 text-muted-foreground">Google / Direct</td>
+                        <td className="p-3.5 text-muted-foreground">
+                          <span className="block text-foreground font-semibold">
+                            {new Date(u.created_at).toLocaleDateString("vi-VN")}
+                          </span>
+                          <span className="text-[10px] block">
+                            {u.updated_at ? `Sửa: ${new Date(u.updated_at).toLocaleDateString("vi-VN")}` : "Mới tham gia"}
+                          </span>
+                        </td>
                         <td className="p-3.5 font-bold text-amber-500 font-mono text-sm">
                           {(u.coins_balance || 0).toLocaleString()} xu
                         </td>
                         <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => setSelectedDetailUserId(u.id)}
+                            className="px-2.5 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 font-bold mr-1.5 cursor-pointer inline-flex items-center gap-1"
+                            title="Xem chi tiết lịch sử giao dịch & đọc truyện"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Chi Tiết
+                          </button>
                           <button
                             onClick={() => {
                               setUserVipModal(u);
@@ -3294,7 +3474,7 @@ export default function AdminPage() {
                             className="px-2.5 py-1.5 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 font-bold mr-1.5 cursor-pointer inline-flex items-center gap-1"
                             title="Nâng cấp VIP trực tiếp"
                           >
-                            <Crown className="w-3.5 h-3.5" /> Nâng Cấp VIP
+                            <Crown className="w-3.5 h-3.5" /> VIP
                           </button>
                           <button
                             onClick={() => {
@@ -3302,8 +3482,9 @@ export default function AdminPage() {
                               setQrAmount(50000);
                             }}
                             className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold mr-1.5 cursor-pointer inline-flex items-center gap-1"
+                            title="Tạo VietQR nạp tiền"
                           >
-                            <QrCode className="w-3.5 h-3.5" /> Tạo VietQR
+                            <QrCode className="w-3.5 h-3.5" /> QR
                           </button>
                           <button
                             onClick={() => {
@@ -3311,8 +3492,9 @@ export default function AdminPage() {
                               setCoinAmount(100);
                             }}
                             className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold cursor-pointer inline-flex items-center gap-1"
+                            title="Cộng/Trừ số dư xu"
                           >
-                            <Coins className="w-3.5 h-3.5" /> Chỉnh Xu
+                            <Coins className="w-3.5 h-3.5" /> Xu
                           </button>
                         </td>
                       </tr>
@@ -3494,16 +3676,51 @@ export default function AdminPage() {
         )}
 
         {/* ============================================================== */}
-        {/* TAB 12: SOCIAL MEDIA, OAUTH & AUTO-SHARE */}
+        {/* TAB 12: SOCIAL MEDIA, OAUTH & AUTO-SHARE (25+ KÊNH) */}
         {/* ============================================================== */}
         {activeTab === "social" && (
-          <AdminSocialSection
-            settings={settings}
-            setSettings={setSettings}
-            onSave={handleSaveSettings}
-            saving={savingSettings}
-            showToast={showToast}
-          />
+          <div className="space-y-8">
+            <SocialAutoShareManager />
+            <div className="pt-6 border-t border-border/50">
+              <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4">
+                Thiết Lập OAuth &amp; Telegram Bot Đọc Truyện (Nâng Cao)
+              </h3>
+              <AdminSocialSection
+                settings={settings}
+                setSettings={setSettings}
+                onSave={handleSaveSettings}
+                saving={savingSettings}
+                showToast={showToast}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB: GOOGLE AUTO INDEXING */}
+        {/* ============================================================== */}
+        {activeTab === "indexing" && (
+          <div className="space-y-6">
+            <AdminGoogleIndexingTab siteUrl="https://doctruyen.vip" />
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB: SOCIAL LISTENING & TRENDS */}
+        {/* ============================================================== */}
+        {activeTab === "trends" && (
+          <div className="space-y-6">
+            <AdminTrendsTab />
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB: LÊN LỊCH AI (AI SCHEDULER) */}
+        {/* ============================================================== */}
+        {activeTab === "ai-scheduler" && (
+          <div className="space-y-6">
+            <AdminAiSchedulerTab />
+          </div>
         )}
 
         {/* ============================================================== */}
@@ -3758,6 +3975,89 @@ export default function AdminPage() {
                       })
                     }
                     className="w-full px-3 py-2 rounded-xl bg-muted/50 border border-border/60 text-xs uppercase font-black"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* CUSTOM SCRIPT & CODE INJECTION (HEAD, BODY, FOOTER, CSS) */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-card border border-border/70 flex flex-col gap-4 shadow-sm">
+              <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-foreground">
+                    Custom Script &amp; Code Injection (GTM, Meta, CSS, JS)
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    Chèn mã script tùy chỉnh vào Header &lt;head&gt;, Body Open, Footer &lt;/body&gt; và Custom CSS không cần sửa mã nguồn.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Mã Chèn Header &lt;head&gt; (GTM Head, Meta tags, v.v.)</label>
+                  <textarea
+                    rows={4}
+                    placeholder="<!-- Ví dụ: Google Tag Manager Head Script -->"
+                    value={settings?.customHeadCode || ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        customHeadCode: e.target.value,
+                      })
+                    }
+                    className="w-full p-3 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Custom CSS Toàn Trang (&lt;style&gt;)</label>
+                  <textarea
+                    rows={4}
+                    placeholder="/* Custom CSS overrides: .custom-class { color: red; } */"
+                    value={settings?.customCss || ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        customCss: e.target.value,
+                      })
+                    }
+                    className="w-full p-3 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Mã Chèn Ngay Sau &lt;body&gt; Open (GTM NoScript, v.v.)</label>
+                  <textarea
+                    rows={4}
+                    placeholder="<!-- Ví dụ: GTM noscript iframe -->"
+                    value={settings?.customBodyCode || ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        customBodyCode: e.target.value,
+                      })
+                    }
+                    className="w-full p-3 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-foreground">Mã Chèn Trước Đóng &lt;/body&gt; (Chat Widget, Analytics JS)</label>
+                  <textarea
+                    rows={4}
+                    placeholder="<!-- Ví dụ: Live chat widget, Tawk.to, v.v. -->"
+                    value={settings?.customFooterCode || ""}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        customFooterCode: e.target.value,
+                      })
+                    }
+                    className="w-full p-3 rounded-xl bg-muted/50 border border-border/60 text-xs font-mono"
                   />
                 </div>
               </div>
@@ -4410,6 +4710,25 @@ export default function AdminPage() {
           showToast("Đã lưu bài viết blog thành công!");
           fetchBlogs();
           fetchStats();
+        }}
+      />
+
+      {/* User Activity & Profile Detail Modal */}
+      <AdminUserDetailModal
+        userId={selectedDetailUserId}
+        onClose={() => setSelectedDetailUserId(null)}
+        onUpgradeVip={(u) => {
+          setUserVipModal(u);
+          setSelectedVipLevel(u.vip_level || 1);
+          setSelectedVipDays(30);
+        }}
+        onAdjustCoins={(u) => {
+          setUserCoinsModal(u);
+          setCoinAmount(100);
+        }}
+        onGenerateQr={(u) => {
+          setQrModalUser(u);
+          setQrAmount(50000);
         }}
       />
     </div>

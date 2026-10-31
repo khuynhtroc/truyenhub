@@ -99,7 +99,7 @@ export function AuthRequiredGate({
         });
         if (loginErr) throw loginErr;
 
-        setSuccessMessage("Đăng ký thành công! Bạn nhận được 10 Xu tân thủ.");
+        setSuccessMessage("Đăng ký thành công! Bạn nhận được 50 Xu tân thủ.");
         setTimeout(() => {
           if (onSuccess) onSuccess();
           else window.location.reload();
@@ -129,7 +129,7 @@ export function AuthRequiredGate({
       <div className="w-full mb-4 flex items-center justify-between text-xs">
         <Link
           href={`/truyen/${storySlug}`}
-          className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors font-semibold"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Về trang giới thiệu truyện</span>
@@ -137,17 +137,17 @@ export function AuthRequiredGate({
       </div>
 
       {/* Main Gate Card */}
-      <div className="w-full rounded-3xl bg-neutral-900 border border-neutral-800 p-6 sm:p-8 shadow-2xl flex flex-col gap-5 text-neutral-100">
+      <div className="w-full rounded-3xl bg-card border border-border p-6 sm:p-8 shadow-2xl flex flex-col gap-5 text-foreground">
         {/* Header with Lock icon */}
         <div className="text-center flex flex-col items-center">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white mb-3 shadow-lg shadow-rose-500/20">
             <Lock className="w-7 h-7" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white">
+          <h2 className="text-xl sm:text-2xl font-black text-foreground">
             Yêu Cầu Đăng Nhập Để Đọc Truyện
           </h2>
-          <p className="text-xs text-neutral-400 mt-1.5 max-w-sm leading-relaxed">
-            Đăng nhập để đọc <strong className="text-rose-400">{storyTitle}</strong> ({chapterTitle}), tự động lưu tiến độ đọc và đồng bộ tủ truyện trên mọi thiết bị.
+          <p className="text-xs text-muted-foreground mt-1.5 max-w-sm leading-relaxed">
+            Đăng nhập để đọc <strong className="text-rose-500">{storyTitle}</strong> ({chapterTitle}), tự động lưu tiến độ đọc và đồng bộ tủ truyện trên mọi thiết bị.
           </p>
         </div>
 
@@ -158,7 +158,7 @@ export function AuthRequiredGate({
             type="button"
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full py-3 px-4 rounded-xl border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs flex items-center justify-center gap-3 transition-all cursor-pointer shadow-sm active:scale-[0.99]"
+            className="w-full py-3 px-4 rounded-xl border border-border bg-card hover:bg-muted text-foreground font-bold text-xs flex items-center justify-center gap-3 transition-all cursor-pointer shadow-sm active:scale-[0.99]"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path
@@ -197,20 +197,20 @@ export function AuthRequiredGate({
 
         {/* Divider */}
         <div className="relative flex items-center justify-center my-0.5">
-          <div className="border-t border-neutral-800 w-full" />
-          <span className="bg-neutral-900 px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+          <div className="border-t border-border w-full" />
+          <span className="bg-card px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
             Hoặc với Email
           </span>
-          <div className="border-t border-neutral-800 w-full" />
+          <div className="border-t border-border w-full" />
         </div>
 
         {/* Tabs */}
-        <div className="grid grid-cols-2 p-1 rounded-xl bg-neutral-800/80 text-xs font-bold">
+        <div className="grid grid-cols-2 p-1 rounded-xl bg-muted text-xs font-bold">
           <button
             type="button"
             onClick={() => setMode("login")}
             className={`py-1.5 rounded-lg transition-all ${
-              mode === "login" ? "bg-neutral-900 text-white shadow-sm" : "text-neutral-400 hover:text-white"
+              mode === "login" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Đăng Nhập
@@ -219,7 +219,7 @@ export function AuthRequiredGate({
             type="button"
             onClick={() => setMode("register")}
             className={`py-1.5 rounded-lg transition-all ${
-              mode === "register" ? "bg-neutral-900 text-white shadow-sm" : "text-neutral-400 hover:text-white"
+              mode === "register" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Đăng Ký
@@ -228,13 +228,13 @@ export function AuthRequiredGate({
 
         {/* Feedback messages */}
         {errorMessage && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
         {successMessage && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-semibold flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{successMessage}</span>
           </div>
@@ -244,47 +244,47 @@ export function AuthRequiredGate({
         <form onSubmit={handleEmailAuth} className="flex flex-col gap-3 text-xs">
           {mode === "register" && (
             <div className="flex flex-col gap-1">
-              <label className="font-bold text-neutral-300">Họ và Tên</label>
+              <label className="font-bold text-foreground">Họ và Tên</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nguyễn Văn A"
-                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-neutral-800 border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-rose-500/50"
                 />
               </div>
             </div>
           )}
 
           <div className="flex flex-col gap-1">
-            <label className="font-bold text-neutral-300">Địa chỉ Email</label>
+            <label className="font-bold text-foreground">Địa chỉ Email</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ban@example.com"
-                className="w-full h-10 pl-9 pr-3 rounded-xl bg-neutral-800 border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                className="w-full h-10 pl-9 pr-3 rounded-xl bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-rose-500/50"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-bold text-neutral-300">Mật khẩu</label>
+            <label className="font-bold text-foreground">Mật khẩu</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full h-10 pl-9 pr-3 rounded-xl bg-neutral-800 border border-neutral-700 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                className="w-full h-10 pl-9 pr-3 rounded-xl bg-muted border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-rose-500/50"
               />
             </div>
           </div>
@@ -300,14 +300,14 @@ export function AuthRequiredGate({
         </form>
 
         {/* Benefits badge */}
-        <div className="pt-2 border-t border-neutral-800/80 grid grid-cols-2 gap-2 text-[11px] text-neutral-400">
+        <div className="pt-2 border-t border-border grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span>Tặng ngay 10 Xu</span>
+            <span className="font-bold text-amber-500">Tặng ngay 50 Xu</span>
           </div>
           <div className="flex items-center gap-1.5">
             <History className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-            <span>Lưu trang đã đọc</span>
+            <span>Lưu trang & Đọc đa thiết bị</span>
           </div>
         </div>
       </div>

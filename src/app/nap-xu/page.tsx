@@ -129,10 +129,10 @@ export default function NapXuPage() {
             </div>
           </div>
 
-          {/* VietQR Display & Instant Banking App Transfer */}
+          {/* VietQR & PayPal Payment Display */}
           <div className="flex flex-col gap-3">
             <h2 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider">
-              2. Quét Mã Hoặc Mở App Ngân Hàng
+              2. Thanh Toán (VietQR Ngân Hàng / PayPal Quốc Tế)
             </h2>
 
             <VietQrPaymentSection

@@ -541,7 +541,7 @@ export function VipMembershipView() {
 
       {/* 5. VIETQR POPUP MODAL */}
       {showQrModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in">
           <div className="relative w-full max-w-lg rounded-3xl bg-card border border-border p-4 sm:p-6 shadow-2xl flex flex-col items-center text-center">
             <button
               onClick={() => setShowQrModal(false)}
@@ -551,14 +551,14 @@ export function VipMembershipView() {
             </button>
 
             <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-rose-500/10 text-rose-500 text-xs font-bold mb-2">
-              <QrCode className="w-3.5 h-3.5" /> Kích Hoạt VIP Tự Động 24/7
+              <Sparkles className="w-3.5 h-3.5" /> Kích Hoạt VIP Tự Động (VietQR & PayPal)
             </div>
 
             <h3 className="text-lg font-black text-foreground mb-1">
               Thanh Toán Gói {selectedPackage.name}
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Quét mã QR hoặc bấm nút mở thẳng app ngân hàng để kích hoạt VIP tự động.
+              Hỗ trợ thanh toán tự động qua App Ngân Hàng (VietQR) hoặc Quốc Tế (PayPal / Visa / Mastercard).
             </p>
 
             <VietQrPaymentSection

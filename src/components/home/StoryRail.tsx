@@ -125,11 +125,11 @@ function RailCard({ story }: { story: Story }) {
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-semibold mt-0.5">
           <span className="flex items-center gap-0.5 text-rose-500">
             <Heart className="w-2.5 h-2.5 fill-rose-500" />
-            {formatNumber(story.total_likes || 120)}
+            {formatNumber(story.total_likes || 0)}
           </span>
           <span className="flex items-center gap-0.5">
             <Eye className="w-2.5 h-2.5" />
-            {formatNumber(story.total_views || 1500)}
+            {formatNumber(story.total_views || 0)}
           </span>
         </div>
       </div>

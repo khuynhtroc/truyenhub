@@ -99,39 +99,15 @@ export async function GET(req: NextRequest) {
       stories = MOCK_STORIES;
     }
 
-    // Generate dynamic periodic metrics for timeframes (day/week/month/all)
+    // Real metrics from database
     const formattedStories = stories.map((story, index) => {
-      let views = Number(story.total_views || 0);
-      let likes = Number(story.total_likes || 0);
-
-      // If views is 0, assign a realistic baseline based on rank & chapters
-      if (views === 0) {
-        const rankScore = Math.max(1, limit - index);
-        const chapterBonus = (story.total_chapters || 1) * 350;
-        views = rankScore * 1200 + chapterBonus + ((index * 997) % 500);
-      }
-      if (likes === 0) {
-        likes = Math.floor(views * 0.045) + 12;
-      }
-
-      // Timeframe adjustment multipliers
-      let periodViews = views;
-      let periodLikes = likes;
-      if (timeframe === "day") {
-        periodViews = Math.max(15, Math.floor(views / 30) + ((index * 83) % 45));
-        periodLikes = Math.max(2, Math.floor(periodViews * 0.06));
-      } else if (timeframe === "week") {
-        periodViews = Math.max(80, Math.floor(views / 8) + ((index * 137) % 120));
-        periodLikes = Math.max(5, Math.floor(periodViews * 0.055));
-      } else if (timeframe === "month") {
-        periodViews = Math.max(250, Math.floor(views / 2.5) + ((index * 251) % 300));
-        periodLikes = Math.max(15, Math.floor(periodViews * 0.05));
-      }
+      const views = Number(story.total_views || 0);
+      const likes = Number(story.total_likes || 0);
 
       return {
         ...story,
-        period_views: periodViews,
-        period_likes: periodLikes,
+        period_views: views,
+        period_likes: likes,
         rank: index + 1,
       };
     });

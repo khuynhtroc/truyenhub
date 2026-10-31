@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
 import { CapacitorAppHandler } from "@/components/common/CapacitorAppHandler";
 import { AppInstallFloatWidget } from "@/components/common/AppInstallFloatWidget";
+import { CookieConsentBanner } from "@/components/common/CookieConsentBanner";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -31,7 +33,8 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48 32x32 16x16" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -41,7 +44,7 @@ export const metadata: Metadata = {
     ],
     shortcut: "/favicon.ico",
   },
-  metadataBase: new URL("https://doctruyen.vip"),
+  metadataBase: new URL("https://www.doctruyen.vip"),
   title: {
     default: "DocTruyen.vip - Đọc Truyện Tranh & Truyện Chữ Online Miễn Phí",
     template: "%s | DocTruyen.vip",
@@ -113,14 +116,43 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let customCss = "";
+  let customHeadCode = "";
+  let customBodyCode = "";
+  let customFooterCode = "";
+
+  try {
+    const supabase = createAdminSupabaseClient();
+    const { data } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "site_config")
+      .single();
+    if (data?.value) {
+      customCss = data.value.customCss || "";
+      customHeadCode = data.value.customHeadCode || "";
+      customBodyCode = data.value.customBodyCode || "";
+      customFooterCode = data.value.customFooterCode || "";
+    }
+  } catch (err) {
+    // Graceful fallback if database unavailable during static export
+  }
+
   return (
     <html lang="vi" suppressHydrationWarning className={`${beVietnamPro.variable} h-full antialiased`}>
       <head>
+        {/* Custom Head Injected Code & CSS */}
+        {customCss && (
+          <style id="custom-site-css" dangerouslySetInnerHTML={{ __html: customCss }} />
+        )}
+        {customHeadCode && (
+          <div dangerouslySetInnerHTML={{ __html: customHeadCode }} />
+        )}
         {/* Anti-FOUC Dark Mode script: applies dark class before page renders to prevent white flash */}
         <script
           dangerouslySetInnerHTML={{
@@ -135,6 +167,12 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* Google & Multi-Search Favicon Specification */}
+        <link rel="icon" type="image/png" sizes="48x48" href="https://www.doctruyen.vip/favicon-48x48.png" />
+        <link rel="icon" type="image/x-icon" href="https://www.doctruyen.vip/favicon.ico" />
+        <link rel="shortcut icon" href="https://www.doctruyen.vip/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="https://www.doctruyen.vip/apple-touch-icon.png" />
+
         {/* JSON-LD Schema.org Structured Data for Google rich results */}
         <script
           type="application/ld+json"
@@ -144,23 +182,24 @@ export default function RootLayout({
               "@graph": [
                 {
                   "@type": "WebSite",
-                  "@id": "https://doctruyen.vip/#website",
-                  "url": "https://doctruyen.vip",
+                  "@id": "https://www.doctruyen.vip/#website",
+                  "url": "https://www.doctruyen.vip",
                   "name": "DocTruyen.vip",
                   "description":
                     "Nền tảng đọc truyện tranh Webtoon, Manga full HD và tiểu thuyết truyện chữ phong phú",
                   "potentialAction": {
                     "@type": "SearchAction",
-                    "target": "https://doctruyen.vip/kham-pha?q={search_term_string}",
+                    "target": "https://www.doctruyen.vip/kham-pha?q={search_term_string}",
                     "query-input": "required name=search_term_string",
                   },
                   "inLanguage": "vi-VN",
                 },
                 {
                   "@type": "Organization",
-                  "@id": "https://doctruyen.vip/#organization",
+                  "@id": "https://www.doctruyen.vip/#organization",
                   "name": "DocTruyen.vip",
-                  "url": "https://doctruyen.vip",
+                  "url": "https://www.doctruyen.vip",
+                  "logo": "https://www.doctruyen.vip/icon-192.png",
                 },
               ],
             }),
@@ -235,6 +274,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         />
       </head>
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground transition-colors duration-150">
+        {/* Custom Body Open Injected Code */}
+        {customBodyCode && (
+          <div dangerouslySetInnerHTML={{ __html: customBodyCode }} />
+        )}
+
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe
@@ -247,11 +291,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
         {children}
 
+        {/* Custom Footer Injected Code */}
+        {customFooterCode && (
+          <div dangerouslySetInnerHTML={{ __html: customFooterCode }} />
+        )}
+
         {/* Native Capacitor App Handlers (Status bar, Android Back button) */}
         <CapacitorAppHandler />
 
         {/* Floating App Install Widget for Mobile & Desktop */}
         <AppInstallFloatWidget />
+
+        {/* Global Cookie Consent & Privacy Notice Banner */}
+        <CookieConsentBanner />
       </body>
     </html>
   );

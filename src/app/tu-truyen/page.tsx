@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Footer } from "@/components/layout/Footer";
 import { SafeImage } from "@/components/common/SafeImage";
 import { useSyncState } from "@/lib/sync/useSyncState";
+import { AuthModal } from "@/components/auth/AuthModal";
 import { 
   Bookmark, 
   Clock, 
@@ -22,6 +23,16 @@ import {
 
 export default function BookshelfPage() {
   const { user, bookmarks, isSyncing, toggleBookmark, refreshBookmarks } = useSyncState();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [targetChapterUrl, setTargetChapterUrl] = useState<string>("");
+
+  const handleReadClick = (e: React.MouseEvent, url: string) => {
+    if (!user) {
+      e.preventDefault();
+      setTargetChapterUrl(url);
+      setIsAuthModalOpen(true);
+    }
+  };
 
   const handleRemove = async (item: any) => {
     await toggleBookmark(item);
@@ -170,6 +181,7 @@ export default function BookshelfPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Link
                       href={`/truyen/${item.slug}/${currentChapter}`}
+                      onClick={(e) => handleReadClick(e, `/truyen/${item.slug}/${currentChapter}`)}
                       className="py-2.5 px-3.5 sm:px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
                     >
                       <span>Đọc Tiếp</span>
@@ -193,6 +205,15 @@ export default function BookshelfPage() {
 
       <Footer />
       <BottomNav />
+
+      {/* Auth Modal when clicking to read */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        redirectTo={targetChapterUrl}
+        title="Đăng Nhập Để Đọc Tiếp"
+        subtitle="Vui lòng đăng nhập tài khoản để đọc tiếp chương đã lưu"
+      />
     </div>
   );
 }

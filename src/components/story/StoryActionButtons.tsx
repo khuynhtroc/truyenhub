@@ -16,6 +16,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 import { toggleStoryBookmark, getLocalBookmarks } from "@/lib/sync/syncService";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 interface StoryActionButtonsProps {
   story: Story;
@@ -32,12 +33,23 @@ export function StoryActionButtons({
   totalChapters,
   onLikeChange,
 }: StoryActionButtonsProps) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [targetChapterUrl, setTargetChapterUrl] = useState<string>("");
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Initialize bookmark & like status
+  // Initialize auth, bookmark & like status
   useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user);
+    });
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user || null);
+    });
+
     try {
       const savedBookmarks = getLocalBookmarks();
       setIsBookmarked(savedBookmarks.some((item: any) => item.slug === story.slug || item.id === story.id));
@@ -45,7 +57,19 @@ export function StoryActionButtons({
       const savedLikes = JSON.parse(localStorage.getItem("doctruyen_likes") || localStorage.getItem("truyenhub_likes") || "[]");
       setIsLiked(savedLikes.includes(story.slug));
     } catch (_) {}
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, [story.slug, story.id]);
+
+  const handleReadClick = (e: React.MouseEvent, url: string) => {
+    if (!currentUser) {
+      e.preventDefault();
+      setTargetChapterUrl(url);
+      setIsAuthModalOpen(true);
+    }
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -120,6 +144,7 @@ export function StoryActionButtons({
         {/* Đọc từ đầu */}
         <Link
           href={`/truyen/${story.slug}/${firstChapterNumber}`}
+          onClick={(e) => handleReadClick(e, `/truyen/${story.slug}/${firstChapterNumber}`)}
           className="py-3 px-5 sm:px-6 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-rose-600 hover:opacity-95 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-rose-500/25 transition-all flex items-center gap-2 active:scale-95"
         >
           <Sparkles className="w-4 h-4" />
@@ -131,6 +156,7 @@ export function StoryActionButtons({
         {totalChapters > 1 && (
           <Link
             href={`/truyen/${story.slug}/${latestChapterNumber}`}
+            onClick={(e) => handleReadClick(e, `/truyen/${story.slug}/${latestChapterNumber}`)}
             className="py-3 px-4 rounded-xl bg-muted/80 hover:bg-muted text-foreground font-bold text-xs border border-border/60 flex items-center gap-1.5 transition-all active:scale-95"
           >
             <span>Tập mới nhất</span>
@@ -198,6 +224,15 @@ export function StoryActionButtons({
           </div>
         </div>
       )}
+
+      {/* Auth Modal when clicking to read */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        redirectTo={targetChapterUrl}
+        title="Đăng Nhập Để Đọc Truyện"
+        subtitle={`Vui lòng đăng nhập để bắt đầu đọc tác phẩm "${story.title}"`}
+      />
     </>
   );
 }

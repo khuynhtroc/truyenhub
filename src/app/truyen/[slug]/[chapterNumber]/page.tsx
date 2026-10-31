@@ -6,6 +6,7 @@ import { NovelReader } from "@/components/reader/NovelReader";
 import { getPublicSupabase } from "@/lib/supabase/server";
 import { Story, Chapter } from "@/types";
 import { notFound, redirect } from "next/navigation";
+import { StoryViewTracker } from "@/components/common/StoryViewTracker";
 
 const SLUG_REDIRECTS: Record<string, string> = {
   "bac-si-quai-di": "bac-si-quai-di-ban-moi",
@@ -197,9 +198,14 @@ export default async function ChapterPage({
     return <NovelReader story={story} chapter={fallbackChapter} allChapters={chapters} />;
   }
 
-  if (story.type === "comic") {
-    return <ComicReader story={story} chapter={chapter} allChapters={chapters} />;
-  }
-
-  return <NovelReader story={story} chapter={chapter} allChapters={chapters} />;
+  return (
+    <>
+      <StoryViewTracker slug={story.slug} storyId={story.id} />
+      {story.type === "comic" ? (
+        <ComicReader story={story} chapter={chapter} allChapters={chapters} />
+      ) : (
+        <NovelReader story={story} chapter={chapter} allChapters={chapters} />
+      )}
+    </>
+  );
 }

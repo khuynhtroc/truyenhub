@@ -7,22 +7,68 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const q = (searchParams.get("q") || "").trim();
+    const vip = searchParams.get("vip") || "all";
+    const coins = searchParams.get("coins") || "all";
+    const role = searchParams.get("role") || "all";
+    const sort = searchParams.get("sort") || "newest";
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "200", 10), 10), 500);
 
     const supabase = createAdminSupabaseClient();
     let query = supabase
       .from("profiles")
-      .select("id, email, display_name, coins_balance, vip_level, vip_until, role, created_at, updated_at")
-      .order("created_at", { ascending: false })
-      .limit(50);
+      .select("id, email, display_name, avatar_url, coins_balance, vip_level, vip_until, role, created_at, updated_at");
 
+    // 1. Text Search (email, display_name, or uuid)
     if (q) {
-      query = query.or(`email.ilike.%${q}%,display_name.ilike.%${q}%`);
+      if (q.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        query = query.eq("id", q);
+      } else {
+        query = query.or(`email.ilike.%${q}%,display_name.ilike.%${q}%`);
+      }
     }
 
-    const { data: users, error } = await query;
+    // 2. VIP Filter
+    if (vip === "free") {
+      query = query.or("vip_level.is.null,vip_level.eq.0");
+    } else if (vip === "1" || vip === "2" || vip === "3" || vip === "4") {
+      query = query.eq("vip_level", parseInt(vip, 10));
+    } else if (vip === "any_vip") {
+      query = query.gt("vip_level", 0);
+    }
+
+    // 3. Coins Filter
+    if (coins === "has_coins") {
+      query = query.gt("coins_balance", 0);
+    } else if (coins === "no_coins") {
+      query = query.or("coins_balance.is.null,coins_balance.eq.0");
+    } else if (coins === "gt_100") {
+      query = query.gte("coins_balance", 100);
+    } else if (coins === "gt_1000") {
+      query = query.gte("coins_balance", 1000);
+    }
+
+    // 4. Role Filter
+    if (role && role !== "all") {
+      query = query.eq("role", role);
+    }
+
+    // 5. Sorting
+    if (sort === "oldest") {
+      query = query.order("created_at", { ascending: true });
+    } else if (sort === "most_coins") {
+      query = query.order("coins_balance", { ascending: false });
+    } else if (sort === "highest_vip") {
+      query = query.order("vip_level", { ascending: false }).order("coins_balance", { ascending: false });
+    } else if (sort === "recently_active") {
+      query = query.order("updated_at", { ascending: false });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
+
+    const { data: users, error } = await query.limit(limit);
     if (error) throw error;
 
-    return NextResponse.json({ success: true, users: users || [] });
+    return NextResponse.json({ success: true, count: users?.length || 0, users: users || [] });
   } catch (error: any) {
     console.error("Admin users GET error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

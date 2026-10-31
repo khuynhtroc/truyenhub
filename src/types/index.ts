@@ -94,3 +94,18 @@ export interface DailyCheckin {
   created_at: string;
 }
 
+export interface Post {
+  id: string;
+  slug: string;
+  title: string;
+  content?: string;
+  excerpt?: string;
+  featured_image?: string;
+  hero_image?: string;
+  coverImage?: string;
+  published_at?: string;
+  tags?: string[];
+  [key: string]: any;
+}
+
+
