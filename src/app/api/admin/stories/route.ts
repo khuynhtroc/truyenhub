@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { schedulePublishedPostAutoShare } from "@/lib/social/schedule-auto-share";
+import { broadcastNewStory } from "@/lib/telegram-broadcast";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +107,32 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+
+    // Tự động đăng lên Fanpage và các mạng xã hội đã bật (nếu có cấu hình Auto-Share)
+    if (data && data.status !== "trash" && data.status !== "draft") {
+      schedulePublishedPostAutoShare({
+        id: data.id,
+        title: data.title,
+        slug: data.slug,
+        cover_url: data.cover_url,
+        description: data.description,
+        status: data.status,
+      } as any, "Admin New Story").catch((shareErr) => {
+        console.warn("[Social Auto-Share] Failed for new story:", shareErr);
+      });
+
+      // Tự động phát sóng thông báo truyện mới đến nhóm cộng đồng Telegram
+      broadcastNewStory({
+        title: data.title,
+        slug: data.slug,
+        author_name: data.author_name,
+        cover_url: data.cover_url,
+        genres: data.genres,
+        description: data.description,
+      }).catch((tgErr) => {
+        console.warn("[Telegram Broadcast] Failed for new story:", tgErr);
+      });
+    }
 
     return NextResponse.json({ success: true, story: data });
   } catch (error: any) {

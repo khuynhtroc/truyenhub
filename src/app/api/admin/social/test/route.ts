@@ -247,19 +247,32 @@ export async function POST(req: NextRequest) {
         postToShare = await db.findOne('posts', { id: post_id });
       }
       if (!postToShare) {
+        // First try finding an active story
         const { rows } = await db.find('posts', {
-          eq: { status: 'published' },
+          neq: { status: 'trash' },
           limit: 1,
         });
+        postToShare = rows[0];
+      }
+      if (!postToShare) {
+        // Fallback to any story in stories table
+        const { rows } = await db.find('posts', { limit: 1 });
         postToShare = rows[0];
       }
 
       if (!postToShare) {
         return NextResponse.json({
           success: false,
-          error: 'Chưa có bài viết xuất bản nào trên website để đăng thử',
+          error: 'Chưa có truyện hoặc bài viết nào trên website để đăng thử',
         });
       }
+
+      // Normalize fields for stories / posts compatibility
+      postToShare.hero_image = postToShare.hero_image || postToShare.cover_url || postToShare.coverImage || postToShare.featured_image;
+      postToShare.og_image = postToShare.og_image || postToShare.cover_url;
+      postToShare.coverImage = postToShare.coverImage || postToShare.cover_url;
+      postToShare.featured_image = postToShare.featured_image || postToShare.cover_url;
+      postToShare.excerpt = postToShare.excerpt || (postToShare.description || '').replace(/<[^>]*>/g, '').trim();
 
       const report = await sharePostToAllChannels(postToShare, {
         forceChannels: channel ? [channel] : undefined,

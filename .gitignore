@@ -86,3 +86,4 @@ google_cached_favicon.png
 scripts/*.py
 scripts/*.txt
 !scripts/notify_telegram.py
+!scripts/cron_scheduler.mjs

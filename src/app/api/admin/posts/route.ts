@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { schedulePublishedPostAutoShare } from "@/lib/social/schedule-auto-share";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,22 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+
+    if (data && data.status === "published") {
+      schedulePublishedPostAutoShare({
+        id: data.id,
+        title: data.title,
+        slug: data.slug,
+        category: "blog",
+        type: data.type || "article",
+        hero_image: data.hero_image,
+        excerpt: data.excerpt,
+        seo_description: data.seo_description,
+        status: data.status,
+      } as any, "Admin New Post").catch((shareErr) => {
+        console.warn("[Social Auto-Share] Failed for new post:", shareErr);
+      });
+    }
 
     return NextResponse.json({
       success: true,
