@@ -94,10 +94,16 @@ export async function executeFacebookBackfillStep(options?: {
   }
 
   if (state.status !== 'scheduled' && !forceNow) {
-    return {
-      httpStatus: 200,
-      body: { status: state.status, posted: false, message: 'Facebook backfill is not scheduled.' },
-    };
+    // Auto-recovery: if queue was left in 'error' state from a past transient issue, auto-heal and resume
+    if (state.status === 'error' && state.post_ids && state.post_ids.length > 0 && settings.facebook_access_token) {
+      console.log('[Facebook Backfill] Auto-healing queue from transient error state back to scheduled.');
+      state.status = 'scheduled';
+    } else {
+      return {
+        httpStatus: 200,
+        body: { status: state.status, posted: false, message: 'Facebook backfill is not scheduled.' },
+      };
+    }
   }
 
   if (!forceNow && state.next_post_at && new Date(state.next_post_at) > now) {
@@ -228,40 +234,52 @@ export async function executeFacebookBackfillStep(options?: {
   const failed = resultsList.filter((r) => !r.success).map((r) => `${r.channel}: ${r.error || 'Failed'}`);
 
   if (succeeded.length === 0) {
+    // Auto-resilience: do not halt the entire queue on a single story failure.
+    // Retry once in 15 mins. If it has already failed on this story, skip it to prevent queue stalls.
+    const isRepeatedFailure = Boolean(latestState.last_error && latestState.cursor === cursor);
+    const nextCursor = isRepeatedFailure ? cursor + 1 : cursor;
+    const nextSkipped = isRepeatedFailure ? skippedCount + 1 : skippedCount;
+    const retryIntervalMinutes = isRepeatedFailure ? (lockedState.interval_minutes || 240) : 15;
+    const isLoopComplete = nextCursor >= lockedState.post_ids.length;
+
     const errorState: FacebookBackfillState = {
       ...latestState,
-      status: latestState.status === 'paused' ? 'paused' : 'error',
-      cursor,
-      skipped_count: skippedCount,
-      next_post_at: null,
+      status: latestState.status === 'paused' ? 'paused' : 'scheduled',
+      cursor: isLoopComplete ? 0 : nextCursor,
+      skipped_count: nextSkipped,
+      next_post_at: latestState.status === 'paused' ? null : new Date(Date.now() + retryIntervalMinutes * 60 * 1000).toISOString(),
       last_error: failed.join(' | ') || 'Không thể đăng lên các mạng xã hội đã chọn.',
       lock_id: null,
       lock_until: null,
     };
     await saveSocialSettings({ facebook_backfill: errorState });
     return {
-      httpStatus: 502,
+      httpStatus: 200,
       body: {
         status: errorState.status,
         posted: false,
         error: errorState.last_error,
         post_id: post.id,
+        skipped_and_continued: isRepeatedFailure,
         state: errorState,
       },
     };
   }
 
-  const nextCursor = cursor + 1;
-  const isComplete = nextCursor >= lockedState.post_ids.length;
+  let nextCursor = cursor + 1;
+  if (nextCursor >= lockedState.post_ids.length) {
+    // Perpetual queue loop: when all stories have been shared, loop back to the beginning so promotion continues indefinitely
+    nextCursor = 0;
+  }
   const pausedDuringPublish = latestState.status === 'paused';
   const postedAt = new Date().toISOString();
   const intervalMs = (lockedState.interval_minutes || 240) * 60 * 1000;
   const successState: FacebookBackfillState = {
     ...latestState,
-    status: pausedDuringPublish ? 'paused' : isComplete ? 'completed' : 'scheduled',
+    status: pausedDuringPublish ? 'paused' : 'scheduled',
     cursor: nextCursor,
     skipped_count: skippedCount,
-    next_post_at: pausedDuringPublish || isComplete ? null : new Date(Date.now() + intervalMs).toISOString(),
+    next_post_at: pausedDuringPublish ? null : new Date(Date.now() + intervalMs).toISOString(),
     last_posted_at: postedAt,
     last_post_title: post.title,
     last_error: failed.length > 0 ? `Đã đăng: ${succeeded.join(', ')} (Lỗi: ${failed.join(', ')})` : null,
