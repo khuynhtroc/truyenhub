@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import { callGemini } from '@/lib/ai/gemini';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import { submitUrlToGoogle } from '@/lib/indexing/google';
@@ -214,7 +213,7 @@ ${parsed.content_html || ''}
 
   const wordCount = fullContentHtml.replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length;
   const nowIso = new Date().toISOString();
-  const postId = randomUUID();
+  const postId = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `post-${Date.now()}`;
   const heroImage = trend.picture || 'https://media.doctruyen.vip/covers/doraemon-cover.webp';
 
   const postRecord = {

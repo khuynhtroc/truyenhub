@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import { db } from '@/lib/db';
 import { createAdminSupabaseClient } from '@/lib/supabase/admin';
 import type { Post } from '@/lib/types';
@@ -44,7 +43,7 @@ export async function buildFacebookBackfillQueue(
 
   const nextState: FacebookBackfillState = {
     status: 'scheduled',
-    queue_id: randomUUID(),
+    queue_id: globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `queue-${Date.now()}`,
     post_ids: postIds,
     cursor: 0,
     interval_minutes: intervalMinutes,
@@ -141,7 +140,7 @@ export async function executeFacebookBackfillStep(options?: {
     };
   }
 
-  const lockId = randomUUID();
+  const lockId = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `lock-${Date.now()}`;
   const activeStatus = state.status === 'paused' || state.status === 'error' ? 'scheduled' : state.status;
   await saveSocialSettings({
     facebook_backfill: {
