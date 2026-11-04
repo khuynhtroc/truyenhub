@@ -20,6 +20,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toggleStoryBookmark, getLocalBookmarks } from "@/lib/sync/syncService";
 import { recordMissionActivity } from "@/lib/missions";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { StoryVoteModal } from "./StoryVoteModal";
 
 interface StoryInteractiveHeroProps {
   story: Story;
@@ -28,7 +29,9 @@ interface StoryInteractiveHeroProps {
 
 export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroProps) {
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [userBalance, setUserBalance] = useState<number>(1000);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isVoteModalOpen, setIsVoteModalOpen] = useState(false);
   const [targetChapterUrl, setTargetChapterUrl] = useState<string>("");
   const [totalLikes, setTotalLikes] = useState<number>(story.total_likes || 0);
   const [isLiked, setIsLiked] = useState<boolean>(false);
@@ -38,14 +41,39 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
   const firstChapterNumber = chapters[0]?.chapter_number || 1;
   const latestChapterNumber = chapters[chapters.length - 1]?.chapter_number || 1;
 
-  // Track auth status
+  // Track auth status & point balance
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCurrentUser(user);
+      if (user) {
+        supabase
+          .from("profiles")
+          .select("coins_balance")
+          .eq("id", user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data?.coins_balance !== undefined) {
+              setUserBalance(data.coins_balance);
+            }
+          });
+      }
     });
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setCurrentUser(session?.user || null);
+      const u = session?.user || null;
+      setCurrentUser(u);
+      if (u) {
+        supabase
+          .from("profiles")
+          .select("coins_balance")
+          .eq("id", u.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data?.coins_balance !== undefined) {
+              setUserBalance(data.coins_balance);
+            }
+          });
+      }
     });
     return () => {
       authListener?.subscription?.unsubscribe();
@@ -273,6 +301,22 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
           <span>{isLiked ? "Đã thích" : "Thả tim"}</span>
         </button>
 
+        {/* Đề cử truyện (Vote Story bằng Point) */}
+        <button
+          onClick={() => {
+            if (!currentUser) {
+              setIsAuthModalOpen(true);
+            } else {
+              setIsVoteModalOpen(true);
+            }
+          }}
+          className="py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-amber-500/15 hover:from-amber-500/25 hover:to-rose-500/25 text-amber-600 dark:text-amber-400 font-extrabold text-xs border border-amber-500/40 flex items-center gap-1.5 transition-all active:scale-95 shadow-sm"
+          title="Bỏ phiếu đề cử tác phẩm bằng Point"
+        >
+          <span className="text-sm">🏆</span>
+          <span>Đề cử</span>
+        </button>
+
         {/* Chia sẻ */}
         <button
           onClick={handleShare}
@@ -311,6 +355,25 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
         redirectTo={targetChapterUrl}
         title="Đăng Nhập Để Đọc Truyện"
         subtitle={`Vui lòng đăng nhập để bắt đầu đọc tác phẩm "${story.title}"`}
+      />
+
+      {/* Story Nomination & Vote Modal */}
+      <StoryVoteModal
+        isOpen={isVoteModalOpen}
+        onClose={() => setIsVoteModalOpen(false)}
+        storyId={story.id}
+        storyTitle={story.title}
+        userBalance={userBalance}
+        isLoggedIn={Boolean(currentUser)}
+        onOpenAuth={() => {
+          setIsVoteModalOpen(false);
+          setIsAuthModalOpen(true);
+        }}
+        onVoteSuccess={(newBal, addedVotes) => {
+          setUserBalance(newBal);
+          setTotalLikes((prev) => prev + addedVotes);
+          showToast(`✓ Đã bỏ phiếu đề cử thành công! (+${addedVotes} phiếu cho truyện)`);
+        }}
       />
     </>
   );

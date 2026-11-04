@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getUserRank } from "@/lib/ranks";
 
 export const dynamic = "force-dynamic";
 
@@ -33,9 +35,32 @@ export async function GET(request: Request) {
     const { data: comments, error } = await query;
     if (error) throw error;
 
+    // Fetch user profiles map to enrich comments with real user points and rank
+    const userNames = Array.from(new Set((comments || []).map((c: any) => c.user_name).filter(Boolean)));
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("display_name, coins_balance, avatar_url")
+      .in("display_name", userNames);
+
+    const profileMap = new Map((profiles || []).map((p: any) => [p.display_name, p]));
+
+    const enriched = (comments || []).map((c: any) => {
+      const p = profileMap.get(c.user_name);
+      const points = p?.coins_balance ?? (c.user_name ? 1000 : 0);
+      const rank = getUserRank(points);
+      const avatar = c.avatar_url || p?.avatar_url || null;
+
+      return {
+        ...c,
+        avatar_url: avatar,
+        user_points: points,
+        user_rank: rank,
+      };
+    });
+
     return NextResponse.json({
       success: true,
-      comments: comments || [],
+      comments: enriched,
     });
   } catch (error: any) {
     console.error("GET /api/comments error:", error);
@@ -48,6 +73,31 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const supabaseUser = await createServerSupabaseClient();
+    const adminSupabase = createAdminSupabaseClient();
+
+    const {
+      data: { user },
+    } = await supabaseUser.auth.getUser();
+
+    let defaultName = "Độc giả DocTruyen";
+    let defaultAvatar = "";
+    let userPoints = 1000;
+
+    if (user) {
+      const { data: profile } = await adminSupabase
+        .from("profiles")
+        .select("display_name, avatar_url, coins_balance")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile) {
+        defaultName = profile.display_name || user.email?.split("@")[0] || defaultName;
+        defaultAvatar = profile.avatar_url || "";
+        userPoints = profile.coins_balance || 1000;
+      }
+    }
+
     const body = await request.json();
     const { story_id, chapter_id, user_name, content, is_spoiler, avatar_url } = body;
 
@@ -58,14 +108,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createAdminSupabaseClient();
-    const { data, error } = await supabase
+    const finalName = user_name?.trim() || defaultName;
+    const finalAvatar = avatar_url || defaultAvatar;
+
+    const { data, error } = await adminSupabase
       .from("comments")
       .insert({
         story_id,
         chapter_id: chapter_id || null,
-        user_name: user_name?.trim() || "Độc giả vô danh",
-        avatar_url: avatar_url || "",
+        user_name: finalName,
+        avatar_url: finalAvatar,
         content: content.trim(),
         is_spoiler: Boolean(is_spoiler),
         status: "approved",
@@ -76,9 +128,15 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
+    const rank = getUserRank(userPoints);
+
     return NextResponse.json({
       success: true,
-      comment: data,
+      comment: {
+        ...data,
+        user_points: userPoints,
+        user_rank: rank,
+      },
     });
   } catch (error: any) {
     console.error("POST /api/comments error:", error);

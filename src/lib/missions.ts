@@ -4,7 +4,9 @@ export type MissionActionType =
   | "comment"
   | "like_comment"
   | "read_chapter"
-  | "bookmark";
+  | "bookmark"
+  | "read_time_15"
+  | "read_time_30";
 
 export interface MissionDefinition {
   id: MissionActionType;
@@ -103,6 +105,30 @@ export const MISSION_DEFINITIONS: Record<MissionActionType, MissionDefinition> =
     badge: "+10 Point / lần",
     href: "/tu-truyen",
   },
+  read_time_15: {
+    id: "read_time_15",
+    title: "Đọc truyện 15 phút liên tục",
+    description: "Duy trì đọc truyện hoặc tiểu thuyết 15 phút nhận Rương Point sơ cấp",
+    reward_coins: 30,
+    daily_limit: 1,
+    unit: "lần",
+    actionLabel: "Nhận Rương 15 Phút",
+    iconName: "Clock",
+    badge: "🎁 +30 Point",
+    href: "/kham-pha",
+  },
+  read_time_30: {
+    id: "read_time_30",
+    title: "Tu luyện đọc truyện 30 phút",
+    description: "Đọc truyện say mê đạt mốc 30 phút mở Rương Point Thượng Phẩm",
+    reward_coins: 80,
+    daily_limit: 1,
+    unit: "lần",
+    actionLabel: "Nhận Rương 30 Phút",
+    iconName: "Award",
+    badge: "🔥 +80 Point",
+    href: "/kham-pha",
+  },
 };
 
 export function getVietnamDateStr(date: Date = new Date()): string {
@@ -121,7 +147,7 @@ export function getVietnamDateStr(date: Date = new Date()): string {
 export async function recordMissionActivity(
   action: MissionActionType,
   metadata?: Record<string, any>
-): Promise<{ success: boolean; coins_reward?: number; new_balance?: number; message?: string } | null> {
+): Promise<{ success: boolean; already_completed?: boolean; coins_reward?: number; new_balance?: number; message?: string } | null> {
   try {
     const res = await fetch("/api/missions", {
       method: "POST",

@@ -28,6 +28,7 @@ import { recordReadingProgress } from "@/lib/sync/syncService";
 import { canUserReadChapter } from "@/lib/vip";
 import { AuthRequiredGate } from "@/components/auth/AuthRequiredGate";
 import { recordMissionActivity } from "@/lib/missions";
+import { ReadingTimerPill } from "@/components/reader/ReadingTimerPill";
 
 interface ComicReaderProps {
   story: Story;
@@ -467,6 +468,9 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
             chapterNumber={chapter.chapter_number}
           />
         </div>
+
+        {/* Floating Gamified Reading Timer */}
+        <ReadingTimerPill storyId={story.id} chapterId={chapter.id} />
       </main>
     </div>
   );

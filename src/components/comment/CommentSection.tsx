@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MessageSquare, Send, Heart, Reply, ShieldAlert, Sparkles, User, Crown, RefreshCw, Coins, CheckCircle2 } from "lucide-react";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { recordMissionActivity } from "@/lib/missions";
+import { getUserRank, UserRank } from "@/lib/ranks";
 
 interface CommentItem {
   id: string;
@@ -13,6 +14,8 @@ interface CommentItem {
   is_spoiler: boolean;
   likes_count: number;
   created_at: string;
+  user_points?: number;
+  user_rank?: UserRank;
 }
 
 interface CommentSectionProps {
@@ -279,47 +282,68 @@ export function CommentSection({ storyId, storyTitle, chapterNumber }: CommentSe
             </div>
           ) : (
             <div className="flex flex-col divide-y divide-border/40">
-              {comments.map((c) => (
-                <div key={c.id} className="py-4 flex gap-3 sm:gap-4 items-start">
-                  {/* User avatar */}
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white text-sm shrink-0 shadow-sm">
-                    {(c.user_name || "Đ")[0].toUpperCase()}
-                  </div>
+              {comments.map((c) => {
+                const rank = c.user_rank || getUserRank(c.user_points || 0);
+                const isStoryCheer = c.content?.includes("Đề cử") || c.content?.includes("Minh Chủ");
 
-                  {/* Content */}
-                  <div className="flex-1 flex flex-col gap-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-xs sm:text-sm text-foreground">{c.user_name || "Độc giả"}</span>
-                      <span className="text-[11px] text-muted-foreground">· {formatTime(c.created_at)}</span>
+                return (
+                  <div key={c.id} className="py-4 flex gap-3 sm:gap-4 items-start">
+                    {/* User avatar with Glowing Rank Ring */}
+                    <div className={`w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white text-sm shrink-0 shadow-sm transition-transform hover:scale-105 ${rank.avatarRingClass}`}>
+                      {(c.user_name || "Đ")[0].toUpperCase()}
                     </div>
 
-                    {/* Body text with spoiler protect */}
-                    {c.is_spoiler ? (
-                      <details className="text-xs sm:text-sm text-muted-foreground p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 my-1 cursor-pointer">
-                        <summary className="font-bold text-amber-600 dark:text-amber-400 select-none">
-                          ⚠️ Bình luận có chứa Spoil (Bấm để xem)
-                        </summary>
-                        <p className="mt-2 text-foreground">{c.content}</p>
-                      </details>
-                    ) : (
-                      <p className="text-xs sm:text-sm text-foreground/90 leading-relaxed">{c.content}</p>
-                    )}
+                    {/* Content */}
+                    <div className="flex-1 flex flex-col gap-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-xs sm:text-sm text-foreground">{c.user_name || "Độc giả"}</span>
+                        
+                        {/* Tu Vi / Cảnh Giới Badge */}
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border ${rank.badgeClass}`}>
+                          <span>{rank.badge}</span>
+                          <span>{rank.shortName}</span>
+                        </span>
 
-                    {/* Comment actions */}
-                    <div className="flex items-center gap-4 mt-1 text-[11px] font-bold text-muted-foreground">
-                      <button
-                        onClick={() => handleLike(c.id)}
-                        className={`flex items-center gap-1 transition-colors cursor-pointer ${
-                          likedMap[c.id] ? "text-rose-500" : "hover:text-rose-500"
-                        }`}
-                      >
-                        <Heart className={`w-3.5 h-3.5 ${likedMap[c.id] ? "fill-current text-rose-500" : ""}`} />
-                        <span>{c.likes_count || 0}</span>
-                      </button>
+                        {/* Special Cheer Badge if this was a story donation/vote */}
+                        {isStoryCheer && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-sm animate-pulse">
+                            <span>🏆 Hộ Đạo / Đề Cử</span>
+                          </span>
+                        )}
+
+                        <span className="text-[11px] text-muted-foreground">· {formatTime(c.created_at)}</span>
+                      </div>
+
+                      {/* Body text with spoiler protect */}
+                      {c.is_spoiler ? (
+                        <details className="text-xs sm:text-sm text-muted-foreground p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 my-1 cursor-pointer">
+                          <summary className="font-bold text-amber-600 dark:text-amber-400 select-none">
+                            ⚠️ Bình luận có chứa Spoil (Bấm để xem)
+                          </summary>
+                          <p className="mt-2 text-foreground">{c.content}</p>
+                        </details>
+                      ) : (
+                        <p className={`text-xs sm:text-sm leading-relaxed ${isStoryCheer ? "text-amber-600 dark:text-amber-400 font-semibold" : "text-foreground/90"}`}>
+                          {c.content}
+                        </p>
+                      )}
+
+                      {/* Comment actions */}
+                      <div className="flex items-center gap-4 mt-1 text-[11px] font-bold text-muted-foreground">
+                        <button
+                          onClick={() => handleLike(c.id)}
+                          className={`flex items-center gap-1 transition-colors cursor-pointer ${
+                            likedMap[c.id] ? "text-rose-500" : "hover:text-rose-500"
+                          }`}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${likedMap[c.id] ? "fill-current text-rose-500" : ""}`} />
+                          <span>{c.likes_count || 0}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

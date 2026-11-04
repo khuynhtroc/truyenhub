@@ -36,6 +36,7 @@ import { recordReadingProgress } from "@/lib/sync/syncService";
 import { AuthRequiredGate } from "@/components/auth/AuthRequiredGate";
 import { canUserReadChapter } from "@/lib/vip";
 import { recordMissionActivity } from "@/lib/missions";
+import { ReadingTimerPill } from "@/components/reader/ReadingTimerPill";
 
 interface NovelReaderProps {
   story: Story;
@@ -1544,6 +1545,8 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
           </div>
         </div>
       )}
+      {/* Floating Gamified Reading Timer */}
+      <ReadingTimerPill storyId={story.id} chapterId={chapter.id} />
     </div>
   );
 }
