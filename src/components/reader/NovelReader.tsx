@@ -288,7 +288,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
   const [showAudioSettings, setShowAudioSettings] = useState(false);
 
   // Language & AI Voice
-  const isDefaultEnglish = 
+  const isDefaultEnglish =
     story.genres?.some((g) => g.toLowerCase().includes("tiếng anh") || g.toLowerCase().includes("english")) ||
     story.title.toLowerCase().includes("tiếng anh") ||
     story.title.toLowerCase().includes("english");
@@ -501,7 +501,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       if (savedVoice) {
         setSelectedAiVoice(savedVoice);
       }
-    } catch (_) {}
+    } catch (_) { }
   }, []);
 
   const updateSettings = (key: string, value: any) => {
@@ -509,7 +509,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       const current = JSON.parse(localStorage.getItem("truyenhub_novel_settings") || "{}");
       current[key] = value;
       localStorage.setItem("truyenhub_novel_settings", JSON.stringify(current));
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Sync reading progress to bookmarks & cloud
@@ -527,7 +527,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
         savedBookmarks[foundIdx].last_chapter = chapter.chapter_number;
         localStorage.setItem("doctruyen_bookmarks", JSON.stringify(savedBookmarks));
       }
-    } catch (_) {}
+    } catch (_) { }
 
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -849,7 +849,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     setSelectedAiVoice(voiceId);
     try {
       localStorage.setItem("truyenhub_ai_voice", voiceId);
-    } catch (_) {}
+    } catch (_) { }
 
     const vObj = AI_VOICES.find((v) => v.id === voiceId);
     if (vObj && vObj.lang !== "any" && vObj.lang !== selectedLang) {
@@ -914,7 +914,7 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
     setAudioEngine(engine);
     try {
       localStorage.setItem("truyenhub_audio_engine", engine);
-    } catch (_) {}
+    } catch (_) { }
 
     if (isPlayingRef.current) {
       if (audioElementRef.current) {
@@ -964,8 +964,8 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
       {/* Header bar */}
       <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-opacity-90 border-b border-inherit px-4 pt-[calc(max(env(safe-area-inset-top,0px),var(--app-safe-top,0px))+0.75rem)] pb-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link 
-            href={`/truyen/${story.slug}`} 
+          <Link
+            href={`/truyen/${story.slug}`}
             onClick={stopAllAudio}
             className="p-1.5 rounded-lg hover:opacity-75 transition-opacity"
             title="Về thông tin truyện (dừng phát audio)"
@@ -980,9 +980,8 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
             {/* TOC Drawer Toggle */}
             <button
               onClick={() => setShowToc(!showToc)}
-              className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${
-                showToc ? "bg-rose-500 text-white" : "hover:bg-black/10 dark:hover:bg-white/10"
-              }`}
+              className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 text-xs font-bold ${showToc ? "bg-rose-500 text-white" : "hover:bg-black/10 dark:hover:bg-white/10"
+                }`}
               title="Mục lục các chương"
             >
               <List className="w-4 h-4" />
@@ -1006,11 +1005,10 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                   }
                 }
               }}
-              className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold ${
-                isAudioOpen
-                  ? "bg-rose-500 text-white shadow-md shadow-rose-500/30" 
+              className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold ${isAudioOpen
+                  ? "bg-rose-500 text-white shadow-md shadow-rose-500/30"
                   : "hover:bg-black/10 dark:hover:bg-white/10"
-              }`}
+                }`}
               title={isAudioOpen ? "Điều khiển Audio Đọc Truyện" : "Bật đọc Audio bằng AI"}
             >
               {isAudioPlaying && !isAudioPaused ? (
@@ -1041,33 +1039,29 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => { setReaderTheme("light"); updateSettings("readerTheme", "light"); }}
-                  className={`px-3 py-1.5 rounded-lg border border-neutral-300 bg-white text-black ${
-                    readerTheme === "light" ? "ring-2 ring-rose-500 font-bold" : ""
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg border border-neutral-300 bg-white text-black ${readerTheme === "light" ? "ring-2 ring-rose-500 font-bold" : ""
+                    }`}
                 >
                   Sáng
                 </button>
                 <button
                   onClick={() => { setReaderTheme("sepia"); updateSettings("readerTheme", "sepia"); }}
-                  className={`px-3 py-1.5 rounded-lg border border-[#d9c49d] bg-[#fbf0d9] text-[#433422] ${
-                    readerTheme === "sepia" ? "ring-2 ring-rose-500 font-bold" : ""
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg border border-[#d9c49d] bg-[#fbf0d9] text-[#433422] ${readerTheme === "sepia" ? "ring-2 ring-rose-500 font-bold" : ""
+                    }`}
                 >
                   Sepia
                 </button>
                 <button
                   onClick={() => { setReaderTheme("dark"); updateSettings("readerTheme", "dark"); }}
-                  className={`px-3 py-1.5 rounded-lg border border-neutral-700 bg-neutral-900 text-white ${
-                    readerTheme === "dark" ? "ring-2 ring-rose-500 font-bold" : ""
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg border border-neutral-700 bg-neutral-900 text-white ${readerTheme === "dark" ? "ring-2 ring-rose-500 font-bold" : ""
+                    }`}
                 >
                   Tối
                 </button>
                 <button
                   onClick={() => { setReaderTheme("black"); updateSettings("readerTheme", "black"); }}
-                  className={`px-3 py-1.5 rounded-lg border border-neutral-800 bg-black text-white ${
-                    readerTheme === "black" ? "ring-2 ring-rose-500 font-bold" : ""
-                  }`}
+                  className={`px-3 py-1.5 rounded-lg border border-neutral-800 bg-black text-white ${readerTheme === "black" ? "ring-2 ring-rose-500 font-bold" : ""
+                    }`}
                 >
                   OLED
                 </button>
@@ -1107,17 +1101,15 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => { setFontFamily("font-serif"); updateSettings("fontFamily", "font-serif"); }}
-                  className={`px-3 py-1 rounded border font-serif ${
-                    fontFamily === "font-serif" ? "border-rose-500 font-bold" : ""
-                  }`}
+                  className={`px-3 py-1 rounded border font-serif ${fontFamily === "font-serif" ? "border-rose-500 font-bold" : ""
+                    }`}
                 >
                   Serif
                 </button>
                 <button
                   onClick={() => { setFontFamily("font-sans"); updateSettings("fontFamily", "font-sans"); }}
-                  className={`px-3 py-1 rounded border font-sans ${
-                    fontFamily === "font-sans" ? "border-rose-500 font-bold" : ""
-                  }`}
+                  className={`px-3 py-1 rounded border font-sans ${fontFamily === "font-sans" ? "border-rose-500 font-bold" : ""
+                    }`}
                 >
                   Sans-serif
                 </button>
@@ -1133,9 +1125,8 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
           <div className="flex items-center justify-between gap-3">
             {/* Info */}
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                isAudioPlaying && !isAudioPaused ? "bg-rose-500/20 text-rose-500" : "bg-neutral-800 text-neutral-400"
-              }`}>
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isAudioPlaying && !isAudioPaused ? "bg-rose-500/20 text-rose-500" : "bg-neutral-800 text-neutral-400"
+                }`}>
                 <Volume2 className={`w-5 h-5 ${isAudioPlaying && !isAudioPaused ? "animate-pulse" : ""}`} />
               </div>
               <div className="truncate">
@@ -1193,9 +1184,8 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
               {/* Audio Settings Popover Toggle */}
               <button
                 onClick={() => setShowAudioSettings(!showAudioSettings)}
-                className={`p-2 rounded-lg transition-colors ${
-                  showAudioSettings ? "bg-amber-500 text-white shadow-sm" : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
-                }`}
+                className={`p-2 rounded-lg transition-colors ${showAudioSettings ? "bg-amber-500 text-white shadow-sm" : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
+                  }`}
                 title="Cài đặt giọng đọc AI, tốc độ & ngôn ngữ"
               >
                 <Settings className="w-4 h-4" />
@@ -1221,22 +1211,20 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => switchEngine("ai")}
-                    className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all ${
-                      audioEngine === "ai"
+                    className={`px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all ${audioEngine === "ai"
                         ? "bg-rose-500 text-white shadow-sm"
                         : "bg-neutral-800 text-neutral-400 hover:text-white"
-                    }`}
+                      }`}
                   >
                     <Sparkles className="w-3 h-3 text-amber-300" />
                     <span>Giọng AI (Tự nhiên & Mềm mại)</span>
                   </button>
                   <button
                     onClick={() => switchEngine("system")}
-                    className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                      audioEngine === "system"
+                    className={`px-2.5 py-1 rounded-lg font-bold transition-all ${audioEngine === "system"
                         ? "bg-indigo-600 text-white shadow-sm"
                         : "bg-neutral-800 text-neutral-400 hover:text-white"
-                    }`}
+                      }`}
                   >
                     <span>Giọng Thiết Bị</span>
                   </button>
@@ -1255,11 +1243,10 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                       key={rate}
                       type="button"
                       onClick={() => changeSpeechRate(rate)}
-                      className={`px-2.5 py-1 rounded-lg font-extrabold transition-all text-xs ${
-                        speechRate === rate
+                      className={`px-2.5 py-1 rounded-lg font-extrabold transition-all text-xs ${speechRate === rate
                           ? "bg-rose-500 text-white shadow-sm scale-105"
                           : "bg-neutral-800 text-neutral-400 hover:text-white"
-                      }`}
+                        }`}
                     >
                       {rate}x
                     </button>
@@ -1284,11 +1271,10 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                       key={lang.id}
                       type="button"
                       onClick={() => switchLanguage(lang.id)}
-                      className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                        selectedLang === lang.id
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all ${selectedLang === lang.id
                           ? "bg-neutral-100 text-neutral-900 font-black shadow-xs scale-105"
                           : "bg-neutral-800 text-neutral-400 hover:text-white"
-                      }`}
+                        }`}
                     >
                       {lang.label}
                     </button>
@@ -1315,20 +1301,18 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                           key={v.id}
                           type="button"
                           onClick={() => switchAiVoice(v.id)}
-                          className={`p-2 rounded-xl text-left transition-all border flex flex-col gap-1 ${
-                            isSelected
+                          className={`p-2 rounded-xl text-left transition-all border flex flex-col gap-1 ${isSelected
                               ? "bg-rose-500/20 border-rose-500 text-white shadow-xs"
                               : "bg-neutral-800/80 border-neutral-700/60 text-neutral-300 hover:bg-neutral-700/80"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-xs flex items-center gap-1.5">
                               {v.gender === "female" ? "👩" : "👨"} {v.name}
                             </span>
                             <div className="flex items-center gap-1">
-                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
-                                isSelected ? "bg-rose-500 text-white" : "bg-neutral-700 text-neutral-400"
-                              }`}>
+                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${isSelected ? "bg-rose-500 text-white" : "bg-neutral-700 text-neutral-400"
+                                }`}>
                                 {v.tag}
                               </span>
                               {isSelected && <Check className="w-3.5 h-3.5 text-rose-400" />}
@@ -1407,39 +1391,38 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
               className={`${fontFamily} space-y-6 leading-relaxed`}
               style={{ fontSize: `${fontSize}px`, lineHeight: lineHeight }}
             >
-            {parsedParagraphs.length > 0 ? (
-              parsedParagraphs.map((p) => (
-                <p key={p.pIndex} className="whitespace-pre-line text-justify">
-                  {p.sentences.map((s) => {
-                    const isCurrent = isAudioOpen && currentChunkIdx === s.index;
-                    return (
-                      <span
-                        key={s.index}
-                        id={`reading-sentence-${s.index}`}
-                        onClick={() => {
-                          startAudio(s.index);
-                        }}
-                        className={`cursor-pointer transition-all duration-200 rounded px-0.5 inline ${
-                          isCurrent
-                            ? "font-extrabold text-rose-600 dark:text-rose-400 bg-rose-500/20 dark:bg-rose-500/30 ring-1 ring-rose-500/40 shadow-xs"
-                            : "hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
-                        }`}
-                        title="Bấm để nghe từ câu này"
-                      >
-                        {s.text}{" "}
-                      </span>
-                    );
-                  })}
-                </p>
-              ))
-            ) : (
-              paragraphs.map((p, idx) => (
-                <p key={idx} className="whitespace-pre-line text-justify">
-                  {p}
-                </p>
-              ))
-            )}
-          </article>
+              {parsedParagraphs.length > 0 ? (
+                parsedParagraphs.map((p) => (
+                  <p key={p.pIndex} className="whitespace-pre-line text-justify">
+                    {p.sentences.map((s) => {
+                      const isCurrent = isAudioOpen && currentChunkIdx === s.index;
+                      return (
+                        <span
+                          key={s.index}
+                          id={`reading-sentence-${s.index}`}
+                          onClick={() => {
+                            startAudio(s.index);
+                          }}
+                          className={`cursor-pointer transition-all duration-200 rounded px-0.5 inline ${isCurrent
+                              ? "font-extrabold text-rose-600 dark:text-rose-400 bg-rose-500/20 dark:bg-rose-500/30 ring-1 ring-rose-500/40 shadow-xs"
+                              : "hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400"
+                            }`}
+                          title="Bấm để nghe từ câu này"
+                        >
+                          {s.text}{" "}
+                        </span>
+                      );
+                    })}
+                  </p>
+                ))
+              ) : (
+                paragraphs.map((p, idx) => (
+                  <p key={idx} className="whitespace-pre-line text-justify">
+                    {p}
+                  </p>
+                ))
+              )}
+            </article>
           </>
         )}
 
@@ -1540,11 +1523,10 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                         stopAllAudio();
                         setShowToc(false);
                       }}
-                      className={`flex items-center justify-between p-2.5 rounded-xl text-xs transition-all ${
-                        isCurrent
+                      className={`flex items-center justify-between p-2.5 rounded-xl text-xs transition-all ${isCurrent
                           ? "bg-rose-500/20 text-rose-400 border border-rose-500/40 font-bold"
                           : "hover:bg-neutral-800 text-neutral-300 border border-transparent"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2 truncate pr-2">
                         <span className={`text-xs ${isCurrent ? "text-rose-400 font-black" : "text-neutral-500 font-semibold"}`}>

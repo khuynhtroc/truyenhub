@@ -16,41 +16,44 @@ export async function GET(req: NextRequest) {
 
     const supabase = createAdminSupabaseClient();
 
-    // 1. VIP Leaderboard Tab
+    // 1. VIP / Readers Real Points Leaderboard Tab
     if (tab === "vip") {
       const { data: dbUsers, error } = await supabase
         .from("profiles")
-        .select("id, display_name, email, avatar_url, coins_balance, vip_level, created_at")
+        .select("id, display_name, email, avatar_url, coins_balance, role, created_at")
         .order("coins_balance", { ascending: false })
-        .limit(30);
+        .order("created_at", { ascending: true })
+        .limit(limit);
 
-      const defaultVipUsers = [
-        { id: "vip-1", display_name: "Trần Thế Long", email: "tranthe***@gmail.com", coins_balance: 71200, vip_level: 12 },
-        { id: "vip-2", display_name: "Nguyễn Thùy Linh", email: "thuylinh***@gmail.com", coins_balance: 54800, vip_level: 10 },
-        { id: "vip-3", display_name: "Hoàng Minh Quân", email: "quanhm***@gmail.com", coins_balance: 39500, vip_level: 8 },
-        { id: "vip-4", display_name: "Đỗ Hải Nam", email: "namdh***@gmail.com", coins_balance: 28400, vip_level: 7 },
-        { id: "vip-5", display_name: "Phạm Khánh Huyền", email: "huyenpk***@gmail.com", coins_balance: 22100, vip_level: 6 },
-        { id: "vip-6", display_name: "Bùi Quốc Anh", email: "anhbq***@gmail.com", coins_balance: 17500, vip_level: 5 },
-        { id: "vip-7", display_name: "Vũ Phương Thảo", email: "thaovp***@gmail.com", coins_balance: 14200, vip_level: 4 },
-        { id: "vip-8", display_name: "Lê Đức Trọng", email: "trongld***@gmail.com", coins_balance: 11800, vip_level: 4 },
-        { id: "vip-9", display_name: "Chu Ngọc Mai", email: "maicn***@gmail.com", coins_balance: 9500, vip_level: 3 },
-        { id: "vip-10", display_name: "Tạ Đình Phong", email: "phongtd***@gmail.com", coins_balance: 7800, vip_level: 3 },
-      ];
-
-      // Merge real users with mock benchmarks if few
-      let combined = [...(dbUsers || [])];
-      for (const def of defaultVipUsers) {
-        if (!combined.some(u => u.email === def.email || u.id === def.id)) {
-          combined.push(def as any);
-        }
+      if (error) {
+        console.error("Error fetching real ranking users:", error);
       }
 
-      combined.sort((a, b) => (Number(b.coins_balance || 0) - Number(a.coins_balance || 0)));
+      // Mask email for privacy if display_name is not set
+      const realUsers = (dbUsers || []).map((u) => {
+        let name = u.display_name?.trim();
+        if (!name && u.email) {
+          const parts = u.email.split("@");
+          const username = parts[0];
+          const maskedUser = username.length > 3 
+            ? `${username.slice(0, 3)}***` 
+            : `${username}***`;
+          name = `${maskedUser}@${parts[1] || "gmail.com"}`;
+        }
+        return {
+          id: u.id,
+          display_name: name || "Độc Giả",
+          email: u.email,
+          avatar_url: u.avatar_url || null,
+          coins_balance: Number(u.coins_balance || 0),
+          created_at: u.created_at,
+        };
+      });
 
       return NextResponse.json({
         success: true,
         tab: "vip",
-        users: combined.slice(0, limit),
+        users: realUsers,
       });
     }
 

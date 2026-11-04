@@ -44,19 +44,32 @@ export default async function HomePage({
   const { type, genre } = await searchParams;
 
   let allStories: Story[] = MOCK_STORIES;
+  let topReaders: any[] = [];
   try {
     const supabase = getPublicSupabase();
-    const { data: dbStories } = await supabase
-      .from("stories")
-      .select("id, title, slug, type, description, cover_url, author_name, status, genres, total_views, total_likes, total_chapters, updated_at")
-      .order("total_views", { ascending: false })
-      .order("updated_at", { ascending: false })
-      .limit(100);
-    if (dbStories && dbStories.length > 0) {
-      allStories = dbStories as unknown as Story[];
+    const [storiesRes, readersRes] = await Promise.all([
+      supabase
+        .from("stories")
+        .select("id, title, slug, type, description, cover_url, author_name, status, genres, total_views, total_likes, total_chapters, updated_at")
+        .order("total_views", { ascending: false })
+        .order("updated_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("profiles")
+        .select("id, display_name, email, avatar_url, coins_balance")
+        .order("coins_balance", { ascending: false })
+        .order("created_at", { ascending: true })
+        .limit(3),
+    ]);
+
+    if (storiesRes.data && storiesRes.data.length > 0) {
+      allStories = storiesRes.data as unknown as Story[];
+    }
+    if (readersRes.data) {
+      topReaders = readersRes.data;
     }
   } catch (error) {
-    console.error("Failed to load stories from Supabase:", error);
+    console.error("Failed to load data from Supabase:", error);
   }
 
   // Filtered stories based on query
@@ -192,12 +205,12 @@ export default async function HomePage({
           )}
         </section>
 
-        {/* VIP Phú Hào Leaderboard / Gamification */}
+        {/* Readers Real Point Leaderboard */}
         <section className="rounded-2xl border border-border/50 bg-card p-5 sm:p-6 flex flex-col gap-4 shadow-sm mt-2">
           <div className="flex items-center justify-between">
             <h3 className="font-extrabold text-sm sm:text-base flex items-center gap-2 text-foreground">
-              <Crown className="w-5 h-5 text-amber-400" />
-              Bảng Xếp Hạng Phú Hào Tháng
+              <Trophy className="w-5 h-5 text-amber-500" />
+              Bảng Xếp Hạng Điểm Thưởng Độc Giả
             </h3>
             <Link
               href="/bang-xep-hang?tab=vip"
@@ -208,40 +221,54 @@ export default async function HomePage({
             </Link>
           </div>
 
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <span className="font-black text-amber-500 text-lg">#1</span>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-rose-500 flex items-center justify-center font-black text-white text-sm shadow-md">
-                T
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-sm">Trần Thế</span>
-                <span className="text-[11px] text-amber-500 font-extrabold">VIP 12 · 71.100 Xu</span>
-              </div>
-            </div>
+            {topReaders.length > 0 ? (
+              topReaders.map((reader, idx) => {
+                const rank = idx + 1;
+                const isGold = rank === 1;
+                const isSilver = rank === 2;
+                const points = Number(reader.coins_balance || 0);
 
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/60 border border-border/50">
-              <span className="font-black text-muted-foreground text-lg">#2</span>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center font-black text-white text-sm">
-                N
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-sm">Người Đọc</span>
-                <span className="text-[11px] text-muted-foreground font-bold">VIP 8 · 54.400 Xu</span>
-              </div>
-            </div>
+                let rankBadge = "#" + rank;
+                let bgClass = "bg-muted/60 border border-border/50";
+                let textRankColor = "text-muted-foreground";
+                let avatarRing = "";
 
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/60 border border-border/50">
-              <span className="font-black text-amber-700 text-lg">#3</span>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 flex items-center justify-center font-black text-white text-sm">
-                T
+                if (isGold) {
+                  bgClass = "bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/5 border border-amber-500/30";
+                  textRankColor = "text-amber-500 font-black";
+                  avatarRing = "ring-2 ring-amber-500/40";
+                } else if (isSilver) {
+                  bgClass = "bg-slate-500/10 border border-slate-400/20";
+                  textRankColor = "text-slate-400 font-black";
+                }
+
+                const displayName = reader.display_name?.trim() || (reader.email ? reader.email.split("@")[0] : "Độc Giả");
+
+                return (
+                  <div key={reader.id || idx} className={`flex items-center gap-3 p-3 rounded-xl ${bgClass}`}>
+                    <span className={`text-lg ${textRankColor}`}>{rankBadge}</span>
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-rose-500 flex items-center justify-center font-black text-white text-sm shadow-md overflow-hidden shrink-0 ${avatarRing}`}>
+                      {reader.avatar_url ? (
+                        <img src={reader.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{displayName[0]?.toUpperCase() || "U"}</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col min-w-0 truncate">
+                      <span className="font-bold text-sm truncate text-foreground">{displayName}</span>
+                      <span className="text-[11px] text-amber-500 font-extrabold">
+                        {points.toLocaleString("vi-VN")} Point
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="col-span-3 text-center text-xs text-muted-foreground py-2">
+                Đang cập nhật bảng xếp hạng...
               </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-sm">Thùy Linh</span>
-                <span className="text-[11px] text-muted-foreground font-bold">VIP 6 · 50.800 Xu</span>
-              </div>
-            </div>
+            )}
           </div>
         </section>
       </main>

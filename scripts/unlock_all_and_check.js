@@ -13,7 +13,7 @@ try {
       process.env[match[1]] = val;
     }
   });
-} catch (_) {}
+} catch (_) { }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bqvffeqjgjtzprouwshd.supabase.co';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxdmZmZXFqZ2p0enByb3V3c2hkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTkwNTQxNywiZXhwIjoyMTA3NDgxNDE3fQ.JOX4r3s7OSsqImlnjRMHD4m4giOAYxN97yZq8a94Q1A';
@@ -25,7 +25,7 @@ async function run() {
     .from('chapters')
     .select('id', { count: 'exact', head: true })
     .eq('is_locked', true);
-    
+
   console.log('Current locked chapters count:', lockedCount, countErr || '');
 
   if (lockedCount && lockedCount > 0) {
@@ -34,7 +34,7 @@ async function run() {
       .from('chapters')
       .update({ is_locked: false, price_coins: 0 })
       .eq('is_locked', true);
-      
+
     if (updateErr) {
       console.error('Error unlocking chapters:', updateErr);
     } else {

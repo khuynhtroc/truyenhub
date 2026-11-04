@@ -37,7 +37,7 @@ const CRITERIA_TABS = [
   { id: "novel", label: "📖 Truyện Chữ", icon: BookOpen, desc: "Tiên hiệp, tiểu thuyết ăn khách" },
   { id: "books", label: "💡 Sách Bán Chạy", icon: BrainCircuit, desc: "Kỹ năng, Tư duy & Kinh tế HBR" },
   { id: "completed", label: "✅ Trọn Bộ (Full)", icon: CheckCircle2, desc: "Đã hoàn thành 100% chương" },
-  { id: "vip", label: "👑 Phú Hào Độc Giả", icon: Crown, desc: "Top thành viên VIP cống hiến" },
+  { id: "vip", label: "🏆 Bảng Điểm Độc Giả", icon: Trophy, desc: "Xếp hạng số điểm Point thực tế của độc giả" },
 ];
 
 const TIMEFRAMES = [
@@ -264,10 +264,10 @@ export function RankingsView() {
         </div>
       ) : activeTab === "vip" ? (
         /* ========================================================================= */
-        /* VIP READERS LEADERBOARD VIEW */
+        /* READERS REAL POINTS LEADERBOARD VIEW */
         /* ========================================================================= */
         <div className="flex flex-col gap-6 animate-in fade-in">
-          {/* Top 3 VIP Podium */}
+          {/* Top 3 Readers Podium */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end pt-4 pb-2">
             {/* Top 2 Silver */}
             {vipUsers[1] && (
@@ -275,17 +275,21 @@ export function RankingsView() {
                 <div className="absolute -top-3 px-3 py-0.5 rounded-full bg-slate-400 text-slate-950 font-black text-[10px] uppercase shadow">
                   🥈 TOP 2
                 </div>
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-slate-400 to-indigo-400 text-white flex items-center justify-center font-black text-xl shadow-md ring-4 ring-slate-400/20 mb-3 mt-2">
-                  {vipUsers[1].display_name?.[0] || "U"}
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-slate-400 to-indigo-400 text-white flex items-center justify-center font-black text-xl shadow-md ring-4 ring-slate-400/20 mb-3 mt-2 overflow-hidden shrink-0">
+                  {vipUsers[1].avatar_url ? (
+                    <img src={vipUsers[1].avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{vipUsers[1].display_name?.[0] || "U"}</span>
+                  )}
                 </div>
                 <h3 className="font-extrabold text-sm text-foreground truncate max-w-full">
                   {vipUsers[1].display_name || vipUsers[1].email}
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-slate-400/15 text-slate-400 text-[10px] font-black uppercase mt-1">
-                  VIP {vipUsers[1].vip_level || 1}
+                  ⭐ Thành Viên Tích Cực
                 </span>
                 <span className="text-amber-500 font-black text-sm mt-2">
-                  {Number(vipUsers[1].coins_balance || 0).toLocaleString("vi-VN")} Xu
+                  {Number(vipUsers[1].coins_balance || 0).toLocaleString("vi-VN")} Point
                 </span>
               </div>
             )}
@@ -296,17 +300,21 @@ export function RankingsView() {
                 <div className="absolute -top-4 px-4 py-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 text-amber-950 font-black text-xs uppercase shadow-md flex items-center gap-1.5">
                   <Crown className="w-4 h-4 fill-amber-950" /> QUÁN QUÂN
                 </div>
-                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-amber-600 text-white flex items-center justify-center font-black text-2xl shadow-xl ring-4 ring-amber-500/30 mb-3 mt-2">
-                  {vipUsers[0].display_name?.[0] || "👑"}
+                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-amber-600 text-white flex items-center justify-center font-black text-2xl shadow-xl ring-4 ring-amber-500/30 mb-3 mt-2 overflow-hidden shrink-0">
+                  {vipUsers[0].avatar_url ? (
+                    <img src={vipUsers[0].avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{vipUsers[0].display_name?.[0] || "👑"}</span>
+                  )}
                 </div>
                 <h3 className="font-black text-base text-foreground truncate max-w-full">
                   {vipUsers[0].display_name || vipUsers[0].email}
                 </h3>
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500 text-xs font-black uppercase mt-1">
-                  ĐẠI PHÚ HÀO · VIP {vipUsers[0].vip_level || 12}
+                  👑 Độc Giả Xuất Sắc
                 </span>
                 <span className="text-amber-500 font-black text-lg mt-2 flex items-center gap-1">
-                  {Number(vipUsers[0].coins_balance || 0).toLocaleString("vi-VN")} <span className="text-xs">Xu</span>
+                  {Number(vipUsers[0].coins_balance || 0).toLocaleString("vi-VN")} <span className="text-xs">Point</span>
                 </span>
               </div>
             )}
@@ -317,28 +325,32 @@ export function RankingsView() {
                 <div className="absolute -top-3 px-3 py-0.5 rounded-full bg-amber-700 text-white font-black text-[10px] uppercase shadow">
                   🥉 TOP 3
                 </div>
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-700 to-rose-600 text-white flex items-center justify-center font-black text-xl shadow-md ring-4 ring-amber-700/20 mb-3 mt-2">
-                  {vipUsers[2].display_name?.[0] || "U"}
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-700 to-rose-600 text-white flex items-center justify-center font-black text-xl shadow-md ring-4 ring-amber-700/20 mb-3 mt-2 overflow-hidden shrink-0">
+                  {vipUsers[2].avatar_url ? (
+                    <img src={vipUsers[2].avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{vipUsers[2].display_name?.[0] || "U"}</span>
+                  )}
                 </div>
                 <h3 className="font-extrabold text-sm text-foreground truncate max-w-full">
                   {vipUsers[2].display_name || vipUsers[2].email}
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-amber-700/15 text-amber-600 text-[10px] font-black uppercase mt-1">
-                  VIP {vipUsers[2].vip_level || 1}
+                  ⭐ Thành Viên Tích Cực
                 </span>
                 <span className="text-amber-500 font-black text-sm mt-2">
-                  {Number(vipUsers[2].coins_balance || 0).toLocaleString("vi-VN")} Xu
+                  {Number(vipUsers[2].coins_balance || 0).toLocaleString("vi-VN")} Point
                 </span>
               </div>
             )}
           </div>
 
-          {/* Remaining VIP List */}
+          {/* Remaining Readers List */}
           <div className="rounded-3xl border border-border/60 bg-card overflow-hidden shadow-sm">
             <div className="p-4 sm:p-5 border-b border-border/50">
               <h3 className="font-black text-sm sm:text-base text-foreground flex items-center gap-2">
                 <Users className="w-4 h-4 text-rose-500" />
-                <span>Bảng Xếp Hạng Độc Giả Thân Thiết (#4 đến #{vipUsers.length})</span>
+                <span>Bảng Xếp Hạng Độc Giả Tích Cực (#4 đến #{vipUsers.length})</span>
               </h3>
             </div>
 
@@ -352,21 +364,25 @@ export function RankingsView() {
                     <span className="w-8 text-center font-mono font-black text-sm text-muted-foreground">
                       #{idx + 4}
                     </span>
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-sm text-foreground">
-                      {user.display_name?.[0] || "U"}
+                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-sm text-foreground overflow-hidden shrink-0">
+                      {user.avatar_url ? (
+                        <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{user.display_name?.[0] || "U"}</span>
+                      )}
                     </div>
                     <div className="flex flex-col">
                       <span className="font-bold text-xs sm:text-sm text-foreground">
                         {user.display_name || user.email}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        VIP {user.vip_level || 1}
+                        Thành Viên Tích Cực
                       </span>
                     </div>
                   </div>
 
                   <span className="font-black text-xs sm:text-sm text-amber-500">
-                    {Number(user.coins_balance || 0).toLocaleString("vi-VN")} Xu
+                    {Number(user.coins_balance || 0).toLocaleString("vi-VN")} Point
                   </span>
                 </div>
               ))}
