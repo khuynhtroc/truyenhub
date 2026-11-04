@@ -82,7 +82,7 @@ export function MemberMissionsCard({ user, onBalanceUpdate }: MemberMissionsCard
   // Handle Share to Earn 100 Coins immediately
   const handleShareToEarn = async () => {
     if (!user) {
-      setMessage({ type: "error", text: "Vui lòng đăng nhập để nhận 100 Xu khi chia sẻ." });
+      setMessage({ type: "error", text: "Vui lòng đăng nhập để nhận 100 Point khi chia sẻ." });
       return;
     }
 
@@ -123,7 +123,7 @@ export function MemberMissionsCard({ user, onBalanceUpdate }: MemberMissionsCard
       if (data.success) {
         setMessage({
           type: "success",
-          text: `🎉 Tuyệt vời! Bạn đã nhận ngay +100 Xu vào tài khoản khi chia sẻ với bạn bè!`,
+          text: `🎉 Tuyệt vời! Bạn đã nhận ngay +100 Point vào tài khoản khi chia sẻ với bạn bè!`,
         });
         if (onBalanceUpdate && typeof data.new_balance === "number") {
           onBalanceUpdate(data.new_balance);
@@ -159,17 +159,17 @@ export function MemberMissionsCard({ user, onBalanceUpdate }: MemberMissionsCard
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-black text-foreground flex items-center gap-1.5">
-                Nhiệm Vụ Thành Viên Tích Xu
+                Nhiệm Vụ Thành Viên Tích Point
               </h2>
               {totalEarnedToday > 0 && (
                 <span className="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[10px] font-black uppercase flex items-center gap-1">
                   <Coins className="w-3 h-3 fill-amber-500" />
-                  +{totalEarnedToday} Xu hôm nay
+                  +{totalEarnedToday} Point hôm nay
                 </span>
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Tương tác với website (thả tim, bình luận, đọc truyện) và chia sẻ để nhận Xu đọc truyện VIP miễn phí mỗi ngày.
+              Tương tác với website (thả tim, bình luận, đọc truyện) và chia sẻ để nhận Point miễn phí mỗi ngày.
             </p>
           </div>
         </div>
@@ -214,11 +214,11 @@ export function MemberMissionsCard({ user, onBalanceUpdate }: MemberMissionsCard
                 Chia Sẻ Với Bạn Bè
               </span>
               <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-white text-[10px] font-black uppercase shadow-xs">
-                +100 Xu Luôn
+                +100 Point Luôn
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Giới thiệu DocTruyen.vip cho bạn bè qua Facebook, Zalo, Telegram để nhận ngay 100 Xu lập tức!
+              Giới thiệu DocTruyen.vip cho bạn bè qua Facebook, Zalo, Telegram để nhận ngay 100 Point lập tức!
             </p>
           </div>
         </div>
@@ -241,10 +241,10 @@ export function MemberMissionsCard({ user, onBalanceUpdate }: MemberMissionsCard
           )}
           <span>
             {shareMission?.is_completed
-              ? "Đã Nhận 100 Xu Hôm Nay"
+              ? "Đã Nhận 100 Point Hôm Nay"
               : sharing
               ? "Đang xử lý..."
-              : "Chia Sẻ Nhận 100 Xu Ngay"}
+              : "Chia Sẻ Nhận 100 Point Ngay"}
           </span>
         </button>
       </div>
@@ -263,12 +263,12 @@ export function MemberMissionsCard({ user, onBalanceUpdate }: MemberMissionsCard
                   Điểm danh hàng ngày
                 </span>
                 <span className="text-[11px] text-muted-foreground line-clamp-1">
-                  Đăng nhập nhận Xu chuỗi 7 ngày
+                  Đăng nhập nhận Point chuỗi 7 ngày
                 </span>
               </div>
             </div>
             <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-black shrink-0">
-              +5 ~ 30 Xu
+              +5 ~ 30 Point
             </span>
           </div>
 
@@ -342,7 +342,7 @@ export function MemberMissionsCard({ user, onBalanceUpdate }: MemberMissionsCard
                       mission.is_completed ? "text-emerald-500 font-black" : "text-amber-500"
                     }
                   >
-                    +{mission.coins_earned_today} Xu
+                    +{mission.coins_earned_today} Point
                   </span>
                 </div>
 

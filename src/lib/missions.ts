@@ -35,13 +35,13 @@ export const MISSION_DEFINITIONS: Record<MissionActionType, MissionDefinition> =
   share: {
     id: "share",
     title: "Chia sẻ với bạn bè",
-    description: "Giới thiệu DocTruyen.vip cho bạn bè nhận ngay 100 Xu",
+    description: "Giới thiệu DocTruyen.vip cho bạn bè nhận ngay 100 Point",
     reward_coins: 100,
     daily_limit: 1,
     unit: "lượt",
-    actionLabel: "Chia Sẻ Nhận 100 Xu",
+    actionLabel: "Chia Sẻ Nhận 100 Point",
     iconName: "Share2",
-    badge: "Hot Nhất +100 Xu",
+    badge: "Hot Nhất +100 Point",
   },
   comment: {
     id: "comment",
@@ -52,7 +52,7 @@ export const MISSION_DEFINITIONS: Record<MissionActionType, MissionDefinition> =
     unit: "bình luận",
     actionLabel: "Viết Bình Luận",
     iconName: "MessageSquare",
-    badge: "+15 Xu / lần",
+    badge: "+15 Point / lần",
     href: "/kham-pha",
   },
   like_story: {
@@ -64,7 +64,7 @@ export const MISSION_DEFINITIONS: Record<MissionActionType, MissionDefinition> =
     unit: "lượt thích",
     actionLabel: "Thả Tim Ngay",
     iconName: "Heart",
-    badge: "+10 Xu / lần",
+    badge: "+10 Point / lần",
     href: "/kham-pha",
   },
   like_comment: {
@@ -76,7 +76,7 @@ export const MISSION_DEFINITIONS: Record<MissionActionType, MissionDefinition> =
     unit: "lượt",
     actionLabel: "Tương Tác",
     iconName: "ThumbsUp",
-    badge: "+5 Xu / lần",
+    badge: "+5 Point / lần",
     href: "/kham-pha",
   },
   read_chapter: {
@@ -88,7 +88,7 @@ export const MISSION_DEFINITIONS: Record<MissionActionType, MissionDefinition> =
     unit: "chương",
     actionLabel: "Đọc Truyện",
     iconName: "BookOpen",
-    badge: "+10 Xu / lần",
+    badge: "+10 Point / lần",
     href: "/kham-pha",
   },
   bookmark: {
@@ -100,7 +100,7 @@ export const MISSION_DEFINITIONS: Record<MissionActionType, MissionDefinition> =
     unit: "truyện",
     actionLabel: "Lưu Tủ Sách",
     iconName: "Bookmark",
-    badge: "+10 Xu / lần",
+    badge: "+10 Point / lần",
     href: "/tu-truyen",
   },
 };

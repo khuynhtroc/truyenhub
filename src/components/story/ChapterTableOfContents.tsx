@@ -277,16 +277,9 @@ export function ChapterTableOfContents({
               </div>
 
               <div className="shrink-0 flex items-center gap-2">
-                {ch.is_locked ? (
-                  <span className="flex items-center gap-1 text-[11px] font-black text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
-                    <Lock className="w-3 h-3" />
-                    {ch.price_coins} Xu
-                  </span>
-                ) : (
-                  <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                    Free
-                  </span>
-                )}
+                <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                  Free
+                </span>
                 <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-rose-500 group-hover:translate-x-0.5 transition-all" />
               </div>
             </Link>

@@ -1390,20 +1390,6 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
             chapterTitle={chapter.title}
             storySlug={story.slug}
           />
-        ) : chapter.is_locked && !isUnlocked ? (
-          <div className="my-8">
-            <PaywallModal
-              chapterId={chapter.id}
-              chapterTitle={chapter.title}
-              chapterNumber={chapter.chapter_number}
-              priceCoins={chapter.price_coins}
-              userCoins={userCoins}
-              onUnlockSuccess={() => {
-                setIsUnlocked(true);
-                setUserCoins((prev) => Math.max(0, prev - (chapter.price_coins || 10)));
-              }}
-            />
-          </div>
         ) : (
           <>
             {vipUnlockedReason && (
@@ -1566,15 +1552,9 @@ export function NovelReader({ story, chapter, allChapters }: NovelReaderProps) {
                         </span>
                         <span className="truncate">{c.title}</span>
                       </div>
-                      {c.is_locked ? (
-                        <span className="shrink-0 text-[10px] text-amber-500 flex items-center gap-0.5 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                          <Lock className="w-3 h-3" /> {c.price_coins}
-                        </span>
-                      ) : (
-                        <span className="shrink-0 text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                          Free
-                        </span>
-                      )}
+                      <span className="shrink-0 text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                        Free
+                      </span>
                     </Link>
                   );
                 })}

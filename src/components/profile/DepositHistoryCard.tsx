@@ -126,10 +126,10 @@ export function DepositHistoryCard({
         <div>
           <h2 className="text-lg sm:text-xl font-black text-foreground flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-rose-500" />
-            <span>Lịch Sử Nạp Xu & Giao Dịch Ví</span>
+            <span>Lịch Sử Giao Dịch & Biến Động Point</span>
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Toàn bộ biến động số dư, giao dịch nạp tiền qua ngân hàng và quà tặng xu của bạn.
+            Toàn bộ biến động Point, nhiệm vụ cộng điểm và các khoản đóng góp ủng hộ website.
           </p>
         </div>
 
@@ -147,11 +147,11 @@ export function DepositHistoryCard({
           )}
 
           <Link
-            href="/nap-xu"
-            className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-extrabold text-xs shadow-sm hover:opacity-95 transition-all flex items-center gap-1"
+            href="/donate"
+            className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-extrabold text-xs shadow-sm hover:opacity-95 transition-all flex items-center gap-1"
           >
             <Coins className="w-3.5 h-3.5" />
-            <span>+ Nạp Xu Ngay</span>
+            <span>+ Ủng Hộ Admin</span>
           </Link>
         </div>
       </div>
@@ -221,14 +221,14 @@ export function DepositHistoryCard({
           <div>
             <h3 className="font-extrabold text-sm text-foreground">Chưa có giao dịch nào</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Bạn chưa có giao dịch nào trong mục này. Nạp xu hoặc điểm danh để tích lũy xu nhé!
+              Bạn chưa có giao dịch nào trong mục này. Tương tác hoặc điểm danh để tích lũy Point nhé!
             </p>
           </div>
           <Link
-            href="/nap-xu"
+            href="/donate"
             className="mt-1 py-2 px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs shadow-xs transition-colors"
           >
-            Nạp Xu Đọc Truyện VIP
+            Ủng Hộ Admin (Donate)
           </Link>
         </div>
       ) : (
@@ -279,7 +279,7 @@ export function DepositHistoryCard({
                 {/* Right: Coins & VND Amount */}
                 <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-border/40 shrink-0">
                   <span className="font-black text-amber-500 text-sm sm:text-base flex items-center gap-1">
-                    +{Number(tx.coins_added || 0).toLocaleString("vi-VN")} Xu
+                    +{Number(tx.coins_added || 0).toLocaleString("vi-VN")} Point
                   </span>
                   {amountVnd > 0 && (
                     <span className="text-xs font-bold text-rose-500">
@@ -297,7 +297,7 @@ export function DepositHistoryCard({
       <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2 text-foreground font-semibold">
           <HelpCircle className="w-4 h-4 text-amber-500 shrink-0" />
-          <span>Bạn đã chuyển khoản nhưng chưa thấy cộng xu vào ví?</span>
+          <span>Bạn cần đối soát hoặc hỗ trợ thông tin đóng góp?</span>
         </div>
         {onOpenSupport ? (
           <button
@@ -310,7 +310,7 @@ export function DepositHistoryCard({
           </button>
         ) : (
           <Link
-            href="/nap-xu"
+            href="/donate"
             className="text-xs font-black text-rose-500 hover:text-rose-600 hover:underline flex items-center gap-1"
           >
             <span>Báo Admin hỗ trợ ngay</span>

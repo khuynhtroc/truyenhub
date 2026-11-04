@@ -61,7 +61,7 @@ export function DailyCheckinCard({ onRewardClaimed, user }: DailyCheckinCardProp
 
   const handleClaim = async () => {
     if (!user) {
-      setMessage({ type: "error", text: "Vui lòng đăng nhập để điểm danh nhận Xu." });
+      setMessage({ type: "error", text: "Vui lòng đăng nhập để điểm danh nhận Point." });
       return;
     }
     if (checkinData.hasCheckedInToday || submitting) return;
@@ -131,7 +131,7 @@ export function DailyCheckinCard({ onRewardClaimed, user }: DailyCheckinCardProp
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Đăng nhập mỗi ngày nhận Xu miễn phí. Ngày thứ 7 mở Rương Thần Tài!
+              Đăng nhập mỗi ngày nhận Point miễn phí. Ngày thứ 7 mở Rương Thần Tài!
             </p>
           </div>
         </div>
@@ -229,7 +229,7 @@ export function DailyCheckinCard({ onRewardClaimed, user }: DailyCheckinCardProp
                     : "text-foreground"
                 }`}
               >
-                +{reward} Xu
+                +{reward} Point
               </span>
             </div>
           );
@@ -260,7 +260,7 @@ export function DailyCheckinCard({ onRewardClaimed, user }: DailyCheckinCardProp
             <span>
               {submitting
                 ? "Đang xử lý..."
-                : `Điểm Danh Ngay (+${checkinData.nextReward} Xu Ngày ${checkinData.nextStreak})`}
+                : `Điểm Danh Ngay (+${checkinData.nextReward} Point Ngày ${checkinData.nextStreak})`}
             </span>
           </button>
         )}

@@ -30,7 +30,8 @@ import {
   BrainCircuit,
   Briefcase,
   Trophy,
-  Crown
+  Crown,
+  Heart
 } from "lucide-react";
 import { Story } from "@/types";
 
@@ -54,7 +55,7 @@ const GENRE_MENU_ITEMS = [
 ];
 
 const QUICK_SUB_BAR = [
-  { label: "Gói VIP", href: "/vip", icon: Crown, color: "text-amber-500 font-black" },
+  { label: "Ủng Hộ Admin", href: "/donate", icon: Heart, color: "text-rose-500 font-black" },
   { label: "Bảng Xếp Hạng", href: "/bang-xep-hang", icon: Trophy, color: "text-amber-500" },
   { label: "Truyện Tranh", href: "/kham-pha?type=comic", icon: Sparkles, color: "text-amber-500" },
   { label: "Truyện Chữ", href: "/kham-pha?type=novel", icon: BookOpen, color: "text-indigo-500" },
@@ -424,11 +425,11 @@ export function Navbar() {
             </Link>
 
             <Link 
-              href="/vip" 
-              className="px-2.5 py-1.5 rounded-lg text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 transition-colors flex items-center gap-1.5 font-black text-xs"
+              href="/donate" 
+              className="px-2.5 py-1.5 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition-colors flex items-center gap-1.5 font-black text-xs"
             >
-              <Crown className="w-3.5 h-3.5" />
-              <span>Gói VIP</span>
+              <Heart className="w-3.5 h-3.5 fill-rose-500" />
+              <span>Ủng Hộ Admin</span>
             </Link>
           </nav>
         </div>
@@ -756,7 +757,7 @@ export function Navbar() {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-foreground">Tài Khoản Độc Giả</span>
                 <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full">
-                  +1.000 Xu Tân Thủ
+                  +1.000 Point Tân Thủ
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -844,7 +845,7 @@ export function Navbar() {
                   <span className="text-xs font-black text-foreground truncate">
                     {currentUser.user_metadata?.full_name || currentUser.email}
                   </span>
-                  <span className="text-[10px] text-amber-500 font-bold">{userCoins} Xu</span>
+                  <span className="text-[10px] text-amber-500 font-bold">{Number(userCoins || 0).toLocaleString("vi-VN")} Point</span>
                 </div>
               </Link>
               <Link

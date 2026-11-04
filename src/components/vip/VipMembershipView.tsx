@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Crown,
+  Heart,
   Sparkles,
   ShieldCheck,
   Award,
@@ -219,6 +220,23 @@ export function VipMembershipView() {
             Mở khóa toàn bộ truyện tranh màu sắc nét, tiểu thuyết hot nhất, kho sách eBook bản quyền và 15 giọng đọc AI diễn cảm cao cấp.
           </p>
 
+          {/* All Stories Unlocked Notice */}
+          <div className="mt-2 w-full p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm font-bold flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+            <div className="flex items-center gap-2.5">
+              <Sparkles className="w-5 h-5 shrink-0 text-emerald-500" />
+              <span>
+                🎉 <strong>Đặc quyền mở rộng:</strong> Hệ thống hiện đã mở khóa 100% tất cả các chương truyện chữ & truyện tranh miễn phí cho độc giả đăng nhập. Bạn có thể ủng hộ Admin để tiếp sức duy trì server.
+              </span>
+            </div>
+            <Link
+              href="/donate"
+              className="px-4 py-2 rounded-xl bg-rose-500 text-white font-extrabold text-xs shadow-sm hover:bg-rose-600 transition-colors flex items-center gap-1.5 shrink-0"
+            >
+              <Heart className="w-3.5 h-3.5 fill-white" />
+              <span>Ủng Hộ Admin</span>
+            </Link>
+          </div>
+
           {/* Current VIP Status Card */}
           {currentUser && (
             <div className="mt-4 w-full p-4 rounded-2xl bg-card/80 border border-border/80 shadow-md backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4 text-left">
@@ -250,7 +268,7 @@ export function VipMembershipView() {
                         {new Date(profile.vip_until).toLocaleDateString("vi-VN")})
                       </span>
                     ) : (
-                      <span>Chưa kích hoạt VIP · Số dư: <b className="text-amber-500">{profile?.coins_balance || 0} Xu</b></span>
+                      <span>Chưa kích hoạt VIP · Số dư: <b className="text-amber-500">{Number(profile?.coins_balance || 0).toLocaleString("vi-VN")} Point</b></span>
                     )}
                   </div>
                 </div>
@@ -258,10 +276,10 @@ export function VipMembershipView() {
 
               <div className="flex items-center gap-2">
                 <Link
-                  href="/nap-xu"
-                  className="px-3.5 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs transition-colors flex items-center gap-1.5"
+                  href="/donate"
+                  className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold text-xs transition-colors flex items-center gap-1.5"
                 >
-                  <Coins className="w-3.5 h-3.5 text-amber-500" /> Nạp Xu
+                  <Heart className="w-3.5 h-3.5 fill-rose-500" /> Ủng Hộ Admin
                 </Link>
                 <a
                   href="#goi-vip"

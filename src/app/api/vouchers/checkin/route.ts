@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Điểm danh Ngày ${newStreak} thành công! Bạn nhận được +${reward} Xu.`,
+      message: `Điểm danh Ngày ${newStreak} thành công! Bạn nhận được +${reward} Point.`,
       reward_coins: reward,
       streak: newStreak,
       new_balance: newCoins,

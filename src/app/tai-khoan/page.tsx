@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   Coins,
   Crown,
+  Heart,
   Shield,
   History,
   Sparkles,
@@ -415,24 +416,24 @@ export default function ProfilePage() {
                 </span>
               </Link>
 
-              {/* 4. Ví Xu */}
+              {/* 4. Ủng Hộ Admin & Point Thưởng */}
               <Link
-                href="/nap-xu"
+                href="/donate"
                 className="p-5 rounded-2xl bg-card border border-border/60 hover:border-border transition-all flex flex-col justify-between gap-3 shadow-xs group"
               >
                 <div>
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center mb-2">
-                    <Coins className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center mb-2">
+                    <Heart className="w-5 h-5 fill-rose-500" />
                   </div>
-                  <h3 className="font-extrabold text-base text-foreground group-hover:text-amber-500 transition-colors">
-                    Ví Xu & Nạp Tiền
+                  <h3 className="font-extrabold text-base text-foreground group-hover:text-rose-500 transition-colors">
+                    Ủng Hộ Admin & Point
                   </h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Số dư xu, nạp xu tự động VPBank, lịch sử giao dịch và mua VIP.
+                    Đồng hành duy trì website, đóng góp tùy tâm và tích lũy Point độc giả.
                   </p>
                 </div>
-                <span className="text-[11px] font-bold text-amber-500 flex items-center gap-1">
-                  <span>Nạp xu ngay</span>
+                <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1">
+                  <span>Ủng hộ Admin (Donate)</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </Link>
@@ -445,10 +446,10 @@ export default function ProfilePage() {
                   </div>
                   <h3 className="font-extrabold text-base text-foreground">Nhiệm Vụ Hệ Thống</h3>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Điểm danh 7 ngày, đọc truyện, bình luận và nhận xu mỗi ngày.
+                    Điểm danh 7 ngày, đọc truyện, bình luận và nhận Point mỗi ngày.
                   </p>
                 </div>
-                <span className="text-[11px] font-bold text-purple-500">Tích lũy xu miễn phí &rarr;</span>
+                <span className="text-[11px] font-bold text-purple-500">Tích lũy Point miễn phí &rarr;</span>
               </div>
 
               {/* 6. Hội Viên VIP */}
@@ -749,7 +750,7 @@ export default function ProfilePage() {
                 }`}
               >
                 <CreditCard className="w-4 h-4" />
-                <span>Lịch Sử Nạp & Ví Xu</span>
+                <span>Lịch Sử Giao Dịch & Point</span>
                 {transactions.length > 0 && (
                   <span
                     className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${

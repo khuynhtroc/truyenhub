@@ -75,8 +75,8 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/nap-xu" className="hover:text-foreground transition-colors">
-                  Nạp Xu Ủng Hộ Tác Giả
+                <Link href="/donate" className="hover:text-foreground transition-colors text-rose-500 font-semibold flex items-center gap-1">
+                  <span>❤️ Ủng Hộ Admin (Donate)</span>
                 </Link>
               </li>
               <li>

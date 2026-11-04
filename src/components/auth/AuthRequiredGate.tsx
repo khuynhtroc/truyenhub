@@ -99,7 +99,7 @@ export function AuthRequiredGate({
         });
         if (loginErr) throw loginErr;
 
-        setSuccessMessage("Đăng ký thành công! Bạn nhận được 1.000 Xu tân thủ.");
+        setSuccessMessage("Đăng ký thành công! Bạn nhận được 1.000 Point tân thủ.");
         setTimeout(() => {
           if (onSuccess) onSuccess();
           else window.location.reload();
@@ -147,7 +147,7 @@ export function AuthRequiredGate({
             Yêu Cầu Đăng Nhập Để Đọc Truyện
           </h2>
           <p className="text-xs text-muted-foreground mt-1.5 max-w-sm leading-relaxed">
-            Đăng nhập để đọc <strong className="text-rose-500">{storyTitle}</strong> ({chapterTitle}), tự động lưu tiến độ đọc và đồng bộ tủ truyện trên mọi thiết bị.
+            Hệ thống đã <strong className="text-emerald-500">mở khóa 100% miễn phí</strong>. Đăng nhập để đọc trọn bộ <strong className="text-rose-500">{storyTitle}</strong> ({chapterTitle}), nhận ngay +1.000 Point và đồng bộ tủ truyện đa thiết bị.
           </p>
         </div>
 
@@ -303,7 +303,7 @@ export function AuthRequiredGate({
         <div className="pt-2 border-t border-border grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span className="font-bold text-amber-500">Tặng ngay 1.000 Xu</span>
+            <span className="font-bold text-amber-500">Tặng ngay 1.000 Point</span>
           </div>
           <div className="flex items-center gap-1.5">
             <History className="w-3.5 h-3.5 text-rose-500 shrink-0" />

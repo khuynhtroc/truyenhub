@@ -44,11 +44,11 @@ export function UserStatsOverview({ stats, userEmail, userName }: UserStatsOverv
     <div className="flex flex-col gap-4">
       {/* 6 Key Stat Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* 1. Ví Xu Khả Dụng */}
+        {/* 1. Điểm Point Tích Lũy */}
         <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-500/10 via-card to-card border border-amber-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-[11px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Ví Xu Khả Dụng
+              Điểm Point Độc Giả
             </span>
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center">
               <Coins className="w-4 h-4" />
@@ -57,22 +57,22 @@ export function UserStatsOverview({ stats, userEmail, userName }: UserStatsOverv
           <div>
             <div className="text-xl sm:text-2xl font-black text-amber-500">
               {Number(stats.coinsBalance || 0).toLocaleString("vi-VN")}{" "}
-              <span className="text-xs font-bold text-foreground">Xu</span>
+              <span className="text-xs font-bold text-foreground">Point</span>
             </div>
             <Link
-              href="/nap-xu"
+              href="/donate"
               className="mt-2 text-[11px] font-extrabold text-rose-500 hover:text-rose-600 hover:underline flex items-center gap-0.5"
             >
-              <span>+ Nạp thêm xu</span>
+              <span>+ Ủng hộ Admin (Donate)</span>
             </Link>
           </div>
         </div>
 
-        {/* 2. Tổng Tiền Đã Nạp */}
+        {/* 2. Tổng Đóng Góp */}
         <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-emerald-500/10 via-card to-card border border-emerald-500/20 shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2 mb-2">
             <span className="text-[11px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Đã Nạp Ngân Hàng
+              Ủng Hộ & Đóng Góp
             </span>
             <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center">
               <CreditCard className="w-4 h-4" />

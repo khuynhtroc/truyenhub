@@ -183,8 +183,8 @@ export default async function ChapterPage({
       story_id: story.id,
       chapter_number: num,
       title: `Chương ${num}`,
-      is_locked: num > 3,
-      price_coins: num > 3 ? 5 : 0,
+      is_locked: false,
+      price_coins: 0,
       content_text: story.type === "novel" ? "Nội dung chương đang được cập nhật..." : null,
       pages_images: story.type === "comic" ? [
         "https://pub-996745da873f42adb3c8b53c9ed97e85.r2.dev/comics/update/6143/page-001-1791627430507987271.webp"

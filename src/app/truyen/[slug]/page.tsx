@@ -231,9 +231,9 @@ export default async function StoryDetailPage({
       id: "sample-3",
       story_id: story.id,
       chapter_number: 3,
-      title: "Chương 3: Trận chiến quyết định (VIP)",
-      is_locked: true,
-      price_coins: 5,
+      title: "Chương 3: Trận chiến quyết định",
+      is_locked: false,
+      price_coins: 0,
       created_at: story.created_at,
     },
   ];

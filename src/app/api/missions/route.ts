@@ -196,8 +196,8 @@ export async function POST(req: NextRequest) {
     const currentCount = todayActionLogs.length + 1;
     const message =
       action === "share"
-        ? `🎉 Tuyệt vời! Bạn nhận được +100 Xu khi chia sẻ DocTruyen.vip với bạn bè!`
-        : `🎉 Bạn nhận được +${reward} Xu (${mission.title} ${currentCount}/${mission.daily_limit})!`;
+        ? `🎉 Tuyệt vời! Bạn nhận được +100 Point khi chia sẻ DocTruyen.vip với bạn bè!`
+        : `🎉 Bạn nhận được +${reward} Point (${mission.title} ${currentCount}/${mission.daily_limit})!`;
 
     return NextResponse.json({
       success: true,

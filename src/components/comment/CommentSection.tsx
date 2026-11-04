@@ -110,7 +110,7 @@ export function CommentSection({ storyId, storyTitle, chapterNumber }: CommentSe
           chapter_number: chapterNumber,
         });
         if (missionRes?.success && missionRes.coins_reward) {
-          showToast(`💬 Bình luận thành công! Bạn nhận được +${missionRes.coins_reward} Xu thưởng nhiệm vụ! 🎉`);
+          showToast(`💬 Bình luận thành công! Bạn nhận được +${missionRes.coins_reward} Point thưởng nhiệm vụ! 🎉`);
         } else {
           showToast("Bình luận của bạn đã được đăng thành công! ✨");
         }
@@ -139,7 +139,7 @@ export function CommentSection({ storyId, storyTitle, chapterNumber }: CommentSe
       // Trigger mission reward for liking comment
       const missionRes = await recordMissionActivity("like_comment", { comment_id: commentId });
       if (missionRes?.success && missionRes.coins_reward) {
-        showToast(`👍 Thích bình luận! Bạn nhận được +${missionRes.coins_reward} Xu thưởng! 🎉`);
+        showToast(`👍 Thích bình luận! Bạn nhận được +${missionRes.coins_reward} Point thưởng! 🎉`);
       }
     } catch (e) {
       console.error(e);

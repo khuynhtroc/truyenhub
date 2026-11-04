@@ -122,7 +122,7 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
       if (nextLiked) {
         const missionRes = await recordMissionActivity("like_story", { story_id: story.id, story_title: story.title });
         if (missionRes?.success && missionRes.coins_reward) {
-          showToast(`❤️ Đã thả tim! Nhận được +${missionRes.coins_reward} Xu thưởng nhiệm vụ! 🎉`);
+          showToast(`❤️ Đã thả tim! Nhận được +${missionRes.coins_reward} Point thưởng nhiệm vụ! 🎉`);
         } else {
           showToast("Cảm ơn bạn đã thả tim cho truyện! ❤️");
         }
@@ -143,7 +143,7 @@ export function StoryInteractiveHero({ story, chapters }: StoryInteractiveHeroPr
       if (newState) {
         const missionRes = await recordMissionActivity("bookmark", { story_id: story.id, story_title: story.title });
         if (missionRes?.success && missionRes.coins_reward) {
-          showToast(`📚 Đã lưu vào Tủ truyện! Nhận được +${missionRes.coins_reward} Xu thưởng! 🎉`);
+          showToast(`📚 Đã lưu vào Tủ truyện! Nhận được +${missionRes.coins_reward} Point thưởng! 🎉`);
         } else {
           showToast("Đã lưu vào Tủ truyện (Đồng bộ đa thiết bị)! 📚");
         }

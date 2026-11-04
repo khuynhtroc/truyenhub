@@ -365,15 +365,9 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
                         </span>
                         <span className="truncate">{c.title}</span>
                       </div>
-                      {c.is_locked ? (
-                        <span className="shrink-0 text-[10px] text-amber-500 flex items-center gap-0.5 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                          <Lock className="w-3 h-3" /> {c.price_coins}
-                        </span>
-                      ) : (
-                        <span className="shrink-0 text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                          Free
-                        </span>
-                      )}
+                      <span className="shrink-0 text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                        Free
+                      </span>
                     </Link>
                   );
                 })}
@@ -395,31 +389,6 @@ export function ComicReader({ story, chapter, allChapters }: ComicReaderProps) {
             chapterTitle={chapter.title}
             storySlug={story.slug}
           />
-        ) : chapter.is_locked && !isUnlocked ? (
-          /* Locked State Preview */
-          <div className="w-full flex flex-col items-center px-4">
-            {pages.length > 0 && (
-              <div className="relative w-full max-h-[480px] overflow-hidden rounded-2xl mb-4">
-                <img
-                  src={pages[0]}
-                  alt="Trang xem thử"
-                  className="w-full h-auto object-cover blur-[2px] opacity-60"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-transparent" />
-              </div>
-            )}
-
-            <div className="w-full max-w-lg">
-              <PaywallModal
-                chapterId={chapter.id}
-                chapterTitle={chapter.title}
-                chapterNumber={chapter.chapter_number}
-                priceCoins={chapter.price_coins}
-                userCoins={userCoins}
-                onUnlockSuccess={handleUnlockSuccess}
-              />
-            </div>
-          </div>
         ) : (
           <div className="w-full flex flex-col items-center">
             {vipUnlockedReason && (
