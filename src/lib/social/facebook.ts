@@ -1,6 +1,7 @@
 import { SITE_URL, postPath } from '@/lib/urls';
 import type { Post } from '@/lib/types';
 import type { ChannelShareResult } from './types';
+import { buildOptimizedFacebookStatus } from './seo-content-generator';
 
 const FB_GRAPH_API = 'https://graph.facebook.com/v19.0';
 
@@ -217,17 +218,20 @@ export async function shareToFacebook(
     }
 
     const postUrl = `${SITE_URL}${postPath(post)}`;
-    const title = post.title || 'DocTruyen.vip - Đọc Truyện Online';
+    const title = (post.title || 'DocTruyen.vip - Đọc Truyện Online').replace(/^bản sao của\s+/i, '').trim();
     const excerpt = (post.seo_description || post.excerpt || post.description || '').replace(/<[^>]*>/g, '').trim();
 
-    const defaultTemplate = `🔥 {title}\n\n📖 {excerpt}\n\n👉 Đọc ngay bản đẹp sắc nét full HD tại:\n{url}\n\n#doctruyen #truyenhay #webtoon #manga #truyentranh #truyenchu #doctruyenvip`;
+    const trimmedTemplate = (template || '').trim();
+    const isLegacyOrAutoTemplate =
+      !trimmedTemplate ||
+      trimmedTemplate === 'auto' ||
+      trimmedTemplate === '{auto_seo}' ||
+      trimmedTemplate.includes('👉 Đọc ngay bản đẹp sắc nét full HD tại:') ||
+      trimmedTemplate.includes('#doctruyen #truyenhay #webtoon #manga #truyentranh #truyenchu #doctruyenvip');
 
-    const message = template
-      ? template
-          .replace(/{title}/g, title)
-          .replace(/{excerpt}/g, excerpt)
-          .replace(/{url}/g, postUrl)
-      : defaultTemplate
+    const message = isLegacyOrAutoTemplate
+      ? buildOptimizedFacebookStatus(post, postUrl)
+      : trimmedTemplate
           .replace(/{title}/g, title)
           .replace(/{excerpt}/g, excerpt)
           .replace(/{url}/g, postUrl);

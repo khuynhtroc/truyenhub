@@ -47,6 +47,7 @@ import {
 } from './extended-community';
 
 export * from './types';
+export * from './seo-content-generator';
 export * from './facebook';
 export * from './instagram';
 export * from './facebook-backfill';
@@ -101,7 +102,7 @@ export const DEFAULT_SOCIAL_SETTINGS: SocialSettings = {
   facebook_access_token: '',
   facebook_app_id: '2272148170382644',
   facebook_app_secret: '',
-  facebook_template: '🔥 {title}\n\n📖 Tóm tắt:\n{excerpt}\n\n👉 Đọc ngay bản đẹp sắc nét full HD tại: {url}\n\n#doctruyen #truyenhay #webtoon #manga #truyentranh #truyenchu #doctruyenvip',
+  facebook_template: '{auto_seo}',
 
   instagram_enabled: false,
   instagram_user_id: '',

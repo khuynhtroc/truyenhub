@@ -1,6 +1,7 @@
 import type { Post } from '@/lib/types';
 import { SITE_URL, postPath } from '@/lib/urls';
 import type { ChannelShareResult } from './types';
+import { buildOptimizedFacebookStatus } from './seo-content-generator';
 
 const FB_GRAPH_VERSION = 'v21.0';
 
@@ -50,17 +51,24 @@ function getGraphHost(accessToken: string): string {
 
 export function formatInstagramCaption(post: Post, template?: string): string {
   const url = buildPostUrl(post);
-  const title = post.title || '';
+  const title = (post.title || '').replace(/^bản sao của\s+/i, '').trim();
   const excerpt = post.excerpt || post.seo_description || '';
+  const trimmedTemplate = (template || '').trim();
+  const isLegacyOrAuto =
+    !trimmedTemplate ||
+    trimmedTemplate === 'auto' ||
+    trimmedTemplate === '{auto_seo}' ||
+    trimmedTemplate.includes('👉 Đọc trọn bộ bản quyền sắc nét tại:') ||
+    trimmedTemplate.includes('#doctruyen #truyenhay #webtoon #manga #truyentranh #truyenchu #doctruyenvip');
 
   let text: string;
-  if (template && template.trim()) {
-    text = template
+  if (!isLegacyOrAuto) {
+    text = trimmedTemplate
       .replace(/\{title\}/g, title)
       .replace(/\{excerpt\}/g, excerpt)
       .replace(/\{url\}/g, url);
   } else {
-    text = `🔥 ${title}\n\n📖 ${excerpt}\n\n👉 Đọc trọn bộ bản quyền sắc nét tại: ${url}\n\n#doctruyen #truyenhay #webtoon #manga #truyentranh #truyenchu #doctruyenvip`;
+    text = buildOptimizedFacebookStatus(post, url);
   }
 
   return text.length > 2150 ? text.slice(0, 2147) + '...' : text;
