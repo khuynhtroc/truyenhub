@@ -25,6 +25,9 @@ import Link from "next/link";
 
 export const revalidate = 60;
 
+const gHome = globalThis as any;
+const HOME_CACHE_TTL_MS = 2 * 60 * 1000;
+
 const QUICK_FILTERS = [
   { label: "Tất cả", href: "/", type: undefined, icon: Sparkles },
   { label: "Bảng Xếp Hạng", href: "/bang-xep-hang", type: "rankings", icon: Trophy },
@@ -45,31 +48,37 @@ export default async function HomePage({
 
   let allStories: Story[] = MOCK_STORIES;
   let topReaders: any[] = [];
-  try {
-    const supabase = getPublicSupabase();
-    const [storiesRes, readersRes] = await Promise.all([
-      supabase
-        .from("stories")
-        .select("id, title, slug, type, description, cover_url, author_name, status, genres, total_views, total_likes, total_chapters, updated_at")
-        .order("total_views", { ascending: false })
-        .order("updated_at", { ascending: false })
-        .limit(100),
-      supabase
-        .from("profiles")
-        .select("id, display_name, email, avatar_url, coins_balance")
-        .order("coins_balance", { ascending: false })
-        .order("created_at", { ascending: true })
-        .limit(3),
-    ]);
+  if (gHome.__homeDataCache && Date.now() - gHome.__homeDataCache.ts < HOME_CACHE_TTL_MS) {
+    allStories = gHome.__homeDataCache.allStories;
+    topReaders = gHome.__homeDataCache.topReaders;
+  } else {
+    try {
+      const supabase = getPublicSupabase();
+      const [storiesRes, readersRes] = await Promise.all([
+        supabase
+          .from("stories")
+          .select("id, title, slug, type, description, cover_url, author_name, status, genres, total_views, total_likes, total_chapters, updated_at")
+          .order("total_views", { ascending: false })
+          .order("updated_at", { ascending: false })
+          .limit(100),
+        supabase
+          .from("profiles")
+          .select("id, display_name, email, avatar_url, coins_balance")
+          .order("coins_balance", { ascending: false })
+          .order("created_at", { ascending: true })
+          .limit(3),
+      ]);
 
-    if (storiesRes.data && storiesRes.data.length > 0) {
-      allStories = storiesRes.data as unknown as Story[];
+      if (storiesRes.data && storiesRes.data.length > 0) {
+        allStories = storiesRes.data as unknown as Story[];
+      }
+      if (readersRes.data) {
+        topReaders = readersRes.data;
+      }
+      gHome.__homeDataCache = { allStories, topReaders, ts: Date.now() };
+    } catch (error) {
+      console.error("Failed to load data from Supabase:", error);
     }
-    if (readersRes.data) {
-      topReaders = readersRes.data;
-    }
-  } catch (error) {
-    console.error("Failed to load data from Supabase:", error);
   }
 
   // Filtered stories based on query

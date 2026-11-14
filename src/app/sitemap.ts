@@ -4,7 +4,13 @@ import { MOCK_STORIES } from "@/lib/mock-data";
 
 export const revalidate = 3600; // Revalidate sitemap every hour
 
+const gSitemap = globalThis as any;
+const SITEMAP_TTL_MS = 30 * 60 * 1000;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (gSitemap.__sitemapCache && Date.now() - gSitemap.__sitemapCache.ts < SITEMAP_TTL_MS) {
+    return gSitemap.__sitemapCache.data;
+  }
   const baseUrl = "https://doctruyen.vip";
 
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -77,6 +83,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
   }
 
-  return [...staticRoutes, ...storyRoutes];
+  const result = [...staticRoutes, ...storyRoutes];
+  gSitemap.__sitemapCache = { data: result, ts: Date.now() };
+  return result;
 }
 

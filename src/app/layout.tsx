@@ -1,17 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Be_Vietnam_Pro } from "next/font/google";
 import { CapacitorAppHandler } from "@/components/common/CapacitorAppHandler";
 import { AppInstallFloatWidget } from "@/components/common/AppInstallFloatWidget";
 import { CookieConsentBanner } from "@/components/common/CookieConsentBanner";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import "./globals.css";
 
-const beVietnamPro = Be_Vietnam_Pro({
-  weight: ["300", "400", "500", "600", "700", "800"],
-  subsets: ["latin", "vietnamese"],
-  display: "swap",
-  variable: "--font-be-vietnam-pro",
-});
+const gLayout = globalThis as any;
+const SITE_CONFIG_TTL_MS = 5 * 60 * 1000;
+
+async function getCachedSiteConfig() {
+  if (gLayout.__siteConfigCache && Date.now() - gLayout.__siteConfigCache.ts < SITE_CONFIG_TTL_MS) {
+    return gLayout.__siteConfigCache.data;
+  }
+  try {
+    const supabase = createAdminSupabaseClient();
+    const { data } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "site_config")
+      .single();
+    const val = data?.value || {};
+    gLayout.__siteConfigCache = { data: val, ts: Date.now() };
+    return val;
+  } catch {
+    return gLayout.__siteConfigCache?.data || {};
+  }
+}
 
 export const viewport: Viewport = {
   themeColor: [
@@ -121,31 +135,21 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let customCss = "";
-  let customHeadCode = "";
-  let customBodyCode = "";
-  let customFooterCode = "";
-
-  try {
-    const supabase = createAdminSupabaseClient();
-    const { data } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "site_config")
-      .single();
-    if (data?.value) {
-      customCss = data.value.customCss || "";
-      customHeadCode = data.value.customHeadCode || "";
-      customBodyCode = data.value.customBodyCode || "";
-      customFooterCode = data.value.customFooterCode || "";
-    }
-  } catch (err) {
-    // Graceful fallback if database unavailable during static export
-  }
+  const siteCfg = await getCachedSiteConfig();
+  const customCss = siteCfg.customCss || "";
+  const customHeadCode = siteCfg.customHeadCode || "";
+  const customBodyCode = siteCfg.customBodyCode || "";
+  const customFooterCode = siteCfg.customFooterCode || "";
 
   return (
-    <html lang="vi" suppressHydrationWarning className={`${beVietnamPro.variable} h-full antialiased`}>
+    <html lang="vi" suppressHydrationWarning className="h-full antialiased">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
         {/* Custom Head Injected Code & CSS */}
         {customCss && (
           <style id="custom-site-css" dangerouslySetInnerHTML={{ __html: customCss }} />
@@ -205,11 +209,13 @@ export default async function RootLayout({
             }),
           }}
         />
-        {/* Google Tag Manager (GTM-N7TTTGPL) (Excluded on /admin) */}
+        {/* Google Tag Manager (GTM-N7TTTGPL) (Excluded on /admin & bots/headless) */}
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(w,d,s,l,i){
 if(w.location&&w.location.pathname&&w.location.pathname.startsWith('/admin'))return;
+var ua=(navigator&&navigator.userAgent)||'';
+if((navigator&&navigator.webdriver)||/bot|crawl|spider|slurp|facebookexternalhit|meta-externalagent|Facebot|Lighthouse|GTmetrix|PageSpeed|HeadlessChrome|PhantomJS|Puppeteer|Playwright|AhrefsBot|SemrushBot|DotBot|MJ12bot|Bytespider|PetalBot/i.test(ua))return;
 w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -218,7 +224,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           }}
         />
 
-        {/* Google Analytics 4 Multi-Platform Tracking (Excluded on /admin) */}
+        {/* Google Analytics 4 Multi-Platform Tracking (Excluded on /admin & bots/headless) */}
         <script
           id="google-analytics"
           dangerouslySetInnerHTML={{
@@ -227,7 +233,10 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
 
-              if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+              var ua = (navigator && navigator.userAgent) || '';
+              var isBot = (navigator && navigator.webdriver) || /bot|crawl|spider|slurp|facebookexternalhit|meta-externalagent|Facebot|Lighthouse|GTmetrix|PageSpeed|HeadlessChrome|PhantomJS|Puppeteer|Playwright|AhrefsBot|SemrushBot|DotBot|MJ12bot|Bytespider|PetalBot/i.test(ua);
+
+              if (typeof window !== 'undefined' && (window.location.pathname.startsWith('/admin') || isBot)) {
                 window['ga-disable-G-0CBF77MVXY'] = true;
               } else {
                 var s = document.createElement('script');
