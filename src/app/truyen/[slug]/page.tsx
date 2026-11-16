@@ -37,6 +37,8 @@ import { StoryInteractiveHero } from "@/components/story/StoryInteractiveHero";
 import { StoryReadCtaButton } from "@/components/story/StoryReadCtaButton";
 import { SafeImage } from "@/components/common/SafeImage";
 import { StoryViewTracker } from "@/components/common/StoryViewTracker";
+import { AiFaqSection } from "@/components/common/AiFaqSection";
+import { buildContextualFaqsForStory } from "@/lib/ai-seo-faq";
 import { getPublicSupabase } from "@/lib/supabase/server";
 import { Story, Chapter, StoryVersion } from "@/types";
 import { getSeriesGroupForSlug } from "@/lib/series-versions";
@@ -407,6 +409,31 @@ export default async function StoryDetailPage({
             seriesGroupName={seriesGroup?.groupName}
           />
         </div>
+
+        {/* Contextual AI Overview Q&A Section + FAQPage Schema for this Story */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: buildContextualFaqsForStory(story, chapters.length).map((f) => ({
+                "@type": "Question",
+                name: f.question,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: f.answer,
+                },
+              })),
+            }),
+          }}
+        />
+        <AiFaqSection
+          faqs={buildContextualFaqsForStory(story, chapters.length)}
+          title={`Câu Hỏi Thường Gặp Về Truyện: ${story.title}`}
+          subtitle={`Tổng hợp thông tin nhanh về số chương, trạng thái cập nhật và cách đọc trọn bộ ${story.title} trên DocTruyen.vip.`}
+          compact
+        />
 
         {/* Comment & Discussion Section (Dual TruyenHub & Facebook) */}
         <CommentSection storyId={story.id} storyTitle={story.title} />

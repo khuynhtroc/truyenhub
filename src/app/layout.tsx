@@ -3,6 +3,7 @@ import { CapacitorAppHandler } from "@/components/common/CapacitorAppHandler";
 import { AppInstallFloatWidget } from "@/components/common/AppInstallFloatWidget";
 import { CookieConsentBanner } from "@/components/common/CookieConsentBanner";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { MASTER_DOCTRUYEN_FAQS } from "@/lib/ai-seo-faq";
 import "./globals.css";
 
 const gLayout = globalThis as any;
@@ -204,6 +205,18 @@ export default async function RootLayout({
                   "name": "DocTruyen.vip",
                   "url": "https://www.doctruyen.vip",
                   "logo": "https://www.doctruyen.vip/icon-192.png",
+                },
+                {
+                  "@type": "FAQPage",
+                  "@id": "https://www.doctruyen.vip/#faq",
+                  "mainEntity": MASTER_DOCTRUYEN_FAQS.map((f) => ({
+                    "@type": "Question",
+                    "name": f.question,
+                    "acceptedAnswer": {
+                      "@type": "Answer",
+                      "text": f.answer,
+                    },
+                  })),
                 },
               ],
             }),

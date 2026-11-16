@@ -4,6 +4,7 @@ import { Footer } from "@/components/layout/Footer";
 import { StoryCard } from "@/components/story/StoryCard";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { StoryRail } from "@/components/home/StoryRail";
+import { AiFaqSection } from "@/components/common/AiFaqSection";
 import { MOCK_STORIES } from "@/lib/mock-data";
 import { getPublicSupabase } from "@/lib/supabase/server";
 import { Story } from "@/types";
@@ -280,6 +281,9 @@ export default async function HomePage({
             )}
           </div>
         </section>
+
+        {/* AI Overview & People Also Ask Q&A Section */}
+        <AiFaqSection />
       </main>
 
       <Footer />
