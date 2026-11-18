@@ -25,7 +25,7 @@ export function formatVND(amount: number): string {
 export const SITE_CONFIG = {
   name: "DocTruyen.vip",
   domain: "doctruyen.vip",
-  url: "https://doctruyen.vip",
+  url: "https://www.doctruyen.vip",
   mediaUrl: process.env.NEXT_PUBLIC_R2_DOMAIN || "https://media.doctruyen.vip",
   fallbackR2Url: "https://pub-96c72b024c5547b594279f6245a7a6a5.r2.dev",
   description:

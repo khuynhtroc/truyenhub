@@ -2,7 +2,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 export const DEFAULT_UPDATE_BOT_TOKEN = "8692623601:AAEcTsr8Fag7dv9u_rK8oDXUoTVq0qfRtAM";
 export const DEFAULT_UPDATE_CHAT_ID = "-5504700831";
-export const SITE_URL = "https://doctruyen.vip";
+export const SITE_URL = "https://www.doctruyen.vip";
 
 export interface BroadcastConfig {
   botToken: string;

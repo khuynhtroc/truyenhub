@@ -1,6 +1,6 @@
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://doctruyen.vip');
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.doctruyen.vip');
 
 export function storyPath(slug: string): string {
   const clean = slug.replace(/^\/|\/$/g, '');

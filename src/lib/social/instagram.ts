@@ -6,7 +6,7 @@ import { buildOptimizedFacebookStatus } from './seo-content-generator';
 const FB_GRAPH_VERSION = 'v21.0';
 
 function getSiteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL || SITE_URL || 'https://doctruyen.vip').replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_SITE_URL || SITE_URL || 'https://www.doctruyen.vip').replace(/\/$/, '');
 }
 
 function buildPostUrl(post: Post): string {
@@ -261,7 +261,7 @@ async function createAndPublishIgContainer(
     if (linkRes.ok && linkData?.permalink) {
       permalink = linkData.permalink;
     }
-  } catch {}
+  } catch { }
 
   return { ok: true, mediaId, permalink };
 }
