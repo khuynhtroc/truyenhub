@@ -6,10 +6,10 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/tai-khoan/", "/auth/"],
+        disallow: ["/api/", "/admin/", "/tai-khoan/", "/auth/"],
       },
     ],
-    sitemap: "https://doctruyen.vip/sitemap.xml",
-    host: "https://doctruyen.vip",
+    sitemap: "https://www.doctruyen.vip/sitemap.xml",
+    host: "https://www.doctruyen.vip",
   };
 }

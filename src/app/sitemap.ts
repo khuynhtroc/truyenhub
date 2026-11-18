@@ -1,6 +1,5 @@
 import { MetadataRoute } from "next";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { MOCK_STORIES } from "@/lib/mock-data";
 
 export const revalidate = 3600; // Revalidate sitemap every hour
 
@@ -11,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (gSitemap.__sitemapCache && Date.now() - gSitemap.__sitemapCache.ts < SITEMAP_TTL_MS) {
     return gSitemap.__sitemapCache.data;
   }
-  const baseUrl = "https://doctruyen.vip";
+  const baseUrl = "https://www.doctruyen.vip";
 
   const staticRoutes: MetadataRoute.Sitemap = [
     {
@@ -25,24 +24,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/kham-pha?type=comic`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/kham-pha?type=novel`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/tu-truyen`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.7,
     },
     {
       url: `${baseUrl}/donate`,
@@ -73,18 +54,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Failed to generate story routes for sitemap:", error);
   }
 
-  // Fallback to MOCK_STORIES if DB is empty/fails
-  if (storyRoutes.length === 0) {
-    storyRoutes = MOCK_STORIES.map((story) => ({
-      url: `${baseUrl}/truyen/${story.slug}`,
-      lastModified: new Date(story.updated_at),
-      changeFrequency: "daily",
-      priority: 0.9,
-    }));
+  // Blog post URLs
+  let blogRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const supabase = createAdminSupabaseClient();
+    const { data: blogPosts } = await supabase
+      .from("posts")
+      .select("slug, updated_at")
+      .eq("type", "blog")
+      .order("updated_at", { ascending: false })
+      .limit(500);
+
+    if (blogPosts && blogPosts.length > 0) {
+      blogRoutes = blogPosts.map((post) => ({
+        url: `${baseUrl}/blog/${post.slug}`,
+        lastModified: post.updated_at ? new Date(post.updated_at) : new Date(),
+        changeFrequency: "weekly",
+        priority: 0.7,
+      }));
+    }
+  } catch (error) {
+    console.error("Failed to generate blog routes for sitemap:", error);
   }
 
-  const result = [...staticRoutes, ...storyRoutes];
+  const result = [...staticRoutes, ...storyRoutes, ...blogRoutes];
   gSitemap.__sitemapCache = { data: result, ts: Date.now() };
   return result;
 }
-

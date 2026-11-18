@@ -69,12 +69,12 @@ export async function generateMetadata({
     title,
     description,
     alternates: {
-      canonical: `https://doctruyen.vip/truyen/${slug}/${chapterNumber}`,
+      canonical: `https://www.doctruyen.vip/truyen/${slug}/${chapterNumber}`,
     },
     openGraph: {
       title: fullTitle,
       description,
-      url: `https://doctruyen.vip/truyen/${slug}/${chapterNumber}`,
+      url: `https://www.doctruyen.vip/truyen/${slug}/${chapterNumber}`,
       siteName: "DocTruyen.vip",
     },
     twitter: {
@@ -160,6 +160,12 @@ export default async function ChapterPage({
           content_text: contentText,
           pages_images: Array.isArray(pages) ? pages : [],
         } as Chapter;
+
+        // SECURITY: Strip VIP chapter content on server if locked
+        if (chapter.is_locked) {
+          chapter.content_text = '';
+          chapter.pages_images = [];
+        }
       }
     }
   } catch (error) {

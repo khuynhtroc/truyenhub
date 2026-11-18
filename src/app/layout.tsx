@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     "thần đồng đất việt",
     "audio truyện",
   ],
-  authors: [{ name: "DocTruyen.vip Team", url: "https://doctruyen.vip" }],
+  authors: [{ name: "DocTruyen.vip Team", url: "https://www.doctruyen.vip" }],
   creator: "DocTruyen.vip",
   publisher: "DocTruyen.vip",
   formatDetection: {
@@ -93,12 +93,12 @@ export const metadata: Metadata = {
     telephone: false,
   },
   alternates: {
-    canonical: "https://doctruyen.vip",
+    canonical: "https://www.doctruyen.vip",
   },
   openGraph: {
     type: "website",
     locale: "vi_VN",
-    url: "https://doctruyen.vip",
+    url: "https://www.doctruyen.vip",
     siteName: "DocTruyen.vip",
     title: "DocTruyen.vip - Đọc Truyện Tranh & Truyện Chữ Online Miễn Phí",
     description:
@@ -155,9 +155,10 @@ export default async function RootLayout({
         {customCss && (
           <style id="custom-site-css" dangerouslySetInnerHTML={{ __html: customCss }} />
         )}
-        {customHeadCode && (
+        {/* TODO: customHeadCode disabled — <div> inside <head> breaks HTML parsing. Re-enable with a safe injection method. */}
+        {/* {customHeadCode && (
           <div dangerouslySetInnerHTML={{ __html: customHeadCode }} />
-        )}
+        )} */}
         {/* Anti-FOUC Dark Mode script: applies dark class before page renders to prevent white flash */}
         <script
           dangerouslySetInnerHTML={{

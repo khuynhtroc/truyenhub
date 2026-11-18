@@ -36,12 +36,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     keywords: post.focus_keyword ? [post.focus_keyword, "doctruyen", "blog truyện"] : ["doctruyen", "blog truyện"],
     alternates: {
-      canonical: `https://doctruyen.vip/blog/${slug}`,
+      canonical: `https://www.doctruyen.vip/blog/${slug}`,
     },
     openGraph: {
       title: fullTitle,
       description,
-      url: `https://doctruyen.vip/blog/${slug}`,
+      url: `https://www.doctruyen.vip/blog/${slug}`,
       images: [{ url: image }],
       type: "article",
       publishedTime: post.published_at || post.created_at,
